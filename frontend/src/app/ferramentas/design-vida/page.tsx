@@ -1,7 +1,7 @@
 'use client';
 
-import Link from "next/link";
 import { useState } from "react";
+import FerramentaLayout from "@/components/dashboard/FerramentaLayout";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -183,11 +183,11 @@ const PERGUNTAS_DIA: {
   },
 ];
 
-const PASSOS = [
-  { numero: 1, label: "Bem-vindo" },
-  { numero: 2, label: "Meu Dia Perfeito" },
-  { numero: 3, label: "Visão por Área" },
-  { numero: 4, label: "Meu Porquê Profundo" },
+const ETAPAS = [
+  { label: "Bem-vindo", descricao: "O que é Design da Vida?" },
+  { label: "Meu Dia Perfeito", descricao: "8 perguntas para visualizar como seria um dia ideal." },
+  { label: "Visão por Área", descricao: "8 dimensões da vida mapeadas em 1, 3 e 5 anos." },
+  { label: "Porquê Profundo", descricao: "A razão que vai sustentar sua jornada." },
 ];
 
 const INSTRUCOES: Record<number, { titulo: string; itens: string[] }> = {
@@ -274,7 +274,7 @@ function PerguntaDia({
         <p
           style={{
             fontFamily: "var(--font-heading)",
-            fontSize: 14,
+            fontSize: 16,
             fontWeight: 700,
             color: COR_DARK,
             lineHeight: 1.3,
@@ -349,7 +349,7 @@ function TabelaAreas({
             <span
               style={{
                 fontFamily: "var(--font-heading)",
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: 700,
                 color: h.cor,
               }}
@@ -579,13 +579,14 @@ export default function DesignVidaPage() {
   }).length;
   const porquePreenchidos = Object.values(porque).filter((v) => v.trim().length > 10).length;
 
-  const progresso = passo === 0
-    ? 0
-    : passo === 1
-    ? Math.round((diaPreenchidos / 8) * 33)
-    : passo === 2
-    ? 33 + Math.round((areasPreenchidas / 8) * 34)
-    : 67 + Math.round((porquePreenchidos / 4) * 33);
+  const progresso =
+    passo === 0
+      ? 0
+      : passo === 1
+      ? Math.round((diaPreenchidos / 8) * 33)
+      : passo === 2
+      ? 33 + Math.round((areasPreenchidas / 8) * 34)
+      : 67 + Math.round((porquePreenchidos / 4) * 33);
 
   const podeAvancar = () => {
     if (passo === 0) return true;
@@ -596,686 +597,493 @@ export default function DesignVidaPage() {
 
   const instrucao = INSTRUCOES[passo + 1];
 
-  return (
-    <div style={{ background: "#f7f5ee", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-
-      {/* ── Topbar ── */}
-      <div
-        className="sticky top-0 z-20 flex items-center gap-4 px-6"
-        style={{
-          height: 56,
-          background: "#fff",
-          borderBottom: "1px solid var(--color-brand-border)",
-          boxShadow: "0 1px 8px rgba(30,57,42,0.06)",
-        }}
-      >
-        <div className="flex items-center gap-2 flex-1" style={{ fontFamily: "var(--font-body)", fontSize: 13 }}>
-          <Link href="/ferramentas" style={{ color: "var(--color-brand-gray)", textDecoration: "none" }}>
-            Ferramentas
-          </Link>
-          <span style={{ color: "var(--color-brand-gray)" }}>›</span>
-          <span style={{ color: COR_DARK, fontWeight: 600 }}>Design da Vida Ideal</span>
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              background: "rgba(224,165,95,0.15)",
-              color: COR_GOLD,
-              padding: "2px 8px",
-              borderRadius: 99,
-              fontWeight: 600,
-              marginLeft: 4,
-            }}
-          >
-            F05
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2">
-            <span style={{ fontSize: 12, color: "var(--color-brand-gray)" }}>Progresso</span>
-            <div
-              className="relative rounded-full overflow-hidden"
-              style={{ width: 120, height: 6, background: "rgba(30,57,42,0.08)" }}
-            >
-              <div
-                className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
-                style={{ width: `${progresso}%`, background: COR_GOLD }}
-              />
-            </div>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: COR_DARK }}>
-              {progresso}%
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Layout ── */}
-      <div className="flex flex-1 overflow-hidden">
-
-        {/* ── Coluna Esquerda ── */}
-        <div
-          className="flex flex-col shrink-0 overflow-y-auto"
+  const painelResumo = (
+    <>
+      <div className="flex flex-col gap-1">
+        <h3
           style={{
-            width: 280,
-            borderRight: "1px solid var(--color-brand-border)",
-            background: "#fff",
-            padding: "28px 20px",
-            gap: 24,
+            fontFamily: "var(--font-heading)",
+            fontSize: 15,
+            fontWeight: 700,
+            color: COR_DARK,
           }}
         >
-          {/* Identidade */}
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span style={{ fontSize: 22 }}>🔮</span>
-              <h2
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  fontSize: 17,
-                  fontWeight: 700,
-                  color: COR_DARK,
-                  lineHeight: 1.2,
-                }}
-              >
-                Design da Vida
-              </h2>
-            </div>
-            <p style={{ fontSize: 12, color: "var(--color-brand-gray)", lineHeight: 1.5, marginTop: 4 }}>
-              Projete intencionalmente sua vida ideal em 1, 3 e 5 anos.
-            </p>
-          </div>
+          Sua Visão
+        </h3>
+        <p style={{ fontSize: 13, color: "var(--color-brand-gray)" }}>
+          Resumo em construção
+        </p>
+      </div>
 
-          {/* Etapas */}
-          <div className="flex flex-col gap-2">
-            <p
+      {/* Declaração de visão em destaque */}
+      {porque.declaracao.trim() && (
+        <div
+          className="rounded-xl p-4"
+          style={{ background: COR_DARK, border: "none" }}
+        >
+          <p style={{ fontSize: 10, fontWeight: 600, color: COR_GOLD, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+            Declaração de Visão
+          </p>
+          <p
+            style={{
+              fontFamily: "var(--font-heading)",
+              fontSize: 13,
+              color: "#F4F1DE",
+              lineHeight: 1.6,
+              fontStyle: "italic",
+            }}
+          >
+            &ldquo;{porque.declaracao}&rdquo;
+          </p>
+        </div>
+      )}
+
+      {/* Dia perfeito — highlights */}
+      {diaPreenchidos > 0 && (
+        <div
+          className="flex flex-col gap-3 rounded-xl p-4"
+          style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}
+        >
+          <div className="flex items-center justify-between">
+            <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
+              Dia Perfeito
+            </p>
+            <span
               style={{
-                fontFamily: "var(--font-body)",
-                fontSize: 10,
-                fontWeight: 600,
-                color: "var(--color-brand-gray)",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                marginBottom: 4,
+                fontFamily: "var(--font-mono)",
+                fontSize: 13,
+                fontWeight: 700,
+                color: COR_GOLD,
+                background: "rgba(224,165,95,0.15)",
+                padding: "2px 8px",
+                borderRadius: 99,
               }}
             >
-              Etapas
+              {diaPreenchidos}/8
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {PERGUNTAS_DIA.filter((p) => dia[p.id].trim().length > 10).map((p) => (
+              <div
+                key={p.id}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1"
+                style={{ background: `${p.cor}14`, border: `1px solid ${p.cor}25` }}
+              >
+                <span style={{ fontSize: 11 }}>{p.emoji}</span>
+                <span style={{ fontSize: 10, color: p.cor, fontWeight: 600 }}>
+                  {p.titulo.split(" ").slice(0, 3).join(" ")}…
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Áreas */}
+      {areasPreenchidas > 0 && (
+        <div
+          className="flex flex-col gap-3 rounded-xl p-4"
+          style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}
+        >
+          <div className="flex items-center justify-between">
+            <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
+              Áreas Mapeadas
             </p>
-            {PASSOS.map((p) => {
-              const idx = p.numero - 1;
-              const ativo = passo === idx;
-              const concluido = passo > idx;
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 13,
+                fontWeight: 700,
+                color: COR_GOLD,
+                background: "rgba(224,165,95,0.15)",
+                padding: "2px 8px",
+                borderRadius: 99,
+              }}
+            >
+              {areasPreenchidas}/8
+            </span>
+          </div>
+          <div className="flex flex-col gap-2">
+            {AREAS.map((area) => {
+              const v = visao[area.id];
+              const tem = v.um.trim() || v.tres.trim() || v.cinco.trim();
+              const horizontes = [v.um, v.tres, v.cinco].filter((h) => h.trim()).length;
               return (
-                <button
-                  key={p.numero}
-                  onClick={() => idx <= passo && setPasso(idx)}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200"
-                  style={{
-                    background: ativo ? `${COR_DARK}08` : "transparent",
-                    border: `1px solid ${ativo ? COR_DARK + "22" : "transparent"}`,
-                    cursor: idx <= passo ? "pointer" : "default",
-                    opacity: idx > passo ? 0.45 : 1,
-                  }}
-                >
-                  <div
-                    className="flex items-center justify-center rounded-full shrink-0"
-                    style={{
-                      width: 24,
-                      height: 24,
-                      background: concluido ? COR_GOLD : ativo ? COR_DARK : "rgba(30,57,42,0.08)",
-                      color: concluido || ativo ? "#fff" : "var(--color-brand-gray)",
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 10,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {concluido ? "✓" : p.numero}
-                  </div>
+                <div key={area.id} className="flex items-center gap-2">
+                  <span style={{ fontSize: 14, opacity: tem ? 1 : 0.3 }}>{area.emoji}</span>
                   <span
                     style={{
-                      fontFamily: "var(--font-body)",
                       fontSize: 13,
-                      fontWeight: ativo ? 600 : 400,
-                      color: ativo ? COR_DARK : "var(--color-brand-gray)",
+                      color: tem ? COR_DARK : "var(--color-brand-gray)",
+                      fontWeight: tem ? 600 : 400,
+                      flex: 1,
                     }}
                   >
-                    {p.label}
+                    {area.label}
                   </span>
-                </button>
+                  {tem && (
+                    <div className="flex gap-1">
+                      {[0, 1, 2].map((i) => (
+                        <div
+                          key={i}
+                          className="rounded-sm"
+                          style={{
+                            width: 6,
+                            height: 6,
+                            background: i < horizontes
+                              ? (i === 0 ? "#27AE60" : i === 1 ? COR_GOLD : "#8E44AD")
+                              : "var(--color-brand-border)",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
+          <div className="flex items-center gap-3 mt-1">
+            {[
+              { cor: "#27AE60", label: "1 ano" },
+              { cor: COR_GOLD, label: "3 anos" },
+              { cor: "#8E44AD", label: "5 anos" },
+            ].map((h) => (
+              <div key={h.label} className="flex items-center gap-1">
+                <div className="rounded-sm" style={{ width: 6, height: 6, background: h.cor }} />
+                <span style={{ fontSize: 9, color: "var(--color-brand-gray)" }}>{h.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-          {/* Dicas */}
+      {/* Porquê */}
+      {(porque.porqueImporta || porque.quemBeneficia || porque.seBuscar) && (
+        <div
+          className="flex flex-col gap-3 rounded-xl p-4"
+          style={{ background: `${COR_GOLD}10`, border: `1px solid ${COR_GOLD}33` }}
+        >
+          <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
+            Porquê Profundo
+          </p>
+          {[
+            { emoji: "❤️", campo: porque.porqueImporta, label: "Por que importa" },
+            { emoji: "🌍", campo: porque.quemBeneficia, label: "Quem se beneficia" },
+            { emoji: "⚠️", campo: porque.seBuscar, label: "Custo de não agir" },
+          ]
+            .filter((i) => i.campo.trim())
+            .map((i) => (
+              <div key={i.label} className="flex items-start gap-2">
+                <span style={{ fontSize: 13, flexShrink: 0 }}>{i.emoji}</span>
+                <div>
+                  <p style={{ fontSize: 10, fontWeight: 600, color: COR_GOLD, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
+                    {i.label}
+                  </p>
+                  <p style={{ fontSize: 13, color: "var(--color-brand-gray)", lineHeight: 1.4 }}>
+                    {i.campo.length > 80 ? i.campo.slice(0, 80) + "…" : i.campo}
+                  </p>
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
+
+      {/* Estado vazio */}
+      {diaPreenchidos === 0 && areasPreenchidas === 0 && !porque.declaracao && (
+        <div
+          className="flex flex-col items-center gap-3 rounded-xl p-6 text-center"
+          style={{ border: "1.5px dashed var(--color-brand-border)" }}
+        >
+          <span style={{ fontSize: 32 }}>🔮</span>
+          <p style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>
+            Sua visão vai tomar forma aqui conforme você preenche.
+          </p>
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <FerramentaLayout
+      codigo="F05"
+      nome="Design da Vida Ideal"
+      descricao="Projete intencionalmente sua vida ideal em 1, 3 e 5 anos."
+      etapas={ETAPAS}
+      etapaAtual={passo}
+      progresso={progresso}
+      onAvancar={() => setPasso((p) => Math.min(ETAPAS.length - 1, p + 1))}
+      onVoltar={() => setPasso((p) => Math.max(0, p - 1))}
+      podeAvancar={podeAvancar()}
+      labelAvancar={passo === 0 ? "Começar →" : passo === ETAPAS.length - 1 ? "Salvar Visão ✓" : "Continuar →"}
+      resumo={painelResumo}
+    >
+      <div className="p-8">
+
+        {/* Instrução da etapa */}
+        {instrucao && (
           <div
-            className="flex flex-col gap-3 rounded-xl p-4"
+            className="flex flex-col gap-3 rounded-xl p-4 mb-6"
             style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}
           >
-            <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
+            <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK }}>
               {instrucao.titulo}
             </p>
             <ul className="flex flex-col gap-2">
               {instrucao.itens.map((item, i) => (
                 <li key={i} className="flex items-start gap-2">
-                  <span style={{ color: COR_GOLD, fontSize: 12, marginTop: 1, flexShrink: 0 }}>→</span>
-                  <span style={{ fontSize: 12, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{item}</span>
+                  <span style={{ color: COR_GOLD, fontSize: 15, marginTop: 1, flexShrink: 0 }}>→</span>
+                  <span style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{item}</span>
                 </li>
               ))}
             </ul>
           </div>
+        )}
 
-          {/* Botões */}
-          <div className="flex flex-col gap-2 mt-auto">
-            {passo < 3 ? (
-              <button
-                onClick={() => podeAvancar() && setPasso((p) => Math.min(3, p + 1))}
-                className="w-full rounded-xl py-3 font-semibold transition-all duration-200"
+        {/* Passo 0 — Bem-vindo */}
+        {passo === 0 && (
+          <div className="flex flex-col gap-8 max-w-2xl mx-auto">
+            <div className="flex flex-col gap-3">
+              <span
                 style={{
-                  background: podeAvancar() ? COR_DARK : "rgba(30,57,42,0.15)",
-                  color: podeAvancar() ? "#fff" : "var(--color-brand-gray)",
-                  fontFamily: "var(--font-body)",
-                  fontSize: 14,
-                  cursor: podeAvancar() ? "pointer" : "not-allowed",
-                  border: "none",
-                }}
-              >
-                {passo === 0 ? "Começar →" : "Continuar →"}
-              </button>
-            ) : (
-              <button
-                className="w-full rounded-xl py-3 font-semibold"
-                style={{
-                  background: COR_GOLD,
-                  color: "#fff",
-                  fontFamily: "var(--font-body)",
-                  fontSize: 14,
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                Salvar Visão ✓
-              </button>
-            )}
-            {passo > 0 && (
-              <button
-                onClick={() => setPasso((p) => Math.max(0, p - 1))}
-                className="w-full rounded-xl py-2.5 transition-all duration-200"
-                style={{
-                  background: "transparent",
-                  color: "var(--color-brand-gray)",
-                  fontFamily: "var(--font-body)",
+                  fontFamily: "var(--font-mono)",
                   fontSize: 13,
-                  border: "1px solid var(--color-brand-border)",
-                  cursor: "pointer",
+                  fontWeight: 600,
+                  color: COR_GOLD,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
                 }}
               >
-                ← Voltar
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* ── Coluna Central ── */}
-        <div className="flex-1 overflow-y-auto p-8">
-
-          {/* Passo 0 — Bem-vindo */}
-          {passo === 0 && (
-            <div className="flex flex-col gap-8 max-w-2xl mx-auto">
-              <div className="flex flex-col gap-3">
-                <span
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: COR_GOLD,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                  }}
-                >
-                  Ferramenta F05
-                </span>
-                <h1
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: "clamp(28px, 4vw, 40px)",
-                    fontWeight: 700,
-                    color: COR_DARK,
-                    lineHeight: 1.15,
-                  }}
-                >
-                  Design da{" "}
-                  <span style={{ color: COR_GOLD, fontStyle: "italic" }}>Vida Ideal</span>
-                </h1>
-                <p
-                  style={{
-                    fontSize: 15,
-                    color: "var(--color-brand-gray)",
-                    lineHeight: 1.7,
-                    maxWidth: 520,
-                  }}
-                >
-                  Grandes vidas não acontecem por acidente — elas são projetadas. Esta ferramenta te ajuda a construir uma visão vívida e concreta do que você quer criar, e conectar essa visão ao porquê que vai te manter no caminho.
-                </p>
-              </div>
-
-              {/* 3 blocos */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  { emoji: "🌅", titulo: "Dia Perfeito", desc: "8 perguntas para visualizar como seria um dia ideal na sua vida.", cor: "#E67E22" },
-                  { emoji: "🗺️", titulo: "Visão por Área", desc: "8 dimensões da vida mapeadas em 1, 3 e 5 anos.", cor: "#2980B9" },
-                  { emoji: "❤️", titulo: "Porquê Profundo", desc: "A razão que vai sustentar sua jornada nos momentos difíceis.", cor: "#E74C3C" },
-                ].map((b) => (
-                  <div
-                    key={b.titulo}
-                    className="flex flex-col gap-3 rounded-2xl p-5"
-                    style={{ background: `${b.cor}0e`, border: `1.5px solid ${b.cor}25` }}
-                  >
-                    <span style={{ fontSize: 24 }}>{b.emoji}</span>
-                    <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK }}>
-                      {b.titulo}
-                    </h3>
-                    <p style={{ fontSize: 12, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{b.desc}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Citação */}
-              <div
-                className="rounded-2xl p-6 relative overflow-hidden"
-                style={{ background: `${COR_DARK}`, border: "none" }}
+                Ferramenta F05
+              </span>
+              <h1
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: "clamp(28px, 4vw, 40px)",
+                  fontWeight: 700,
+                  color: COR_DARK,
+                  lineHeight: 1.15,
+                }}
               >
-                <div
-                  className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10"
-                  style={{ background: COR_GOLD, transform: "translate(30%, -30%)" }}
-                />
-                <p
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: 16,
-                    fontStyle: "italic",
-                    color: "#F4F1DE",
-                    lineHeight: 1.6,
-                    position: "relative",
-                  }}
-                >
-                  "Se você não sabe para onde vai, qualquer caminho serve. Mas se você sabe com clareza, o caminho se revela."
-                </p>
-                <p style={{ fontSize: 12, color: COR_GOLD, marginTop: 12, fontWeight: 600, position: "relative" }}>
-                  Design da Vida — A Virada
-                </p>
-              </div>
-
-              {/* Tempo */}
-              <div
-                className="flex items-center gap-4 rounded-xl p-4"
-                style={{ background: `${COR_GOLD}12`, border: `1px solid ${COR_GOLD}33` }}
+                Design da{" "}
+                <span style={{ color: COR_GOLD, fontStyle: "italic" }}>Vida Ideal</span>
+              </h1>
+              <p
+                style={{
+                  fontSize: 15,
+                  color: "var(--color-brand-gray)",
+                  lineHeight: 1.7,
+                  maxWidth: 520,
+                }}
               >
-                <span style={{ fontSize: 20 }}>⏱️</span>
-                <div>
-                  <p style={{ fontFamily: "var(--font-heading)", fontSize: 14, fontWeight: 700, color: COR_DARK }}>
-                    45–60 minutos
-                  </p>
-                  <p style={{ fontSize: 12, color: "var(--color-brand-gray)" }}>
-                    Reserve um tempo sem interrupções. Vale um café e um caderno ao lado.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Passo 1 — Dia Perfeito */}
-          {passo === 1 && (
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-1">
-                <h2
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: COR_DARK,
-                  }}
-                >
-                  Meu Dia Perfeito
-                </h2>
-                <p style={{ fontSize: 13, color: "var(--color-brand-gray)" }}>
-                  Imagine que hoje é um dia perfeito. Escreva no <strong style={{ color: COR_DARK }}>presente</strong>, como se já fosse real. Mínimo{" "}
-                  <strong style={{ color: COR_DARK }}>4 perguntas</strong> para continuar.
-                </p>
-              </div>
-
-              {diaPreenchidos > 0 && (
-                <div
-                  className="flex items-center gap-3 rounded-xl px-4 py-3"
-                  style={{ background: "rgba(39,174,96,0.08)", border: "1px solid rgba(39,174,96,0.25)" }}
-                >
-                  <span style={{ fontSize: 16 }}>✅</span>
-                  <p style={{ fontSize: 13, color: "#27AE60", fontWeight: 600 }}>
-                    {diaPreenchidos}/8 perguntas respondidas
-                    {diaPreenchidos < 4 ? ` — responda mais ${4 - diaPreenchidos} para continuar` : " — você pode continuar!"}
-                  </p>
-                </div>
-              )}
-
-              <div className="flex flex-col gap-4">
-                {PERGUNTAS_DIA.map((pergunta) => (
-                  <PerguntaDia
-                    key={pergunta.id}
-                    pergunta={pergunta}
-                    valor={dia[pergunta.id]}
-                    onChange={(v) => updateDia(pergunta.id, v)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Passo 2 — Visão por Área */}
-          {passo === 2 && (
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-1">
-                <h2
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: COR_DARK,
-                  }}
-                >
-                  Visão por Área de Vida
-                </h2>
-                <p style={{ fontSize: 13, color: "var(--color-brand-gray)" }}>
-                  Para cada área, escreva onde quer estar em <strong style={{ color: "#27AE60" }}>1 ano</strong>,{" "}
-                  <strong style={{ color: COR_GOLD }}>3 anos</strong> e{" "}
-                  <strong style={{ color: "#8E44AD" }}>5 anos</strong>. Mínimo{" "}
-                  <strong style={{ color: COR_DARK }}>3 áreas</strong> para continuar.
-                </p>
-              </div>
-
-              {areasPreenchidas > 0 && (
-                <div
-                  className="flex items-center gap-3 rounded-xl px-4 py-3"
-                  style={{ background: "rgba(39,174,96,0.08)", border: "1px solid rgba(39,174,96,0.25)" }}
-                >
-                  <span style={{ fontSize: 16 }}>✅</span>
-                  <p style={{ fontSize: 13, color: "#27AE60", fontWeight: 600 }}>
-                    {areasPreenchidas}/8 áreas preenchidas
-                    {areasPreenchidas < 3 ? ` — preencha mais ${3 - areasPreenchidas} para continuar` : " — você pode continuar!"}
-                  </p>
-                </div>
-              )}
-
-              <TabelaAreas visao={visao} onUpdate={updateVisao} />
-            </div>
-          )}
-
-          {/* Passo 3 — Porquê Profundo */}
-          {passo === 3 && (
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-1">
-                <h2
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: COR_DARK,
-                  }}
-                >
-                  Meu Porquê Profundo
-                </h2>
-                <p style={{ fontSize: 13, color: "var(--color-brand-gray)" }}>
-                  Conecte sua visão ao que realmente importa. O porquê é o que sustenta a jornada nos momentos difíceis.
-                </p>
-              </div>
-
-              <CampoPorque
-                emoji="❤️"
-                titulo="Por que esta visão importa para mim?"
-                placeholder="Vá além do óbvio. Por que, no fundo, você quer isso? O que muda em você quando alcança?"
-                valor={porque.porqueImporta}
-                onChange={(v) => updatePorque("porqueImporta", v)}
-                cor="#E74C3C"
-              />
-              <CampoPorque
-                emoji="🌍"
-                titulo="Quem se beneficia quando eu vivo esta visão?"
-                placeholder="Família, equipe, comunidade, pessoas que você nem conhece — quem ganha quando você se torna essa versão?"
-                valor={porque.quemBeneficia}
-                onChange={(v) => updatePorque("quemBeneficia", v)}
-                cor="#2980B9"
-              />
-              <CampoPorque
-                emoji="⚠️"
-                titulo="O que acontece se eu não buscar esta visão?"
-                placeholder="Seja honesto. Qual é o custo de não agir? Quem perde, o que se perde, como você se sentirá em 5 anos?"
-                valor={porque.seBuscar}
-                onChange={(v) => updatePorque("seBuscar", v)}
-                cor="#E67E22"
-              />
-              <CampoPorque
-                emoji="⭐"
-                titulo="Minha declaração de visão em 1 frase"
-                placeholder="Em [prazo], eu serei [quem], fazendo [o quê], para [quem/por quê]."
-                valor={porque.declaracao}
-                onChange={(v) => updatePorque("declaracao", v)}
-                cor={COR_GOLD}
-                destaque
-              />
-            </div>
-          )}
-        </div>
-
-        {/* ── Coluna Direita ── */}
-        <div
-          className="shrink-0 overflow-y-auto flex flex-col gap-5 p-6"
-          style={{
-            width: 300,
-            borderLeft: "1px solid var(--color-brand-border)",
-            background: "#fff",
-          }}
-        >
-          <div className="flex flex-col gap-1">
-            <h3
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: 15,
-                fontWeight: 700,
-                color: COR_DARK,
-              }}
-            >
-              Sua Visão
-            </h3>
-            <p style={{ fontSize: 11, color: "var(--color-brand-gray)" }}>
-              Resumo em construção
-            </p>
-          </div>
-
-          {/* Declaração de visão em destaque */}
-          {porque.declaracao.trim() && (
-            <div
-              className="rounded-xl p-4"
-              style={{ background: COR_DARK, border: "none" }}
-            >
-              <p style={{ fontSize: 10, fontWeight: 600, color: COR_GOLD, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
-                Declaração de Visão
+                Grandes vidas não acontecem por acidente — elas são projetadas. Esta ferramenta te ajuda a construir uma visão vívida e concreta do que você quer criar, e conectar essa visão ao porquê que vai te manter no caminho.
               </p>
+            </div>
+
+            {/* 3 blocos */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { emoji: "🌅", titulo: "Dia Perfeito", desc: "8 perguntas para visualizar como seria um dia ideal na sua vida.", cor: "#E67E22" },
+                { emoji: "🗺️", titulo: "Visão por Área", desc: "8 dimensões da vida mapeadas em 1, 3 e 5 anos.", cor: "#2980B9" },
+                { emoji: "❤️", titulo: "Porquê Profundo", desc: "A razão que vai sustentar sua jornada nos momentos difíceis.", cor: "#E74C3C" },
+              ].map((b) => (
+                <div
+                  key={b.titulo}
+                  className="flex flex-col gap-3 rounded-2xl p-5"
+                  style={{ background: `${b.cor}0e`, border: `1.5px solid ${b.cor}25` }}
+                >
+                  <span style={{ fontSize: 24 }}>{b.emoji}</span>
+                  <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK }}>
+                    {b.titulo}
+                  </h3>
+                  <p style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{b.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Citação */}
+            <div
+              className="rounded-2xl p-6 relative overflow-hidden"
+              style={{ background: `${COR_DARK}`, border: "none" }}
+            >
+              <div
+                className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10"
+                style={{ background: COR_GOLD, transform: "translate(30%, -30%)" }}
+              />
               <p
                 style={{
                   fontFamily: "var(--font-heading)",
-                  fontSize: 13,
+                  fontSize: 20,
+                  fontStyle: "italic",
                   color: "#F4F1DE",
                   lineHeight: 1.6,
-                  fontStyle: "italic",
+                  position: "relative",
                 }}
               >
-                "{porque.declaracao}"
+                &ldquo;Se você não sabe para onde vai, qualquer caminho serve. Mas se você sabe com clareza, o caminho se revela.&rdquo;
+              </p>
+              <p style={{ fontSize: 15, color: COR_GOLD, marginTop: 12, fontWeight: 600, position: "relative" }}>
+                Design da Vida — A Virada
               </p>
             </div>
-          )}
 
-          {/* Dia perfeito — highlights */}
-          {diaPreenchidos > 0 && (
+            {/* Tempo */}
             <div
-              className="flex flex-col gap-3 rounded-xl p-4"
-              style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}
+              className="flex items-center gap-4 rounded-xl p-4"
+              style={{ background: `${COR_GOLD}12`, border: `1px solid ${COR_GOLD}33` }}
             >
-              <div className="flex items-center justify-between">
-                <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
-                  Dia Perfeito
+              <span style={{ fontSize: 20 }}>⏱️</span>
+              <div>
+                <p style={{ fontFamily: "var(--font-heading)", fontSize: 16, fontWeight: 700, color: COR_DARK }}>
+                  45–60 minutos
                 </p>
-                <span
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: COR_GOLD,
-                    background: "rgba(224,165,95,0.15)",
-                    padding: "2px 8px",
-                    borderRadius: 99,
-                  }}
-                >
-                  {diaPreenchidos}/8
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {PERGUNTAS_DIA.filter((p) => dia[p.id].trim().length > 10).map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1"
-                    style={{ background: `${p.cor}14`, border: `1px solid ${p.cor}25` }}
-                  >
-                    <span style={{ fontSize: 11 }}>{p.emoji}</span>
-                    <span style={{ fontSize: 10, color: p.cor, fontWeight: 600 }}>
-                      {p.titulo.split(" ").slice(0, 3).join(" ")}…
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Áreas */}
-          {areasPreenchidas > 0 && (
-            <div
-              className="flex flex-col gap-3 rounded-xl p-4"
-              style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}
-            >
-              <div className="flex items-center justify-between">
-                <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
-                  Áreas Mapeadas
+                <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
+                  Reserve um tempo sem interrupções. Vale um café e um caderno ao lado.
                 </p>
-                <span
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: COR_GOLD,
-                    background: "rgba(224,165,95,0.15)",
-                    padding: "2px 8px",
-                    borderRadius: 99,
-                  }}
-                >
-                  {areasPreenchidas}/8
-                </span>
-              </div>
-              <div className="flex flex-col gap-2">
-                {AREAS.map((area) => {
-                  const v = visao[area.id];
-                  const tem = v.um.trim() || v.tres.trim() || v.cinco.trim();
-                  const horizontes = [v.um, v.tres, v.cinco].filter((h) => h.trim()).length;
-                  return (
-                    <div key={area.id} className="flex items-center gap-2">
-                      <span style={{ fontSize: 14, opacity: tem ? 1 : 0.3 }}>{area.emoji}</span>
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: tem ? COR_DARK : "var(--color-brand-gray)",
-                          fontWeight: tem ? 600 : 400,
-                          flex: 1,
-                        }}
-                      >
-                        {area.label}
-                      </span>
-                      {tem && (
-                        <div className="flex gap-1">
-                          {[0, 1, 2].map((i) => (
-                            <div
-                              key={i}
-                              className="rounded-sm"
-                              style={{
-                                width: 6,
-                                height: 6,
-                                background: i < horizontes
-                                  ? (i === 0 ? "#27AE60" : i === 1 ? COR_GOLD : "#8E44AD")
-                                  : "var(--color-brand-border)",
-                              }}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex items-center gap-3 mt-1">
-                {[
-                  { cor: "#27AE60", label: "1 ano" },
-                  { cor: COR_GOLD, label: "3 anos" },
-                  { cor: "#8E44AD", label: "5 anos" },
-                ].map((h) => (
-                  <div key={h.label} className="flex items-center gap-1">
-                    <div className="rounded-sm" style={{ width: 6, height: 6, background: h.cor }} />
-                    <span style={{ fontSize: 9, color: "var(--color-brand-gray)" }}>{h.label}</span>
-                  </div>
-                ))}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Porquê */}
-          {(porque.porqueImporta || porque.quemBeneficia || porque.seBuscar) && (
-            <div
-              className="flex flex-col gap-3 rounded-xl p-4"
-              style={{ background: `${COR_GOLD}10`, border: `1px solid ${COR_GOLD}33` }}
-            >
-              <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
-                Porquê Profundo
-              </p>
-              {[
-                { emoji: "❤️", campo: porque.porqueImporta, label: "Por que importa" },
-                { emoji: "🌍", campo: porque.quemBeneficia, label: "Quem se beneficia" },
-                { emoji: "⚠️", campo: porque.seBuscar, label: "Custo de não agir" },
-              ]
-                .filter((i) => i.campo.trim())
-                .map((i) => (
-                  <div key={i.label} className="flex items-start gap-2">
-                    <span style={{ fontSize: 13, flexShrink: 0 }}>{i.emoji}</span>
-                    <div>
-                      <p style={{ fontSize: 10, fontWeight: 600, color: COR_GOLD, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
-                        {i.label}
-                      </p>
-                      <p style={{ fontSize: 11, color: "var(--color-brand-gray)", lineHeight: 1.4 }}>
-                        {i.campo.length > 80 ? i.campo.slice(0, 80) + "…" : i.campo}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          )}
-
-          {/* Estado vazio */}
-          {diaPreenchidos === 0 && areasPreenchidas === 0 && !porque.declaracao && (
-            <div
-              className="flex flex-col items-center gap-3 rounded-xl p-6 text-center"
-              style={{ border: "1.5px dashed var(--color-brand-border)" }}
-            >
-              <span style={{ fontSize: 32 }}>🔮</span>
-              <p style={{ fontSize: 12, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>
-                Sua visão vai tomar forma aqui conforme você preenche.
+        {/* Passo 1 — Dia Perfeito */}
+        {passo === 1 && (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <h2
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: 24,
+                  fontWeight: 700,
+                  color: COR_DARK,
+                }}
+              >
+                Meu Dia Perfeito
+              </h2>
+              <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
+                Imagine que hoje é um dia perfeito. Escreva no <strong style={{ color: COR_DARK }}>presente</strong>, como se já fosse real. Mínimo{" "}
+                <strong style={{ color: COR_DARK }}>4 perguntas</strong> para continuar.
               </p>
             </div>
-          )}
-        </div>
 
+            {diaPreenchidos > 0 && (
+              <div
+                className="flex items-center gap-3 rounded-xl px-4 py-3"
+                style={{ background: "rgba(39,174,96,0.08)", border: "1px solid rgba(39,174,96,0.25)" }}
+              >
+                <span style={{ fontSize: 16 }}>✅</span>
+                <p style={{ fontSize: 15, color: "#27AE60", fontWeight: 600 }}>
+                  {diaPreenchidos}/8 perguntas respondidas
+                  {diaPreenchidos < 4 ? ` — responda mais ${4 - diaPreenchidos} para continuar` : " — você pode continuar!"}
+                </p>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-4">
+              {PERGUNTAS_DIA.map((pergunta) => (
+                <PerguntaDia
+                  key={pergunta.id}
+                  pergunta={pergunta}
+                  valor={dia[pergunta.id]}
+                  onChange={(v) => updateDia(pergunta.id, v)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Passo 2 — Visão por Área */}
+        {passo === 2 && (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <h2
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: 24,
+                  fontWeight: 700,
+                  color: COR_DARK,
+                }}
+              >
+                Visão por Área de Vida
+              </h2>
+              <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
+                Para cada área, escreva onde quer estar em <strong style={{ color: "#27AE60" }}>1 ano</strong>,{" "}
+                <strong style={{ color: COR_GOLD }}>3 anos</strong> e{" "}
+                <strong style={{ color: "#8E44AD" }}>5 anos</strong>. Mínimo{" "}
+                <strong style={{ color: COR_DARK }}>3 áreas</strong> para continuar.
+              </p>
+            </div>
+
+            {areasPreenchidas > 0 && (
+              <div
+                className="flex items-center gap-3 rounded-xl px-4 py-3"
+                style={{ background: "rgba(39,174,96,0.08)", border: "1px solid rgba(39,174,96,0.25)" }}
+              >
+                <span style={{ fontSize: 16 }}>✅</span>
+                <p style={{ fontSize: 15, color: "#27AE60", fontWeight: 600 }}>
+                  {areasPreenchidas}/8 áreas preenchidas
+                  {areasPreenchidas < 3 ? ` — preencha mais ${3 - areasPreenchidas} para continuar` : " — você pode continuar!"}
+                </p>
+              </div>
+            )}
+
+            <TabelaAreas visao={visao} onUpdate={updateVisao} />
+          </div>
+        )}
+
+        {/* Passo 3 — Porquê Profundo */}
+        {passo === 3 && (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <h2
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: 24,
+                  fontWeight: 700,
+                  color: COR_DARK,
+                }}
+              >
+                Meu Porquê Profundo
+              </h2>
+              <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
+                Conecte sua visão ao que realmente importa. O porquê é o que sustenta a jornada nos momentos difíceis.
+              </p>
+            </div>
+
+            <CampoPorque
+              emoji="❤️"
+              titulo="Por que esta visão importa para mim?"
+              placeholder="Vá além do óbvio. Por que, no fundo, você quer isso? O que muda em você quando alcança?"
+              valor={porque.porqueImporta}
+              onChange={(v) => updatePorque("porqueImporta", v)}
+              cor="#E74C3C"
+            />
+            <CampoPorque
+              emoji="🌍"
+              titulo="Quem se beneficia quando eu vivo esta visão?"
+              placeholder="Família, equipe, comunidade, pessoas que você nem conhece — quem ganha quando você se torna essa versão?"
+              valor={porque.quemBeneficia}
+              onChange={(v) => updatePorque("quemBeneficia", v)}
+              cor="#2980B9"
+            />
+            <CampoPorque
+              emoji="⚠️"
+              titulo="O que acontece se eu não buscar esta visão?"
+              placeholder="Seja honesto. Qual é o custo de não agir? Quem perde, o que se perde, como você se sentirá em 5 anos?"
+              valor={porque.seBuscar}
+              onChange={(v) => updatePorque("seBuscar", v)}
+              cor="#E67E22"
+            />
+            <CampoPorque
+              emoji="⭐"
+              titulo="Minha declaração de visão em 1 frase"
+              placeholder="Em [prazo], eu serei [quem], fazendo [o quê], para [quem/por quê]."
+              valor={porque.declaracao}
+              onChange={(v) => updatePorque("declaracao", v)}
+              cor={COR_GOLD}
+              destaque
+            />
+          </div>
+        )}
       </div>
-    </div>
+    </FerramentaLayout>
   );
 }

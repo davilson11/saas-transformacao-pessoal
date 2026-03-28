@@ -1,7 +1,7 @@
 'use client';
 
-import Link from "next/link";
 import { useState } from "react";
+import FerramentaLayout from "@/components/dashboard/FerramentaLayout";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -25,11 +25,11 @@ type Estrategias = {
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
-const PASSOS = [
-  { numero: 1, label: "Bem-vindo" },
-  { numero: 2, label: "Forças e Fraquezas" },
-  { numero: 3, label: "Oportunidades e Ameaças" },
-  { numero: 4, label: "Matriz de Ação" },
+const ETAPAS = [
+  { label: "Bem-vindo",                descricao: "Introdução à ferramenta" },
+  { label: "Forças e Fraquezas",       descricao: "Fatores internos" },
+  { label: "Oportunidades e Ameaças",  descricao: "Fatores externos" },
+  { label: "Matriz de Ação",           descricao: "Estratégias concretas" },
 ];
 
 const INSTRUCOES: Record<number, { titulo: string; itens: string[] }> = {
@@ -137,7 +137,7 @@ function QuadranteEditor({
         <h3
           style={{
             fontFamily: "var(--font-heading)",
-            fontSize: 16,
+            fontSize: 20,
             fontWeight: 700,
             color: cor,
           }}
@@ -148,14 +148,14 @@ function QuadranteEditor({
 
       {/* Perguntas */}
       <div className="px-5 py-4 flex flex-col gap-2">
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600, color: "var(--color-brand-gray)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600, color: "var(--color-brand-gray)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
           Perguntas guiadoras
         </p>
         <ul className="flex flex-col gap-1.5">
           {perguntas.map((p, i) => (
             <li key={i} className="flex items-start gap-2">
-              <span style={{ color: cor, fontWeight: 700, fontSize: 12, marginTop: 1, flexShrink: 0 }}>•</span>
-              <span style={{ fontSize: 12, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{p}</span>
+              <span style={{ color: cor, fontWeight: 700, fontSize: 15, marginTop: 1, flexShrink: 0 }}>•</span>
+              <span style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{p}</span>
             </li>
           ))}
         </ul>
@@ -163,7 +163,7 @@ function QuadranteEditor({
 
       {/* Textarea */}
       <div className="px-5 pb-5 flex-1 flex flex-col">
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600, color: "var(--color-brand-gray)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600, color: "var(--color-brand-gray)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
           Suas respostas
         </p>
         <textarea
@@ -212,7 +212,7 @@ function EstrategiaCard({
         >
           {titulo}
         </div>
-        <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--color-brand-gray)", lineHeight: 1.4 }}>
+        <span style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.4 }}>
           {subtitulo}
         </span>
       </div>
@@ -303,7 +303,7 @@ function MiniQuadrante({
 // ─── Página ───────────────────────────────────────────────────────────────────
 
 export default function SwotPessoalPage() {
-  const [passo, setPasso] = useState(0); // 0 = bem-vindo, 1 = forcas/fraquezas, 2 = oportunidades/ameacas, 3 = matriz
+  const [passo, setPasso] = useState(0);
   const [swot, setSwot] = useState<SwotData>({
     forcas: { texto: "" },
     fraquezas: { texto: "" },
@@ -332,620 +332,379 @@ export default function SwotPessoalPage() {
     swot.oportunidades.texto.split("\n").filter((l) => l.trim()).length +
     swot.ameacas.texto.split("\n").filter((l) => l.trim()).length;
 
-  return (
-    <div style={{ background: "#f7f5ee", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+  // ── Painel direito (resumo) ───────────────────────────────────────────────
 
-      {/* ── Topbar ── */}
-      <div
-        className="sticky top-0 z-20 flex items-center gap-4 px-6"
-        style={{
-          height: 56,
-          background: "#fff",
-          borderBottom: "1px solid var(--color-brand-border)",
-          boxShadow: "0 1px 8px rgba(30,57,42,0.06)",
-        }}
-      >
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 flex-1" style={{ fontFamily: "var(--font-body)", fontSize: 13 }}>
-          <Link href="/ferramentas" style={{ color: "var(--color-brand-gray)", textDecoration: "none" }}>
-            Ferramentas
-          </Link>
-          <span style={{ color: "var(--color-brand-gray)" }}>›</span>
-          <span style={{ color: "var(--color-brand-dark-green)", fontWeight: 600 }}>SWOT Pessoal</span>
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              background: "rgba(224,165,95,0.15)",
-              color: COR_GOLD,
-              padding: "2px 8px",
-              borderRadius: 99,
-              fontWeight: 600,
-              marginLeft: 4,
-            }}
-          >
-            F03
-          </span>
-        </div>
-
-        {/* Progresso */}
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2">
-            <span style={{ fontSize: 12, color: "var(--color-brand-gray)" }}>Progresso</span>
-            <div
-              className="relative rounded-full overflow-hidden"
-              style={{ width: 120, height: 6, background: "rgba(30,57,42,0.08)" }}
-            >
-              <div
-                className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
-                style={{ width: `${progresso}%`, background: COR_GOLD }}
-              />
-            </div>
-            <span
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: 12,
-                fontWeight: 600,
-                color: COR_DARK,
-              }}
-            >
-              {progresso}%
-            </span>
-          </div>
-
-          {totalItens > 0 && (
-            <span
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: 11,
-                background: `${COR_DARK}10`,
-                color: COR_DARK,
-                padding: "3px 10px",
-                borderRadius: 99,
-                fontWeight: 600,
-              }}
-            >
-              {totalItens} itens
-            </span>
-          )}
-        </div>
+  const painelResumo = (
+    <>
+      {/* Quadrantes mini */}
+      <div className="flex flex-col gap-3">
+        <MiniQuadrante titulo="Forças" cor={COR_FORCAS} emoji="💪" texto={swot.forcas.texto} />
+        <MiniQuadrante titulo="Fraquezas" cor={COR_FRAQUEZAS} emoji="🎯" texto={swot.fraquezas.texto} />
+        <MiniQuadrante titulo="Oportunidades" cor={COR_OPORTUNIDADES} emoji="🌱" texto={swot.oportunidades.texto} />
+        <MiniQuadrante titulo="Ameaças" cor={COR_AMEACAS} emoji="⚡" texto={swot.ameacas.texto} />
       </div>
 
-      {/* ── Layout principal ── */}
-      <div className="flex flex-1 overflow-hidden">
-
-        {/* ── Coluna Esquerda ── */}
+      {/* Completude */}
+      {totalItens > 0 && (
         <div
-          className="flex flex-col shrink-0 overflow-y-auto"
-          style={{
-            width: 280,
-            borderRight: "1px solid var(--color-brand-border)",
-            background: "#fff",
-            padding: "28px 20px",
-            gap: 24,
-          }}
+          className="flex flex-col gap-3 rounded-xl p-4"
+          style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}
         >
-          {/* Identidade */}
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span style={{ fontSize: 22 }}>⚡</span>
+          <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
+            Preenchimento
+          </p>
+          {[
+            { label: "Forças", texto: swot.forcas.texto, cor: COR_FORCAS },
+            { label: "Fraquezas", texto: swot.fraquezas.texto, cor: COR_FRAQUEZAS },
+            { label: "Oportunidades", texto: swot.oportunidades.texto, cor: COR_OPORTUNIDADES },
+            { label: "Ameaças", texto: swot.ameacas.texto, cor: COR_AMEACAS },
+          ].map((q) => {
+            const itens = q.texto.split("\n").filter((l) => l.trim()).length;
+            const pct = Math.min(100, Math.round((itens / 5) * 100));
+            return (
+              <div key={q.label} className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span style={{ fontSize: 13, color: "var(--color-brand-gray)" }}>{q.label}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: q.cor, fontWeight: 600 }}>
+                    {itens}/5
+                  </span>
+                </div>
+                <div
+                  className="rounded-full overflow-hidden"
+                  style={{ height: 4, background: `${q.cor}18` }}
+                >
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${pct}%`, background: q.cor }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Estratégias mini */}
+      {passo === 3 && (estrategias.fo || estrategias.wo || estrategias.ft || estrategias.wt) && (
+        <div
+          className="flex flex-col gap-3 rounded-xl p-4"
+          style={{ background: `${COR_GOLD}10`, border: `1px solid ${COR_GOLD}33` }}
+        >
+          <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
+            Estratégias definidas
+          </p>
+          {[
+            { sigla: "FO", texto: estrategias.fo, cor: COR_FORCAS },
+            { sigla: "FrO", texto: estrategias.wo, cor: COR_OPORTUNIDADES },
+            { sigla: "FA", texto: estrategias.ft, cor: COR_AMEACAS },
+            { sigla: "FrA", texto: estrategias.wt, cor: COR_FRAQUEZAS },
+          ]
+            .filter((e) => e.texto.trim())
+            .map((e) => (
+              <div key={e.sigla} className="flex items-start gap-2">
+                <div
+                  className="flex items-center justify-center rounded shrink-0"
+                  style={{ width: 22, height: 22, background: e.cor, color: "#fff", fontSize: 9, fontFamily: "var(--font-mono)", fontWeight: 700, marginTop: 1 }}
+                >
+                  {e.sigla}
+                </div>
+                <p style={{ fontSize: 13, color: "var(--color-brand-gray)", lineHeight: 1.4 }}>
+                  {e.texto.length > 80 ? e.texto.slice(0, 80) + "…" : e.texto}
+                </p>
+              </div>
+            ))}
+        </div>
+      )}
+
+      {/* Estado vazio */}
+      {totalItens === 0 && (
+        <div
+          className="flex flex-col items-center gap-3 rounded-xl p-6 text-center"
+          style={{ border: `1.5px dashed var(--color-brand-border)` }}
+        >
+          <span style={{ fontSize: 32 }}>⚡</span>
+          <p style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>
+            Seu SWOT vai aparecer aqui conforme você preenche.
+          </p>
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <FerramentaLayout
+      codigo="F03"
+      nome="SWOT Pessoal"
+      descricao="Análise estratégica completa das suas forças, fraquezas, oportunidades e ameaças."
+      etapas={ETAPAS}
+      etapaAtual={passo}
+      progresso={progresso}
+      onAvancar={() => podeAvancar() && setPasso((p) => Math.min(3, p + 1))}
+      onVoltar={() => setPasso((p) => Math.max(0, p - 1))}
+      podeAvancar={podeAvancar()}
+      totalItens={totalItens}
+      labelItens="itens"
+      resumo={painelResumo}
+    >
+      <div className="p-8">
+
+        {/* Instrução contextual */}
+        <div
+          className="max-w-2xl mx-auto mb-6 flex flex-col gap-3 rounded-xl p-4"
+          style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}
+        >
+          <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK }}>
+            {instrucao.titulo}
+          </p>
+          <ul className="flex flex-col gap-2">
+            {instrucao.itens.map((item, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span style={{ color: COR_GOLD, fontSize: 15, marginTop: 1, flexShrink: 0 }}>→</span>
+                <span style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Passo 0 — Bem-vindo */}
+        {passo === 0 && (
+          <div className="flex flex-col gap-8 max-w-2xl mx-auto">
+            <div className="flex flex-col gap-3">
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: COR_GOLD,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                }}
+              >
+                Ferramenta F03
+              </span>
+              <h1
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: "clamp(28px, 4vw, 40px)",
+                  fontWeight: 700,
+                  color: COR_DARK,
+                  lineHeight: 1.15,
+                }}
+              >
+                SWOT{" "}
+                <span style={{ color: COR_GOLD, fontStyle: "italic" }}>Pessoal</span>
+              </h1>
+              <p
+                style={{
+                  fontSize: 15,
+                  color: "var(--color-brand-gray)",
+                  lineHeight: 1.7,
+                  maxWidth: 520,
+                }}
+              >
+                A análise SWOT — Forças, Fraquezas, Oportunidades e Ameaças — é uma das ferramentas mais poderosas da estratégia empresarial, agora aplicada ao seu desenvolvimento pessoal.
+              </p>
+            </div>
+
+            {/* Quadrantes intro */}
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { cor: COR_FORCAS, emoji: "💪", titulo: "Forças", desc: "Seus diferenciais e pontos fortes internos." },
+                { cor: COR_FRAQUEZAS, emoji: "🎯", titulo: "Fraquezas", desc: "Limitações e pontos a desenvolver." },
+                { cor: COR_OPORTUNIDADES, emoji: "🌱", titulo: "Oportunidades", desc: "Fatores externos favoráveis ao seu crescimento." },
+                { cor: COR_AMEACAS, emoji: "⚡", titulo: "Ameaças", desc: "Riscos e desafios externos a antecipar." },
+              ].map((q) => (
+                <div
+                  key={q.titulo}
+                  className="flex flex-col gap-2 rounded-2xl p-5"
+                  style={{ background: `${q.cor}10`, border: `1.5px solid ${q.cor}25` }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span style={{ fontSize: 20 }}>{q.emoji}</span>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-heading)",
+                        fontSize: 18,
+                        fontWeight: 700,
+                        color: q.cor,
+                      }}
+                    >
+                      {q.titulo}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{q.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Tempo estimado */}
+            <div
+              className="flex items-center gap-4 rounded-xl p-4"
+              style={{ background: `${COR_GOLD}12`, border: `1px solid ${COR_GOLD}33` }}
+            >
+              <span style={{ fontSize: 20 }}>⏱️</span>
+              <div>
+                <p style={{ fontFamily: "var(--font-heading)", fontSize: 16, fontWeight: 700, color: COR_DARK }}>
+                  30–45 minutos
+                </p>
+                <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
+                  Recomendado: em um lugar tranquilo, sem distrações.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Passo 1 — Forças e Fraquezas */}
+        {passo === 1 && (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
               <h2
                 style={{
                   fontFamily: "var(--font-heading)",
-                  fontSize: 17,
+                  fontSize: 24,
                   fontWeight: 700,
                   color: COR_DARK,
-                  lineHeight: 1.2,
                 }}
               >
-                SWOT Pessoal
+                Forças e Fraquezas
               </h2>
+              <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
+                Fatores <strong style={{ color: COR_DARK }}>internos</strong> — o que você controla.
+              </p>
             </div>
-            <p style={{ fontSize: 12, color: "var(--color-brand-gray)", lineHeight: 1.5, marginTop: 4 }}>
-              Análise estratégica completa das suas forças, fraquezas, oportunidades e ameaças.
-            </p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <QuadranteEditor
+                titulo="Forças"
+                cor={COR_FORCAS}
+                emoji="💪"
+                perguntas={PERGUNTAS.forcas}
+                valor={swot.forcas.texto}
+                onChange={(v) => update("forcas", v)}
+              />
+              <QuadranteEditor
+                titulo="Fraquezas"
+                cor={COR_FRAQUEZAS}
+                emoji="🎯"
+                perguntas={PERGUNTAS.fraquezas}
+                valor={swot.fraquezas.texto}
+                onChange={(v) => update("fraquezas", v)}
+              />
+            </div>
           </div>
+        )}
 
-          {/* Etapas */}
-          <div className="flex flex-col gap-2">
-            <p
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: 10,
-                fontWeight: 600,
-                color: "var(--color-brand-gray)",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                marginBottom: 4,
-              }}
-            >
-              Etapas
-            </p>
-            {PASSOS.map((p) => {
-              const idx = p.numero - 1;
-              const ativo = passo === idx;
-              const concluido = passo > idx;
-              return (
-                <button
-                  key={p.numero}
-                  onClick={() => idx <= passo && setPasso(idx)}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200"
-                  style={{
-                    background: ativo ? `${COR_DARK}08` : "transparent",
-                    border: `1px solid ${ativo ? COR_DARK + "22" : "transparent"}`,
-                    cursor: idx <= passo ? "pointer" : "default",
-                    opacity: idx > passo ? 0.45 : 1,
-                  }}
-                >
+        {/* Passo 2 — Oportunidades e Ameaças */}
+        {passo === 2 && (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <h2
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: 24,
+                  fontWeight: 700,
+                  color: COR_DARK,
+                }}
+              >
+                Oportunidades e Ameaças
+              </h2>
+              <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
+                Fatores <strong style={{ color: COR_DARK }}>externos</strong> — o que o ambiente oferece ou impõe.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <QuadranteEditor
+                titulo="Oportunidades"
+                cor={COR_OPORTUNIDADES}
+                emoji="🌱"
+                perguntas={PERGUNTAS.oportunidades}
+                valor={swot.oportunidades.texto}
+                onChange={(v) => update("oportunidades", v)}
+              />
+              <QuadranteEditor
+                titulo="Ameaças"
+                cor={COR_AMEACAS}
+                emoji="⚡"
+                perguntas={PERGUNTAS.ameacas}
+                valor={swot.ameacas.texto}
+                onChange={(v) => update("ameacas", v)}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Passo 3 — Matriz de Ação */}
+        {passo === 3 && (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <h2
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: 24,
+                  fontWeight: 700,
+                  color: COR_DARK,
+                }}
+              >
+                Matriz de Ação
+              </h2>
+              <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
+                Combine os quadrantes para criar <strong style={{ color: COR_DARK }}>estratégias concretas</strong>.
+              </p>
+            </div>
+
+            {/* Legenda */}
+            <div className="flex flex-wrap gap-3">
+              {[
+                { sigla: "FO", desc: "Força × Oportunidade", cor: COR_FORCAS },
+                { sigla: "FrO", desc: "Fraqueza × Oportunidade", cor: COR_OPORTUNIDADES },
+                { sigla: "FA", desc: "Força × Ameaça", cor: COR_AMEACAS },
+                { sigla: "FrA", desc: "Fraqueza × Ameaça", cor: COR_FRAQUEZAS },
+              ].map((l) => (
+                <div key={l.sigla} className="flex items-center gap-2">
                   <div
-                    className="flex items-center justify-center rounded-full shrink-0"
-                    style={{
-                      width: 24,
-                      height: 24,
-                      background: concluido ? COR_GOLD : ativo ? COR_DARK : "rgba(30,57,42,0.08)",
-                      color: concluido || ativo ? "#fff" : "var(--color-brand-gray)",
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 10,
-                      fontWeight: 700,
-                    }}
+                    className="flex items-center justify-center rounded-lg font-bold"
+                    style={{ width: 28, height: 28, background: l.cor, color: "#fff", fontSize: 10, fontFamily: "var(--font-mono)" }}
                   >
-                    {concluido ? "✓" : p.numero}
+                    {l.sigla}
                   </div>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: 13,
-                      fontWeight: ativo ? 600 : 400,
-                      color: ativo ? COR_DARK : "var(--color-brand-gray)",
-                    }}
-                  >
-                    {p.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Dicas */}
-          <div
-            className="flex flex-col gap-3 rounded-xl p-4"
-            style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}
-          >
-            <p
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: 13,
-                fontWeight: 700,
-                color: COR_DARK,
-              }}
-            >
-              {instrucao.titulo}
-            </p>
-            <ul className="flex flex-col gap-2">
-              {instrucao.itens.map((item, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <span style={{ color: COR_GOLD, fontSize: 12, marginTop: 1, flexShrink: 0 }}>→</span>
-                  <span style={{ fontSize: 12, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Botões */}
-          <div className="flex flex-col gap-2 mt-auto">
-            {passo < 3 ? (
-              <button
-                onClick={() => podeAvancar() && setPasso((p) => Math.min(3, p + 1))}
-                className="w-full rounded-xl py-3 font-semibold transition-all duration-200"
-                style={{
-                  background: podeAvancar() ? COR_DARK : "rgba(30,57,42,0.15)",
-                  color: podeAvancar() ? "#fff" : "var(--color-brand-gray)",
-                  fontFamily: "var(--font-body)",
-                  fontSize: 14,
-                  cursor: podeAvancar() ? "pointer" : "not-allowed",
-                  border: "none",
-                }}
-              >
-                {passo === 0 ? "Começar Análise →" : "Continuar →"}
-              </button>
-            ) : (
-              <button
-                className="w-full rounded-xl py-3 font-semibold transition-all duration-200"
-                style={{
-                  background: COR_GOLD,
-                  color: "#fff",
-                  fontFamily: "var(--font-body)",
-                  fontSize: 14,
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                Salvar SWOT ✓
-              </button>
-            )}
-            {passo > 0 && (
-              <button
-                onClick={() => setPasso((p) => Math.max(0, p - 1))}
-                className="w-full rounded-xl py-2.5 transition-all duration-200"
-                style={{
-                  background: "transparent",
-                  color: "var(--color-brand-gray)",
-                  fontFamily: "var(--font-body)",
-                  fontSize: 13,
-                  border: "1px solid var(--color-brand-border)",
-                  cursor: "pointer",
-                }}
-              >
-                ← Voltar
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* ── Coluna Central ── */}
-        <div className="flex-1 overflow-y-auto p-8">
-
-          {/* Passo 0 — Bem-vindo */}
-          {passo === 0 && (
-            <div className="flex flex-col gap-8 max-w-2xl mx-auto">
-              <div className="flex flex-col gap-3">
-                <span
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: COR_GOLD,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                  }}
-                >
-                  Ferramenta F03
-                </span>
-                <h1
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: "clamp(28px, 4vw, 40px)",
-                    fontWeight: 700,
-                    color: COR_DARK,
-                    lineHeight: 1.15,
-                  }}
-                >
-                  SWOT{" "}
-                  <span style={{ color: COR_GOLD, fontStyle: "italic" }}>Pessoal</span>
-                </h1>
-                <p
-                  style={{
-                    fontSize: 15,
-                    color: "var(--color-brand-gray)",
-                    lineHeight: 1.7,
-                    maxWidth: 520,
-                  }}
-                >
-                  A análise SWOT — Forças, Fraquezas, Oportunidades e Ameaças — é uma das ferramentas mais poderosas da estratégia empresarial, agora aplicada ao seu desenvolvimento pessoal.
-                </p>
-              </div>
-
-              {/* Quadrantes intro */}
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { cor: COR_FORCAS, emoji: "💪", titulo: "Forças", desc: "Seus diferenciais e pontos fortes internos." },
-                  { cor: COR_FRAQUEZAS, emoji: "🎯", titulo: "Fraquezas", desc: "Limitações e pontos a desenvolver." },
-                  { cor: COR_OPORTUNIDADES, emoji: "🌱", titulo: "Oportunidades", desc: "Fatores externos favoráveis ao seu crescimento." },
-                  { cor: COR_AMEACAS, emoji: "⚡", titulo: "Ameaças", desc: "Riscos e desafios externos a antecipar." },
-                ].map((q) => (
-                  <div
-                    key={q.titulo}
-                    className="flex flex-col gap-2 rounded-2xl p-5"
-                    style={{ background: `${q.cor}10`, border: `1.5px solid ${q.cor}25` }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span style={{ fontSize: 20 }}>{q.emoji}</span>
-                      <span
-                        style={{
-                          fontFamily: "var(--font-heading)",
-                          fontSize: 15,
-                          fontWeight: 700,
-                          color: q.cor,
-                        }}
-                      >
-                        {q.titulo}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: 13, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{q.desc}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Tempo estimado */}
-              <div
-                className="flex items-center gap-4 rounded-xl p-4"
-                style={{ background: `${COR_GOLD}12`, border: `1px solid ${COR_GOLD}33` }}
-              >
-                <span style={{ fontSize: 20 }}>⏱️</span>
-                <div>
-                  <p style={{ fontFamily: "var(--font-heading)", fontSize: 14, fontWeight: 700, color: COR_DARK }}>
-                    30–45 minutos
-                  </p>
-                  <p style={{ fontSize: 12, color: "var(--color-brand-gray)" }}>
-                    Recomendado: em um lugar tranquilo, sem distrações.
-                  </p>
+                  <span style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>{l.desc}</span>
                 </div>
-              </div>
+              ))}
             </div>
-          )}
 
-          {/* Passo 1 — Forças e Fraquezas */}
-          {passo === 1 && (
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-1">
-                <h2
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: COR_DARK,
-                  }}
-                >
-                  Forças e Fraquezas
-                </h2>
-                <p style={{ fontSize: 13, color: "var(--color-brand-gray)" }}>
-                  Fatores <strong style={{ color: COR_DARK }}>internos</strong> — o que você controla.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <QuadranteEditor
-                  titulo="Forças"
-                  cor={COR_FORCAS}
-                  emoji="💪"
-                  perguntas={PERGUNTAS.forcas}
-                  valor={swot.forcas.texto}
-                  onChange={(v) => update("forcas", v)}
-                />
-                <QuadranteEditor
-                  titulo="Fraquezas"
-                  cor={COR_FRAQUEZAS}
-                  emoji="🎯"
-                  perguntas={PERGUNTAS.fraquezas}
-                  valor={swot.fraquezas.texto}
-                  onChange={(v) => update("fraquezas", v)}
-                />
-              </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <EstrategiaCard
+                titulo="FO"
+                subtitulo="Use suas forças para capturar oportunidades"
+                cor={COR_FORCAS}
+                valor={estrategias.fo}
+                onChange={(v) => setEstrategias((p) => ({ ...p, fo: v }))}
+              />
+              <EstrategiaCard
+                titulo="FrO"
+                subtitulo="Supere fraquezas aproveitando oportunidades"
+                cor={COR_OPORTUNIDADES}
+                valor={estrategias.wo}
+                onChange={(v) => setEstrategias((p) => ({ ...p, wo: v }))}
+              />
+              <EstrategiaCard
+                titulo="FA"
+                subtitulo="Use forças para neutralizar ameaças"
+                cor={COR_AMEACAS}
+                valor={estrategias.ft}
+                onChange={(v) => setEstrategias((p) => ({ ...p, ft: v }))}
+              />
+              <EstrategiaCard
+                titulo="FrA"
+                subtitulo="Minimize fraquezas e evite ameaças"
+                cor={COR_FRAQUEZAS}
+                valor={estrategias.wt}
+                onChange={(v) => setEstrategias((p) => ({ ...p, wt: v }))}
+              />
             </div>
-          )}
-
-          {/* Passo 2 — Oportunidades e Ameaças */}
-          {passo === 2 && (
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-1">
-                <h2
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: COR_DARK,
-                  }}
-                >
-                  Oportunidades e Ameaças
-                </h2>
-                <p style={{ fontSize: 13, color: "var(--color-brand-gray)" }}>
-                  Fatores <strong style={{ color: COR_DARK }}>externos</strong> — o que o ambiente oferece ou impõe.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <QuadranteEditor
-                  titulo="Oportunidades"
-                  cor={COR_OPORTUNIDADES}
-                  emoji="🌱"
-                  perguntas={PERGUNTAS.oportunidades}
-                  valor={swot.oportunidades.texto}
-                  onChange={(v) => update("oportunidades", v)}
-                />
-                <QuadranteEditor
-                  titulo="Ameaças"
-                  cor={COR_AMEACAS}
-                  emoji="⚡"
-                  perguntas={PERGUNTAS.ameacas}
-                  valor={swot.ameacas.texto}
-                  onChange={(v) => update("ameacas", v)}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Passo 3 — Matriz de Ação */}
-          {passo === 3 && (
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-1">
-                <h2
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: COR_DARK,
-                  }}
-                >
-                  Matriz de Ação
-                </h2>
-                <p style={{ fontSize: 13, color: "var(--color-brand-gray)" }}>
-                  Combine os quadrantes para criar <strong style={{ color: COR_DARK }}>estratégias concretas</strong>.
-                </p>
-              </div>
-
-              {/* Legenda */}
-              <div className="flex flex-wrap gap-3">
-                {[
-                  { sigla: "FO", desc: "Força × Oportunidade", cor: COR_FORCAS },
-                  { sigla: "FrO", desc: "Fraqueza × Oportunidade", cor: COR_OPORTUNIDADES },
-                  { sigla: "FA", desc: "Força × Ameaça", cor: COR_AMEACAS },
-                  { sigla: "FrA", desc: "Fraqueza × Ameaça", cor: COR_FRAQUEZAS },
-                ].map((l) => (
-                  <div key={l.sigla} className="flex items-center gap-2">
-                    <div
-                      className="flex items-center justify-center rounded-lg font-bold"
-                      style={{ width: 28, height: 28, background: l.cor, color: "#fff", fontSize: 10, fontFamily: "var(--font-mono)" }}
-                    >
-                      {l.sigla}
-                    </div>
-                    <span style={{ fontSize: 12, color: "var(--color-brand-gray)" }}>{l.desc}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <EstrategiaCard
-                  titulo="FO"
-                  subtitulo="Use suas forças para capturar oportunidades"
-                  cor={COR_FORCAS}
-                  valor={estrategias.fo}
-                  onChange={(v) => setEstrategias((p) => ({ ...p, fo: v }))}
-                />
-                <EstrategiaCard
-                  titulo="FrO"
-                  subtitulo="Supere fraquezas aproveitando oportunidades"
-                  cor={COR_OPORTUNIDADES}
-                  valor={estrategias.wo}
-                  onChange={(v) => setEstrategias((p) => ({ ...p, wo: v }))}
-                />
-                <EstrategiaCard
-                  titulo="FA"
-                  subtitulo="Use forças para neutralizar ameaças"
-                  cor={COR_AMEACAS}
-                  valor={estrategias.ft}
-                  onChange={(v) => setEstrategias((p) => ({ ...p, ft: v }))}
-                />
-                <EstrategiaCard
-                  titulo="FrA"
-                  subtitulo="Minimize fraquezas e evite ameaças"
-                  cor={COR_FRAQUEZAS}
-                  valor={estrategias.wt}
-                  onChange={(v) => setEstrategias((p) => ({ ...p, wt: v }))}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── Coluna Direita ── */}
-        <div
-          className="shrink-0 overflow-y-auto flex flex-col gap-5 p-6"
-          style={{
-            width: 300,
-            borderLeft: "1px solid var(--color-brand-border)",
-            background: "#fff",
-          }}
-        >
-          {/* Título painel */}
-          <div className="flex flex-col gap-1">
-            <h3
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: 15,
-                fontWeight: 700,
-                color: COR_DARK,
-              }}
-            >
-              Resumo Visual
-            </h3>
-            <p style={{ fontSize: 11, color: "var(--color-brand-gray)" }}>
-              Seus 4 quadrantes em tempo real
-            </p>
           </div>
-
-          {/* Quadrantes mini */}
-          <div className="flex flex-col gap-3">
-            <MiniQuadrante titulo="Forças" cor={COR_FORCAS} emoji="💪" texto={swot.forcas.texto} />
-            <MiniQuadrante titulo="Fraquezas" cor={COR_FRAQUEZAS} emoji="🎯" texto={swot.fraquezas.texto} />
-            <MiniQuadrante titulo="Oportunidades" cor={COR_OPORTUNIDADES} emoji="🌱" texto={swot.oportunidades.texto} />
-            <MiniQuadrante titulo="Ameaças" cor={COR_AMEACAS} emoji="⚡" texto={swot.ameacas.texto} />
-          </div>
-
-          {/* Completude */}
-          {totalItens > 0 && (
-            <div
-              className="flex flex-col gap-3 rounded-xl p-4"
-              style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}
-            >
-              <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
-                Preenchimento
-              </p>
-              {[
-                { label: "Forças", texto: swot.forcas.texto, cor: COR_FORCAS },
-                { label: "Fraquezas", texto: swot.fraquezas.texto, cor: COR_FRAQUEZAS },
-                { label: "Oportunidades", texto: swot.oportunidades.texto, cor: COR_OPORTUNIDADES },
-                { label: "Ameaças", texto: swot.ameacas.texto, cor: COR_AMEACAS },
-              ].map((q) => {
-                const itens = q.texto.split("\n").filter((l) => l.trim()).length;
-                const pct = Math.min(100, Math.round((itens / 5) * 100));
-                return (
-                  <div key={q.label} className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between">
-                      <span style={{ fontSize: 11, color: "var(--color-brand-gray)" }}>{q.label}</span>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: q.cor, fontWeight: 600 }}>
-                        {itens}/5
-                      </span>
-                    </div>
-                    <div
-                      className="rounded-full overflow-hidden"
-                      style={{ height: 4, background: `${q.cor}18` }}
-                    >
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${pct}%`, background: q.cor }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Estratégias mini */}
-          {passo === 3 && (estrategias.fo || estrategias.wo || estrategias.ft || estrategias.wt) && (
-            <div
-              className="flex flex-col gap-3 rounded-xl p-4"
-              style={{ background: `${COR_GOLD}10`, border: `1px solid ${COR_GOLD}33` }}
-            >
-              <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
-                Estratégias definidas
-              </p>
-              {[
-                { sigla: "FO", texto: estrategias.fo, cor: COR_FORCAS },
-                { sigla: "FrO", texto: estrategias.wo, cor: COR_OPORTUNIDADES },
-                { sigla: "FA", texto: estrategias.ft, cor: COR_AMEACAS },
-                { sigla: "FrA", texto: estrategias.wt, cor: COR_FRAQUEZAS },
-              ]
-                .filter((e) => e.texto.trim())
-                .map((e) => (
-                  <div key={e.sigla} className="flex items-start gap-2">
-                    <div
-                      className="flex items-center justify-center rounded shrink-0"
-                      style={{ width: 22, height: 22, background: e.cor, color: "#fff", fontSize: 9, fontFamily: "var(--font-mono)", fontWeight: 700, marginTop: 1 }}
-                    >
-                      {e.sigla}
-                    </div>
-                    <p style={{ fontSize: 11, color: "var(--color-brand-gray)", lineHeight: 1.4 }}>
-                      {e.texto.length > 80 ? e.texto.slice(0, 80) + "…" : e.texto}
-                    </p>
-                  </div>
-                ))}
-            </div>
-          )}
-
-          {/* Estado vazio */}
-          {totalItens === 0 && (
-            <div
-              className="flex flex-col items-center gap-3 rounded-xl p-6 text-center"
-              style={{ border: `1.5px dashed var(--color-brand-border)` }}
-            >
-              <span style={{ fontSize: 32 }}>⚡</span>
-              <p style={{ fontSize: 12, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>
-                Seu SWOT vai aparecer aqui conforme você preenche.
-              </p>
-            </div>
-          )}
-        </div>
-
+        )}
       </div>
-    </div>
+    </FerramentaLayout>
   );
 }

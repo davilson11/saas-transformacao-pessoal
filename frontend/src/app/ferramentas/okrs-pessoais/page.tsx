@@ -1,7 +1,7 @@
 'use client';
 
-import Link from "next/link";
 import { useState } from "react";
+import FerramentaLayout from "@/components/dashboard/FerramentaLayout";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -47,11 +47,11 @@ const OBJETIVO_VAZIO = (i: number): Objetivo => ({
 
 const SEMANA_VAZIA = (): Semana => ({ feito: "", aprendizado: "" });
 
-const PASSOS = [
-  { numero: 1, label: "Bem-vindo" },
-  { numero: 2, label: "Meus Objetivos" },
-  { numero: 3, label: "Resultados-Chave" },
-  { numero: 4, label: "Progresso Semanal" },
+const ETAPAS = [
+  { label: "Bem-vindo", descricao: "O que são OKRs?" },
+  { label: "Meus Objetivos", descricao: "Objetivos trimestrais qualitativos." },
+  { label: "Resultados-Chave", descricao: "Key Results mensuráveis por objetivo." },
+  { label: "Progresso Semanal", descricao: "Check-in de 5 minutos por semana." },
 ];
 
 const INSTRUCOES: Record<number, { titulo: string; itens: string[] }> = {
@@ -173,7 +173,7 @@ function CardObjetivo({
           >
             Objetivo {idx + 1}
           </span>
-          <p style={{ fontSize: 11, color: "var(--color-brand-gray)", marginTop: 1 }}>
+          <p style={{ fontSize: 13, color: "var(--color-brand-gray)", marginTop: 1 }}>
             Qualitativo e inspirador
           </p>
         </div>
@@ -253,7 +253,7 @@ function CardKRs({
           <p
             style={{
               fontFamily: "var(--font-heading)",
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: 700,
               color: COR_DARK,
               lineHeight: 1.3,
@@ -290,7 +290,7 @@ function CardKRs({
                 >
                   KR{ki + 1}
                 </div>
-                <span style={{ fontSize: 12, color: "var(--color-brand-gray)", fontWeight: 600 }}>
+                <span style={{ fontSize: 15, color: "var(--color-brand-gray)", fontWeight: 600 }}>
                   Key Result {ki + 1}
                 </span>
                 {temDados && (
@@ -321,7 +321,7 @@ function CardKRs({
                   background: `${cor}05`,
                   color: COR_DARK,
                   fontFamily: "var(--font-body)",
-                  fontSize: 14,
+                  fontSize: 16,
                 }}
                 onFocus={(e) => { e.target.style.borderColor = cor; e.target.style.boxShadow = `0 0 0 3px ${cor}18`; }}
                 onBlur={(e) => { e.target.style.borderColor = `${cor}22`; e.target.style.boxShadow = "none"; }}
@@ -490,7 +490,7 @@ function TrackerSemanal({
         <div className="flex flex-col gap-2">
           <label
             style={{
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: 600,
               color: "var(--color-brand-gray)",
               textTransform: "uppercase",
@@ -509,7 +509,7 @@ function TrackerSemanal({
               background: "#fafafa",
               color: COR_DARK,
               fontFamily: "var(--font-body)",
-              fontSize: 14,
+              fontSize: 16,
               lineHeight: 1.65,
               minHeight: 110,
             }}
@@ -522,7 +522,7 @@ function TrackerSemanal({
         <div className="flex flex-col gap-3">
           <p
             style={{
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: 600,
               color: "var(--color-brand-gray)",
               textTransform: "uppercase",
@@ -593,7 +593,7 @@ function TrackerSemanal({
         <div className="flex flex-col gap-2">
           <label
             style={{
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: 600,
               color: "var(--color-brand-gray)",
               textTransform: "uppercase",
@@ -612,7 +612,7 @@ function TrackerSemanal({
               background: `${COR_GOLD}06`,
               color: COR_DARK,
               fontFamily: "var(--font-body)",
-              fontSize: 14,
+              fontSize: 16,
               lineHeight: 1.65,
               minHeight: 90,
             }}
@@ -733,569 +733,412 @@ export default function OKRsPessoaisPage() {
     .sort((a, b) => b.pct - a.pct)
     .slice(0, 4);
 
-  return (
-    <div style={{ background: "#f7f5ee", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+  const painelResumo = (
+    <>
+      <div className="flex flex-col gap-1">
+        <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK }}>
+          Painel {trimestre}
+        </h3>
+        <p style={{ fontSize: 11, color: "var(--color-brand-gray)" }}>Resumo em tempo real</p>
+      </div>
 
-      {/* ── Topbar ── */}
-      <div
-        className="sticky top-0 z-20 flex items-center gap-4 px-6"
-        style={{
-          height: 56,
-          background: "#fff",
-          borderBottom: "1px solid var(--color-brand-border)",
-          boxShadow: "0 1px 8px rgba(30,57,42,0.06)",
-        }}
-      >
-        <div className="flex items-center gap-2 flex-1" style={{ fontFamily: "var(--font-body)", fontSize: 13 }}>
-          <Link href="/ferramentas" style={{ color: "var(--color-brand-gray)", textDecoration: "none" }}>
-            Ferramentas
-          </Link>
-          <span style={{ color: "var(--color-brand-gray)" }}>›</span>
-          <span style={{ color: COR_DARK, fontWeight: 600 }}>OKRs Pessoais</span>
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              background: "rgba(224,165,95,0.15)",
-              color: COR_GOLD,
-              padding: "2px 8px",
-              borderRadius: 99,
-              fontWeight: 600,
-              marginLeft: 4,
-            }}
-          >
-            F06
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Trimestre badge */}
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 11,
-              fontWeight: 700,
-              color: COR_DARK,
-              background: `${COR_DARK}10`,
-              padding: "3px 10px",
-              borderRadius: 99,
-            }}
-          >
-            {trimestre}
-          </span>
-          <div className="hidden sm:flex items-center gap-2">
-            <div
-              className="relative rounded-full overflow-hidden"
-              style={{ width: 120, height: 6, background: "rgba(30,57,42,0.08)" }}
-            >
-              <div
-                className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
-                style={{ width: `${progresso}%`, background: COR_GOLD }}
+      {/* Score geral */}
+      {krsComMeta.length > 0 && (
+        <div
+          className="flex flex-col items-center gap-3 rounded-xl p-5"
+          style={{ background: COR_DARK }}
+        >
+          <p style={{ fontSize: 10, fontWeight: 600, color: "rgba(244,241,222,0.5)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Conclusão Geral
+          </p>
+          <div className="relative flex items-center justify-center">
+            <svg width="100" height="100" viewBox="0 0 100 100" fill="none" style={{ transform: "rotate(-90deg)" }}>
+              <circle cx="50" cy="50" r="40" stroke="rgba(244,241,222,0.1)" strokeWidth="8" fill="none" />
+              <circle
+                cx="50" cy="50" r="40"
+                stroke={pctGeral >= 70 ? "#27AE60" : pctGeral >= 40 ? COR_GOLD : "#E74C3C"}
+                strokeWidth="8"
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray={2 * Math.PI * 40}
+                strokeDashoffset={2 * Math.PI * 40 * (1 - pctGeral / 100)}
+                style={{ transition: "stroke-dashoffset 0.8s ease" }}
               />
+            </svg>
+            <div className="absolute flex flex-col items-center">
+              <span style={{ fontFamily: "var(--font-heading)", fontSize: 26, fontWeight: 700, color: "#F4F1DE", lineHeight: 1 }}>
+                {pctGeral}%
+              </span>
             </div>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: COR_DARK }}>
-              {progresso}%
+          </div>
+          <p style={{ fontSize: 11, color: pctGeral >= 70 ? "#27AE60" : pctGeral >= 40 ? COR_GOLD : "#E74C3C", fontWeight: 600 }}>
+            {pctGeral >= 70 ? "Excelente progresso!" : pctGeral >= 40 ? "No caminho certo" : "Acelere o ritmo"}
+          </p>
+        </div>
+      )}
+
+      {/* Objetivos */}
+      {objPreenchidos > 0 && (
+        <div className="flex flex-col gap-3 rounded-xl p-4" style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}>
+          <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
+            3 Objetivos
+          </p>
+          {objetivos.map((obj, oi) => {
+            if (!obj.texto.trim()) return null;
+            const cor = CORES_OBJETIVO[oi];
+            const krsObj = obj.krs.filter((kr) => kr.descricao.trim() && kr.meta.trim());
+            const pctObj = krsObj.length === 0 ? 0 : Math.round(krsObj.reduce((acc, kr) => acc + calcPct(kr.atual, kr.meta), 0) / krsObj.length);
+            return (
+              <div key={oi} className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span style={{ fontSize: 14 }}>{obj.emoji}</span>
+                  <p style={{ fontSize: 12, color: COR_DARK, fontWeight: 600, flex: 1, lineHeight: 1.3 }}>
+                    {obj.texto.slice(0, 45)}{obj.texto.length > 45 ? "…" : ""}
+                  </p>
+                  {krsObj.length > 0 && (
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: pctCor(pctObj) }}>
+                      {pctObj}%
+                    </span>
+                  )}
+                </div>
+                {krsObj.length > 0 && (
+                  <BarraProgresso pct={pctObj} cor={cor} altura={4} />
+                )}
+                {krsObj.length > 0 && (
+                  <div className="flex gap-2 flex-wrap pl-1">
+                    {obj.krs.map((kr, ki) => {
+                      if (!kr.descricao.trim() || !kr.meta.trim()) return null;
+                      const p = calcPct(kr.atual, kr.meta);
+                      return (
+                        <span
+                          key={ki}
+                          style={{
+                            fontFamily: "var(--font-mono)",
+                            fontSize: 9,
+                            fontWeight: 700,
+                            background: `${pctCor(p)}18`,
+                            color: pctCor(p),
+                            padding: "1px 6px",
+                            borderRadius: 4,
+                          }}
+                        >
+                          KR{ki + 1} {p}%
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Próximos KRs */}
+      {proximosKRs.length > 0 && (
+        <div className="flex flex-col gap-3 rounded-xl p-4" style={{ background: `${COR_GOLD}10`, border: `1px solid ${COR_GOLD}33` }}>
+          <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
+            Próximos a Completar
+          </p>
+          {proximosKRs.map((item, i) => {
+            const cor = CORES_OBJETIVO[item.oi];
+            return (
+              <div key={i} className="flex items-center gap-2">
+                <div
+                  className="flex items-center justify-center rounded shrink-0"
+                  style={{ width: 22, height: 22, background: `${cor}20`, fontFamily: "var(--font-mono)", fontSize: 8, fontWeight: 700, color: cor }}
+                >
+                  KR{item.ki + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p style={{ fontSize: 11, color: COR_DARK, lineHeight: 1.3 }}>
+                    {item.kr.descricao.slice(0, 35)}{item.kr.descricao.length > 35 ? "…" : ""}
+                  </p>
+                  <div style={{ marginTop: 3 }}>
+                    <BarraProgresso pct={item.pct} cor={pctCor(item.pct)} altura={3} />
+                  </div>
+                </div>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: pctCor(item.pct), flexShrink: 0 }}>
+                  {item.pct}%
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Tracker */}
+      {semanasFeitas > 0 && (
+        <div className="flex flex-col gap-3 rounded-xl p-4" style={{ background: "rgba(39,174,96,0.06)", border: "1px solid rgba(39,174,96,0.2)" }}>
+          <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
+            Check-ins Realizados
+          </p>
+          <div className="flex items-center gap-3">
+            <div className="flex gap-1.5 flex-wrap">
+              {semanas.map((s, i) => (
+                <div
+                  key={i}
+                  className="rounded"
+                  style={{
+                    width: 14,
+                    height: 14,
+                    background: s.feito.trim() ? "#27AE60" : "rgba(30,57,42,0.08)",
+                    fontSize: 0,
+                  }}
+                  title={`Semana ${i + 1}`}
+                />
+              ))}
+            </div>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, color: "#27AE60" }}>
+              {semanasFeitas}/{SEMANAS_TOTAL}
             </span>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* ── Layout ── */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* Estado vazio */}
+      {objPreenchidos === 0 && krsComMeta.length === 0 && (
+        <div className="flex flex-col items-center gap-3 rounded-xl p-6 text-center" style={{ border: "1.5px dashed var(--color-brand-border)" }}>
+          <span style={{ fontSize: 32 }}>📊</span>
+          <p style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>
+            Seus OKRs vão aparecer aqui conforme você preenche.
+          </p>
+        </div>
+      )}
+    </>
+  );
 
-        {/* ── Coluna Esquerda ── */}
-        <div
-          className="flex flex-col shrink-0 overflow-y-auto"
-          style={{
-            width: 280,
-            borderRight: "1px solid var(--color-brand-border)",
-            background: "#fff",
-            padding: "28px 20px",
-            gap: 24,
-          }}
-        >
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span style={{ fontSize: 22 }}>📊</span>
-              <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 17, fontWeight: 700, color: COR_DARK, lineHeight: 1.2 }}>
-                OKRs Pessoais
-              </h2>
-            </div>
-            <p style={{ fontSize: 12, color: "var(--color-brand-gray)", lineHeight: 1.5, marginTop: 4 }}>
-              Objetivos trimestrais com resultados-chave mensuráveis.
+  return (
+    <FerramentaLayout
+      codigo="F06"
+      nome="OKRs Pessoais"
+      descricao="Objetivos trimestrais com resultados-chave mensuráveis."
+      etapas={ETAPAS}
+      etapaAtual={passo}
+      progresso={progresso}
+      onAvancar={() => setPasso((p) => Math.min(ETAPAS.length - 1, p + 1))}
+      onVoltar={() => setPasso((p) => Math.max(0, p - 1))}
+      podeAvancar={podeAvancar()}
+      labelAvancar={passo === 0 ? "Começar →" : passo === ETAPAS.length - 1 ? "Salvar OKRs ✓" : "Continuar →"}
+      resumo={painelResumo}
+    >
+      <div className="p-8">
+
+        {/* Instrução da etapa */}
+        {instrucao && (
+          <div
+            className="flex flex-col gap-3 rounded-xl p-4 mb-6"
+            style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}
+          >
+            <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK }}>
+              {instrucao.titulo}
             </p>
-          </div>
-
-          {/* Etapas */}
-          <div className="flex flex-col gap-2">
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 600, color: "var(--color-brand-gray)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
-              Etapas
-            </p>
-            {PASSOS.map((p) => {
-              const idx = p.numero - 1;
-              const ativo = passo === idx;
-              const concluido = passo > idx;
-              return (
-                <button
-                  key={p.numero}
-                  onClick={() => idx <= passo && setPasso(idx)}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200"
-                  style={{
-                    background: ativo ? `${COR_DARK}08` : "transparent",
-                    border: `1px solid ${ativo ? COR_DARK + "22" : "transparent"}`,
-                    cursor: idx <= passo ? "pointer" : "default",
-                    opacity: idx > passo ? 0.45 : 1,
-                  }}
-                >
-                  <div
-                    className="flex items-center justify-center rounded-full shrink-0"
-                    style={{
-                      width: 24,
-                      height: 24,
-                      background: concluido ? COR_GOLD : ativo ? COR_DARK : "rgba(30,57,42,0.08)",
-                      color: concluido || ativo ? "#fff" : "var(--color-brand-gray)",
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 10,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {concluido ? "✓" : p.numero}
-                  </div>
-                  <span style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: ativo ? 600 : 400, color: ativo ? COR_DARK : "var(--color-brand-gray)" }}>
-                    {p.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Dicas */}
-          <div className="flex flex-col gap-3 rounded-xl p-4" style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}>
-            <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>{instrucao.titulo}</p>
             <ul className="flex flex-col gap-2">
               {instrucao.itens.map((item, i) => (
                 <li key={i} className="flex items-start gap-2">
-                  <span style={{ color: COR_GOLD, fontSize: 12, marginTop: 1, flexShrink: 0 }}>→</span>
-                  <span style={{ fontSize: 12, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{item}</span>
+                  <span style={{ color: COR_GOLD, fontSize: 15, marginTop: 1, flexShrink: 0 }}>→</span>
+                  <span style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{item}</span>
                 </li>
               ))}
             </ul>
           </div>
+        )}
 
-          {/* Botões */}
-          <div className="flex flex-col gap-2 mt-auto">
-            {passo < 3 ? (
-              <button
-                onClick={() => podeAvancar() && setPasso((p) => Math.min(3, p + 1))}
-                className="w-full rounded-xl py-3 font-semibold transition-all duration-200"
-                style={{
-                  background: podeAvancar() ? COR_DARK : "rgba(30,57,42,0.15)",
-                  color: podeAvancar() ? "#fff" : "var(--color-brand-gray)",
-                  fontFamily: "var(--font-body)",
-                  fontSize: 14,
-                  cursor: podeAvancar() ? "pointer" : "not-allowed",
-                  border: "none",
-                }}
-              >
-                {passo === 0 ? "Começar →" : "Continuar →"}
-              </button>
-            ) : (
-              <button
-                className="w-full rounded-xl py-3 font-semibold"
-                style={{ background: COR_GOLD, color: "#fff", fontFamily: "var(--font-body)", fontSize: 14, border: "none", cursor: "pointer" }}
-              >
-                Salvar OKRs ✓
-              </button>
-            )}
-            {passo > 0 && (
-              <button
-                onClick={() => setPasso((p) => Math.max(0, p - 1))}
-                className="w-full rounded-xl py-2.5 transition-all duration-200"
-                style={{ background: "transparent", color: "var(--color-brand-gray)", fontFamily: "var(--font-body)", fontSize: 13, border: "1px solid var(--color-brand-border)", cursor: "pointer" }}
-              >
-                ← Voltar
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* ── Coluna Central ── */}
-        <div className="flex-1 overflow-y-auto p-8">
-
-          {/* Passo 0 — Bem-vindo */}
-          {passo === 0 && (
-            <div className="flex flex-col gap-8 max-w-2xl mx-auto">
-              <div className="flex flex-col gap-3">
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, color: COR_GOLD, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                  Ferramenta F06
-                </span>
-                <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 700, color: COR_DARK, lineHeight: 1.15 }}>
-                  OKRs{" "}
-                  <span style={{ color: COR_GOLD, fontStyle: "italic" }}>Pessoais</span>
-                </h1>
-                <p style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.7, maxWidth: 520 }}>
-                  A metodologia OKR — usada por Google, Intel e Netflix — adaptada para sua vida pessoal. Defina onde quer chegar neste trimestre e meça o progresso semana a semana.
-                </p>
-              </div>
-
-              {/* Anatomia do OKR */}
-              <div
-                className="rounded-2xl p-6 flex flex-col gap-5"
-                style={{ background: `${COR_DARK}`, border: "none" }}
-              >
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, color: COR_GOLD, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                  Anatomia de um OKR
-                </p>
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-lg px-3 py-1" style={{ background: "#27AE60", fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, color: "#fff" }}>O</div>
-                      <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: "#F4F1DE" }}>Objective</p>
-                    </div>
-                    <p style={{ fontSize: 13, color: "rgba(244,241,222,0.65)", lineHeight: 1.5, paddingLeft: 48 }}>
-                      "Construir uma saúde física que me dê energia para viver plenamente"
-                    </p>
-                  </div>
-                  {[
-                    { n: 1, texto: "Correr 3x por semana — meta: 36 vezes no trimestre" },
-                    { n: 2, texto: "Perder 5kg — atual: 82kg, meta: 77kg" },
-                    { n: 3, texto: "Dormir 7h+ — taxa de conformidade: meta 90%" },
-                  ].map((kr) => (
-                    <div key={kr.n} className="flex items-start gap-3 pl-4">
-                      <div
-                        className="flex items-center justify-center rounded-lg shrink-0"
-                        style={{ width: 28, height: 28, background: "rgba(224,165,95,0.2)", fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, color: COR_GOLD, marginTop: 1 }}
-                      >
-                        KR{kr.n}
-                      </div>
-                      <p style={{ fontSize: 13, color: "rgba(244,241,222,0.65)", lineHeight: 1.5 }}>{kr.texto}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Selecionar trimestre */}
-              <div className="flex flex-col gap-3">
-                <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK }}>
-                  Selecione o trimestre
-                </p>
-                <div className="grid grid-cols-4 gap-3">
-                  {TRIMESTRES.map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTrimestre(t)}
-                      className="rounded-xl py-3 font-semibold transition-all duration-200"
-                      style={{
-                        background: trimestre === t ? COR_DARK : "#fff",
-                        color: trimestre === t ? "#fff" : COR_DARK,
-                        border: `1.5px solid ${trimestre === t ? COR_DARK : "var(--color-brand-border)"}`,
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 13,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 rounded-xl p-4" style={{ background: `${COR_GOLD}12`, border: `1px solid ${COR_GOLD}33` }}>
-                <span style={{ fontSize: 20 }}>⏱️</span>
-                <div>
-                  <p style={{ fontFamily: "var(--font-heading)", fontSize: 14, fontWeight: 700, color: COR_DARK }}>30–40 minutos</p>
-                  <p style={{ fontSize: 12, color: "var(--color-brand-gray)" }}>Para definir os OKRs. O tracker semanal leva 5 minutos por semana.</p>
-                </div>
-              </div>
+        {/* Passo 0 — Bem-vindo */}
+        {passo === 0 && (
+          <div className="flex flex-col gap-8 max-w-2xl mx-auto">
+            <div className="flex flex-col gap-3">
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, color: COR_GOLD, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                Ferramenta F06
+              </span>
+              <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 700, color: COR_DARK, lineHeight: 1.15 }}>
+                OKRs{" "}
+                <span style={{ color: COR_GOLD, fontStyle: "italic" }}>Pessoais</span>
+              </h1>
+              <p style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.7, maxWidth: 520 }}>
+                A metodologia OKR — usada por Google, Intel e Netflix — adaptada para sua vida pessoal. Defina onde quer chegar neste trimestre e meça o progresso semana a semana.
+              </p>
             </div>
-          )}
 
-          {/* Passo 1 — Objetivos */}
-          {passo === 1 && (
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 700, color: COR_DARK }}>
-                    Meus Objetivos — {trimestre}
-                  </h2>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: COR_DARK,
-                      background: `${COR_DARK}10`,
-                      padding: "3px 10px",
-                      borderRadius: 99,
-                    }}
-                  >
-                    {objPreenchidos}/3
-                  </span>
-                </div>
-                <p style={{ fontSize: 13, color: "var(--color-brand-gray)" }}>
-                  Defina até 3 objetivos <strong style={{ color: COR_DARK }}>qualitativos e inspiradores</strong> para este trimestre. Mínimo 1 para continuar.
-                </p>
-              </div>
-              <div className="flex flex-col gap-5">
-                {objetivos.map((obj, i) => (
-                  <CardObjetivo key={i} idx={i} obj={obj} onChange={(d) => updateObjetivo(i, d)} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Passo 2 — Key Results */}
-          {passo === 2 && (
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 700, color: COR_DARK }}>
-                    Resultados-Chave
-                  </h2>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: pctGeral >= 70 ? "#27AE60" : pctGeral >= 40 ? COR_GOLD : COR_DARK,
-                      background: `${COR_DARK}10`,
-                      padding: "3px 10px",
-                      borderRadius: 99,
-                    }}
-                  >
-                    {krsComMeta.length} KRs definidos
-                  </span>
-                </div>
-                <p style={{ fontSize: 13, color: "var(--color-brand-gray)" }}>
-                  3 Key Results por objetivo — <strong style={{ color: COR_DARK }}>mensuráveis e com prazo</strong>. O percentual é calculado automaticamente. Mínimo 3 KRs para continuar.
-                </p>
-              </div>
-              <div className="flex flex-col gap-6">
-                {objetivos.map((obj, i) => (
-                  obj.texto.trim() && (
-                    <CardKRs key={i} idx={i} obj={obj} onUpdateKR={(ki, d) => updateKR(i, ki, d)} />
-                  )
-                ))}
-                {objPreenchidos === 0 && (
-                  <div className="flex flex-col items-center gap-3 rounded-2xl p-10 text-center" style={{ border: "1.5px dashed var(--color-brand-border)" }}>
-                    <span style={{ fontSize: 32 }}>📊</span>
-                    <p style={{ fontSize: 14, color: "var(--color-brand-gray)" }}>Volte ao passo anterior e defina pelo menos 1 objetivo.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Passo 3 — Tracker Semanal */}
-          {passo === 3 && (
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 700, color: COR_DARK }}>
-                    Progresso Semanal
-                  </h2>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: COR_DARK,
-                      background: `${COR_DARK}10`,
-                      padding: "3px 10px",
-                      borderRadius: 99,
-                    }}
-                  >
-                    {semanasFeitas}/{SEMANAS_TOTAL} semanas
-                  </span>
-                </div>
-                <p style={{ fontSize: 13, color: "var(--color-brand-gray)" }}>
-                  Check-in semanal de{" "}
-                  <strong style={{ color: COR_DARK }}>5 minutos</strong>. Registre o que avançou e o maior aprendizado da semana.
-                </p>
-              </div>
-              <TrackerSemanal semanas={semanas} objetivos={objetivos} onUpdate={updateSemana} />
-            </div>
-          )}
-        </div>
-
-        {/* ── Coluna Direita ── */}
-        <div
-          className="shrink-0 overflow-y-auto flex flex-col gap-5 p-6"
-          style={{ width: 300, borderLeft: "1px solid var(--color-brand-border)", background: "#fff" }}
-        >
-          <div className="flex flex-col gap-1">
-            <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK }}>
-              Painel {trimestre}
-            </h3>
-            <p style={{ fontSize: 11, color: "var(--color-brand-gray)" }}>Resumo em tempo real</p>
-          </div>
-
-          {/* Score geral */}
-          {krsComMeta.length > 0 && (
+            {/* Anatomia do OKR */}
             <div
-              className="flex flex-col items-center gap-3 rounded-xl p-5"
-              style={{ background: COR_DARK }}
+              className="rounded-2xl p-6 flex flex-col gap-5"
+              style={{ background: `${COR_DARK}`, border: "none" }}
             >
-              <p style={{ fontSize: 10, fontWeight: 600, color: "rgba(244,241,222,0.5)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                Conclusão Geral
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, color: COR_GOLD, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                Anatomia de um OKR
               </p>
-              <div className="relative flex items-center justify-center">
-                <svg width="100" height="100" viewBox="0 0 100 100" fill="none" style={{ transform: "rotate(-90deg)" }}>
-                  <circle cx="50" cy="50" r="40" stroke="rgba(244,241,222,0.1)" strokeWidth="8" fill="none" />
-                  <circle
-                    cx="50" cy="50" r="40"
-                    stroke={pctGeral >= 70 ? "#27AE60" : pctGeral >= 40 ? COR_GOLD : "#E74C3C"}
-                    strokeWidth="8"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeDasharray={2 * Math.PI * 40}
-                    strokeDashoffset={2 * Math.PI * 40 * (1 - pctGeral / 100)}
-                    style={{ transition: "stroke-dashoffset 0.8s ease" }}
-                  />
-                </svg>
-                <div className="absolute flex flex-col items-center">
-                  <span style={{ fontFamily: "var(--font-heading)", fontSize: 26, fontWeight: 700, color: "#F4F1DE", lineHeight: 1 }}>
-                    {pctGeral}%
-                  </span>
-                </div>
-              </div>
-              <p style={{ fontSize: 11, color: pctGeral >= 70 ? "#27AE60" : pctGeral >= 40 ? COR_GOLD : "#E74C3C", fontWeight: 600 }}>
-                {pctGeral >= 70 ? "Excelente progresso!" : pctGeral >= 40 ? "No caminho certo" : "Acelere o ritmo"}
-              </p>
-            </div>
-          )}
-
-          {/* Objetivos */}
-          {objPreenchidos > 0 && (
-            <div className="flex flex-col gap-3 rounded-xl p-4" style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}>
-              <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
-                3 Objetivos
-              </p>
-              {objetivos.map((obj, oi) => {
-                if (!obj.texto.trim()) return null;
-                const cor = CORES_OBJETIVO[oi];
-                const krsObj = obj.krs.filter((kr) => kr.descricao.trim() && kr.meta.trim());
-                const pctObj = krsObj.length === 0 ? 0 : Math.round(krsObj.reduce((acc, kr) => acc + calcPct(kr.atual, kr.meta), 0) / krsObj.length);
-                return (
-                  <div key={oi} className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <span style={{ fontSize: 14 }}>{obj.emoji}</span>
-                      <p style={{ fontSize: 12, color: COR_DARK, fontWeight: 600, flex: 1, lineHeight: 1.3 }}>
-                        {obj.texto.slice(0, 45)}{obj.texto.length > 45 ? "…" : ""}
-                      </p>
-                      {krsObj.length > 0 && (
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: pctCor(pctObj) }}>
-                          {pctObj}%
-                        </span>
-                      )}
-                    </div>
-                    {krsObj.length > 0 && (
-                      <BarraProgresso pct={pctObj} cor={cor} altura={4} />
-                    )}
-                    {krsObj.length > 0 && (
-                      <div className="flex gap-2 flex-wrap pl-1">
-                        {obj.krs.map((kr, ki) => {
-                          if (!kr.descricao.trim() || !kr.meta.trim()) return null;
-                          const p = calcPct(kr.atual, kr.meta);
-                          return (
-                            <span
-                              key={ki}
-                              style={{
-                                fontFamily: "var(--font-mono)",
-                                fontSize: 9,
-                                fontWeight: 700,
-                                background: `${pctCor(p)}18`,
-                                color: pctCor(p),
-                                padding: "1px 6px",
-                                borderRadius: 4,
-                              }}
-                            >
-                              KR{ki + 1} {p}%
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg px-3 py-1" style={{ background: "#27AE60", fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, color: "#fff" }}>O</div>
+                    <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: "#F4F1DE" }}>Objective</p>
                   </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Próximos KRs */}
-          {proximosKRs.length > 0 && (
-            <div className="flex flex-col gap-3 rounded-xl p-4" style={{ background: `${COR_GOLD}10`, border: `1px solid ${COR_GOLD}33` }}>
-              <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
-                Próximos a Completar
-              </p>
-              {proximosKRs.map((item, i) => {
-                const cor = CORES_OBJETIVO[item.oi];
-                return (
-                  <div key={i} className="flex items-center gap-2">
+                  <p style={{ fontSize: 15, color: "rgba(244,241,222,0.65)", lineHeight: 1.5, paddingLeft: 48 }}>
+                    &ldquo;Construir uma saúde física que me dê energia para viver plenamente&rdquo;
+                  </p>
+                </div>
+                {[
+                  { n: 1, texto: "Correr 3x por semana — meta: 36 vezes no trimestre" },
+                  { n: 2, texto: "Perder 5kg — atual: 82kg, meta: 77kg" },
+                  { n: 3, texto: "Dormir 7h+ — taxa de conformidade: meta 90%" },
+                ].map((kr) => (
+                  <div key={kr.n} className="flex items-start gap-3 pl-4">
                     <div
-                      className="flex items-center justify-center rounded shrink-0"
-                      style={{ width: 22, height: 22, background: `${cor}20`, fontFamily: "var(--font-mono)", fontSize: 8, fontWeight: 700, color: cor }}
+                      className="flex items-center justify-center rounded-lg shrink-0"
+                      style={{ width: 28, height: 28, background: "rgba(224,165,95,0.2)", fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, color: COR_GOLD, marginTop: 1 }}
                     >
-                      KR{item.ki + 1}
+                      KR{kr.n}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p style={{ fontSize: 11, color: COR_DARK, lineHeight: 1.3 }}>
-                        {item.kr.descricao.slice(0, 35)}{item.kr.descricao.length > 35 ? "…" : ""}
-                      </p>
-                      <div style={{ marginTop: 3 }}>
-                        <BarraProgresso pct={item.pct} cor={pctCor(item.pct)} altura={3} />
-                      </div>
-                    </div>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: pctCor(item.pct), flexShrink: 0 }}>
-                      {item.pct}%
-                    </span>
+                    <p style={{ fontSize: 15, color: "rgba(244,241,222,0.65)", lineHeight: 1.5 }}>{kr.texto}</p>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          )}
 
-          {/* Tracker */}
-          {semanasFeitas > 0 && (
-            <div className="flex flex-col gap-3 rounded-xl p-4" style={{ background: "rgba(39,174,96,0.06)", border: "1px solid rgba(39,174,96,0.2)" }}>
-              <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
-                Check-ins Realizados
+            {/* Selecionar trimestre */}
+            <div className="flex flex-col gap-3">
+              <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK }}>
+                Selecione o trimestre
               </p>
-              <div className="flex items-center gap-3">
-                <div className="flex gap-1.5 flex-wrap">
-                  {semanas.map((s, i) => (
-                    <div
-                      key={i}
-                      className="rounded"
-                      style={{
-                        width: 14,
-                        height: 14,
-                        background: s.feito.trim() ? "#27AE60" : "rgba(30,57,42,0.08)",
-                        fontSize: 0,
-                      }}
-                      title={`Semana ${i + 1}`}
-                    />
-                  ))}
-                </div>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, color: "#27AE60" }}>
-                  {semanasFeitas}/{SEMANAS_TOTAL}
+              <div className="grid grid-cols-4 gap-3">
+                {TRIMESTRES.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTrimestre(t)}
+                    className="rounded-xl py-3 font-semibold transition-all duration-200"
+                    style={{
+                      background: trimestre === t ? COR_DARK : "#fff",
+                      color: trimestre === t ? "#fff" : COR_DARK,
+                      border: `1.5px solid ${trimestre === t ? COR_DARK : "var(--color-brand-border)"}`,
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 13,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 rounded-xl p-4" style={{ background: `${COR_GOLD}12`, border: `1px solid ${COR_GOLD}33` }}>
+              <span style={{ fontSize: 20 }}>⏱️</span>
+              <div>
+                <p style={{ fontFamily: "var(--font-heading)", fontSize: 16, fontWeight: 700, color: COR_DARK }}>30–40 minutos</p>
+                <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>Para definir os OKRs. O tracker semanal leva 5 minutos por semana.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Passo 1 — Objetivos */}
+        {passo === 1 && (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 700, color: COR_DARK }}>
+                  Meus Objetivos — {trimestre}
+                </h2>
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: COR_DARK,
+                    background: `${COR_DARK}10`,
+                    padding: "3px 10px",
+                    borderRadius: 99,
+                  }}
+                >
+                  {objPreenchidos}/3
                 </span>
               </div>
-            </div>
-          )}
-
-          {/* Estado vazio */}
-          {objPreenchidos === 0 && krsComMeta.length === 0 && (
-            <div className="flex flex-col items-center gap-3 rounded-xl p-6 text-center" style={{ border: "1.5px dashed var(--color-brand-border)" }}>
-              <span style={{ fontSize: 32 }}>📊</span>
-              <p style={{ fontSize: 12, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>
-                Seus OKRs vão aparecer aqui conforme você preenche.
+              <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
+                Defina até 3 objetivos <strong style={{ color: COR_DARK }}>qualitativos e inspiradores</strong> para este trimestre. Mínimo 1 para continuar.
               </p>
             </div>
-          )}
-        </div>
+            <div className="flex flex-col gap-5">
+              {objetivos.map((obj, i) => (
+                <CardObjetivo key={i} idx={i} obj={obj} onChange={(d) => updateObjetivo(i, d)} />
+              ))}
+            </div>
+          </div>
+        )}
 
+        {/* Passo 2 — Key Results */}
+        {passo === 2 && (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 700, color: COR_DARK }}>
+                  Resultados-Chave
+                </h2>
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: pctGeral >= 70 ? "#27AE60" : pctGeral >= 40 ? COR_GOLD : COR_DARK,
+                    background: `${COR_DARK}10`,
+                    padding: "3px 10px",
+                    borderRadius: 99,
+                  }}
+                >
+                  {krsComMeta.length} KRs definidos
+                </span>
+              </div>
+              <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
+                3 Key Results por objetivo — <strong style={{ color: COR_DARK }}>mensuráveis e com prazo</strong>. O percentual é calculado automaticamente. Mínimo 3 KRs para continuar.
+              </p>
+            </div>
+            <div className="flex flex-col gap-6">
+              {objetivos.map((obj, i) => (
+                obj.texto.trim() && (
+                  <CardKRs key={i} idx={i} obj={obj} onUpdateKR={(ki, d) => updateKR(i, ki, d)} />
+                )
+              ))}
+              {objPreenchidos === 0 && (
+                <div className="flex flex-col items-center gap-3 rounded-2xl p-10 text-center" style={{ border: "1.5px dashed var(--color-brand-border)" }}>
+                  <span style={{ fontSize: 32 }}>📊</span>
+                  <p style={{ fontSize: 16, color: "var(--color-brand-gray)" }}>Volte ao passo anterior e defina pelo menos 1 objetivo.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Passo 3 — Tracker Semanal */}
+        {passo === 3 && (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 700, color: COR_DARK }}>
+                  Progresso Semanal
+                </h2>
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: COR_DARK,
+                    background: `${COR_DARK}10`,
+                    padding: "3px 10px",
+                    borderRadius: 99,
+                  }}
+                >
+                  {semanasFeitas}/{SEMANAS_TOTAL} semanas
+                </span>
+              </div>
+              <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
+                Check-in semanal de{" "}
+                <strong style={{ color: COR_DARK }}>5 minutos</strong>. Registre o que avançou e o maior aprendizado da semana.
+              </p>
+            </div>
+            <TrackerSemanal semanas={semanas} objetivos={objetivos} onUpdate={updateSemana} />
+          </div>
+        )}
       </div>
-    </div>
+    </FerramentaLayout>
   );
 }

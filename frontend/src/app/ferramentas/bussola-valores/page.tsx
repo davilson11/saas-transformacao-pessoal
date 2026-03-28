@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -60,11 +61,11 @@ const VALORES: Valor[] = [
 
 const MAX = 5;
 
-const PASSOS_CONFIG = [
-  { numero: 1, titulo: 'Bem-vindo',              icone: '👋' },
-  { numero: 2, titulo: 'Escolha seus Valores',   icone: '✨' },
-  { numero: 3, titulo: 'Ranqueie e Reflita',     icone: '🏅' },
-  { numero: 4, titulo: 'Seu Código de Conduta',  icone: '📜' },
+const ETAPAS = [
+  { label: 'Bem-vindo',             descricao: 'Introdução à ferramenta' },
+  { label: 'Selecione Valores',     descricao: 'Escolha seus 5 essenciais' },
+  { label: 'Ordene e Justifique',   descricao: 'Ranqueie e reflita' },
+  { label: 'Código de Conduta',     descricao: 'Crie suas regras de vida' },
 ];
 
 const INSTRUCOES = [
@@ -108,41 +109,6 @@ const INSTRUCOES = [
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
 
-function StepNav({ passo }: { passo: Passo }) {
-  return (
-    <div className="flex flex-col gap-3 p-5" style={{ borderBottom: '1px solid var(--color-brand-border)' }}>
-      {PASSOS_CONFIG.map((p) => {
-        const idx = (p.numero - 1) as Passo;
-        const concluido = idx < passo;
-        const ativo = idx === passo;
-        return (
-          <div key={p.numero} className="flex items-center gap-3">
-            <div
-              className="flex items-center justify-center rounded-full flex-shrink-0 text-xs font-bold transition-all duration-300"
-              style={{
-                width: 28, height: 28,
-                background: concluido ? '#27AE60' : ativo ? '#1E392A' : 'rgba(30,57,42,0.08)',
-                color: concluido || ativo ? '#fff' : 'var(--color-brand-gray)',
-                fontFamily: 'var(--font-heading)',
-              }}
-            >
-              {concluido ? '✓' : p.numero}
-            </div>
-            <p style={{
-              fontSize: 13,
-              fontWeight: ativo ? 700 : 500,
-              color: ativo ? 'var(--color-brand-dark-green)' : concluido ? '#27AE60' : 'var(--color-brand-gray)',
-              fontFamily: 'var(--font-body)',
-            }}>
-              {p.titulo}
-            </p>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function ValorCard({ valor, selecionado, desabilitado, onToggle, corCategoria }: {
   valor: Valor;
   selecionado: boolean;
@@ -165,10 +131,10 @@ function ValorCard({ valor, selecionado, desabilitado, onToggle, corCategoria }:
     >
       <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>{valor.emoji}</span>
       <div className="min-w-0">
-        <p style={{ fontSize: 13, fontWeight: 600, color: selecionado ? corCategoria : 'var(--color-brand-dark-green)', fontFamily: 'var(--font-body)', lineHeight: 1.2 }}>
+        <p style={{ fontSize: 15, fontWeight: 600, color: selecionado ? corCategoria : 'var(--color-brand-dark-green)', fontFamily: 'var(--font-body)', lineHeight: 1.2 }}>
           {valor.nome}
         </p>
-        <p style={{ fontSize: 11, color: 'var(--color-brand-gray)', marginTop: 2, lineHeight: 1.4 }}>
+        <p style={{ fontSize: 13, color: 'var(--color-brand-gray)', marginTop: 2, lineHeight: 1.4 }}>
           {valor.descricao}
         </p>
       </div>
@@ -232,6 +198,80 @@ export default function BussolaValoresPage() {
   const getValor = (id: string) => VALORES.find((v) => v.id === id)!;
   const getCat = (cat: string) => CATEGORIAS.find((c) => c.id === cat)!;
 
+  const progresso = Math.round((passo / (ETAPAS.length - 1)) * 100);
+
+  // ── Painel direito (resumo) ───────────────────────────────────────────────
+
+  const listaRanking = passo >= 2 ? ranking : selecionados.map((id) => ({ id, porque: '' }));
+
+  const painelResumo = (
+    <>
+      <div className="flex flex-col gap-1" style={{ borderBottom: '1px solid var(--color-brand-border)', paddingBottom: 16 }}>
+        <p style={{ fontSize: 13, color: 'var(--color-brand-gray)', marginTop: 2 }}>
+          {selecionados.length === 0 ? 'Nenhum selecionado ainda' : `${selecionados.length} de ${MAX} escolhidos`}
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {Array.from({ length: MAX }).map((_, i) => {
+          const rv = listaRanking[i];
+          if (!rv) return (
+            <div key={i} className="flex items-center gap-3 rounded-xl p-3"
+              style={{ background: 'rgba(30,57,42,0.03)', border: '1.5px dashed var(--color-brand-border)' }}>
+              <div className="flex items-center justify-center rounded-full flex-shrink-0"
+                style={{ width: 24, height: 24, background: 'rgba(30,57,42,0.06)', color: 'rgba(30,57,42,0.25)', fontSize: 11, fontFamily: 'var(--font-heading)', fontWeight: 700 }}>
+                {i + 1}
+              </div>
+              <p style={{ fontSize: 13, color: 'rgba(30,57,42,0.3)', fontStyle: 'italic' }}>Não selecionado</p>
+            </div>
+          );
+
+          const v = getValor(rv.id);
+          const cat = getCat(v.categoria);
+          return (
+            <div key={rv.id} className="flex items-center gap-3 rounded-xl p-3"
+              style={{ background: `${cat.cor}10`, border: `1.5px solid ${cat.cor}30` }}>
+              <div className="flex items-center justify-center rounded-full flex-shrink-0 font-bold"
+                style={{ width: 24, height: 24, background: i === 0 && passo >= 2 ? 'var(--color-brand-gold)' : cat.cor, color: '#fff', fontSize: 11, fontFamily: 'var(--font-heading)' }}>
+                {i + 1}
+              </div>
+              <span style={{ fontSize: 16 }}>{v.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <p style={{ fontSize: 13, fontWeight: 600, color: cat.cor, fontFamily: 'var(--font-body)' }}>{v.nome}</p>
+                {rv.porque && (
+                  <p style={{ fontSize: 10, color: 'var(--color-brand-gray)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {rv.porque}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Código de conduta resumo */}
+      {passo === 3 && (codigo.naoTolero || codigo.sobPressao || codigo.compromisso) && (
+        <div className="flex flex-col gap-2" style={{ borderTop: '1px solid var(--color-brand-border)', paddingTop: 16 }}>
+          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-brand-gray)', marginBottom: 4 }}>
+            Código de conduta
+          </p>
+          {codigo.naoTolero && (
+            <div className="rounded-xl p-3" style={{ background: 'rgba(192,57,43,0.05)', border: '1px solid rgba(192,57,43,0.15)' }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: '#C0392B', marginBottom: 3 }}>🚫 Não tolero</p>
+              <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', lineHeight: 1.5 }}>{codigo.naoTolero.slice(0, 80)}{codigo.naoTolero.length > 80 ? '…' : ''}</p>
+            </div>
+          )}
+          {codigo.compromisso && (
+            <div className="rounded-xl p-3" style={{ background: 'rgba(30,57,42,0.05)', border: '1px solid rgba(30,57,42,0.12)' }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 3 }}>✨ Compromisso</p>
+              <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', lineHeight: 1.5 }}>{codigo.compromisso.slice(0, 80)}{codigo.compromisso.length > 80 ? '…' : ''}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+
   // ── Render central por passo ──────────────────────────────────────────────
 
   const renderCentro = () => {
@@ -250,22 +290,43 @@ export default function BussolaValoresPage() {
           {[{ n: '20', l: 'valores disponíveis' }, { n: '5', l: 'para selecionar' }, { n: '3', l: 'perguntas finais' }].map((s) => (
             <div key={s.l} className="rounded-xl p-3 text-center" style={{ background: 'rgba(30,57,42,0.05)', border: '1px solid var(--color-brand-border)' }}>
               <p style={{ fontFamily: 'var(--font-heading)', fontSize: 22, fontWeight: 700, color: 'var(--color-brand-dark-green)' }}>{s.n}</p>
-              <p style={{ fontSize: 10, color: 'var(--color-brand-gray)', marginTop: 2 }}>{s.l}</p>
+              <p style={{ fontSize: 13, color: 'var(--color-brand-gray)', marginTop: 2 }}>{s.l}</p>
             </div>
           ))}
+        </div>
+
+        {/* Instrução */}
+        <div className="w-full max-w-lg">
+          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 16, fontWeight: 700, color: 'var(--color-brand-dark-green)', marginBottom: 8 }}>
+            {instrucao.titulo}
+          </h3>
+          <div className="flex flex-col gap-2 mb-3">
+            {instrucao.corpo.map((t, i) => (
+              <p key={i} style={{ fontSize: 15, lineHeight: 1.65, color: 'var(--color-brand-gray)' }}>{t}</p>
+            ))}
+          </div>
+          <div className="rounded-xl p-3" style={{ background: 'rgba(224,165,95,0.1)', border: '1px solid rgba(224,165,95,0.25)' }}>
+            <p style={{ fontSize: 15, color: '#a0692d', lineHeight: 1.6 }}>{instrucao.dica}</p>
+          </div>
         </div>
       </div>
     );
 
     if (passo === 1) return (
       <div className="flex flex-col gap-5">
+        {/* Instrução */}
+        <div className="rounded-xl p-4" style={{ background: 'rgba(224,165,95,0.1)', border: '1px solid rgba(224,165,95,0.25)' }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 4 }}>{instrucao.titulo}</p>
+          <p style={{ fontSize: 15, color: '#a0692d', lineHeight: 1.6 }}>{instrucao.dica}</p>
+        </div>
+
         {/* Contador */}
         <div className="flex items-center justify-between">
           <div>
             <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 20, fontWeight: 700, color: 'var(--color-brand-dark-green)' }}>
               Escolha seus 5 Valores
             </h2>
-            <p style={{ fontSize: 13, color: 'var(--color-brand-gray)', marginTop: 2 }}>
+            <p style={{ fontSize: 15, color: 'var(--color-brand-gray)', marginTop: 2 }}>
               Clique nos valores que mais ressoam com você
             </p>
           </div>
@@ -288,7 +349,7 @@ export default function BussolaValoresPage() {
           <div key={cat.id}>
             <div className="flex items-center gap-2 mb-2">
               <span style={{ fontSize: 14 }}>{cat.emoji}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: cat.cor, fontFamily: 'var(--font-body)' }}>
+              <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: cat.cor, fontFamily: 'var(--font-body)' }}>
                 {cat.label}
               </span>
             </div>
@@ -311,11 +372,17 @@ export default function BussolaValoresPage() {
 
     if (passo === 2) return (
       <div className="flex flex-col gap-4">
+        {/* Instrução */}
+        <div className="rounded-xl p-4" style={{ background: 'rgba(224,165,95,0.1)', border: '1px solid rgba(224,165,95,0.25)' }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 4 }}>{instrucao.titulo}</p>
+          <p style={{ fontSize: 15, color: '#a0692d', lineHeight: 1.6 }}>{instrucao.dica}</p>
+        </div>
+
         <div>
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 20, fontWeight: 700, color: 'var(--color-brand-dark-green)' }}>
             Ranqueie seus Valores
           </h2>
-          <p style={{ fontSize: 13, color: 'var(--color-brand-gray)', marginTop: 2 }}>
+          <p style={{ fontSize: 15, color: 'var(--color-brand-gray)', marginTop: 2 }}>
             Ordene do mais ao menos essencial e justifique cada escolha
           </p>
         </div>
@@ -336,7 +403,7 @@ export default function BussolaValoresPage() {
                 <span style={{ fontSize: 22 }}>{v.emoji}</span>
                 <div className="flex-1">
                   <p style={{ fontFamily: 'var(--font-heading)', fontSize: 15, fontWeight: 700, color: cat.cor }}>{v.nome}</p>
-                  <p style={{ fontSize: 11, color: 'var(--color-brand-gray)' }}>{v.descricao}</p>
+                  <p style={{ fontSize: 13, color: 'var(--color-brand-gray)' }}>{v.descricao}</p>
                 </div>
                 {/* Botões de ordem */}
                 <div className="flex flex-col gap-1 flex-shrink-0">
@@ -355,7 +422,7 @@ export default function BussolaValoresPage() {
 
               {/* Campo "por que" */}
               <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-brand-gray)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-brand-gray)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                   Por que é inegociável para mim?
                 </label>
                 <textarea
@@ -366,7 +433,7 @@ export default function BussolaValoresPage() {
                   className="w-full mt-1 rounded-xl resize-none outline-none transition-all duration-150"
                   style={{
                     padding: '10px 12px',
-                    fontSize: 13,
+                    fontSize: 15,
                     fontFamily: 'var(--font-body)',
                     color: 'var(--color-brand-dark-green)',
                     background: 'rgba(30,57,42,0.03)',
@@ -384,11 +451,17 @@ export default function BussolaValoresPage() {
     // passo === 3
     return (
       <div className="flex flex-col gap-5">
+        {/* Instrução */}
+        <div className="rounded-xl p-4" style={{ background: 'rgba(224,165,95,0.1)', border: '1px solid rgba(224,165,95,0.25)' }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 4 }}>{instrucao.titulo}</p>
+          <p style={{ fontSize: 15, color: '#a0692d', lineHeight: 1.6 }}>{instrucao.dica}</p>
+        </div>
+
         <div>
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 20, fontWeight: 700, color: 'var(--color-brand-dark-green)' }}>
             Seu Código de Conduta
           </h2>
-          <p style={{ fontSize: 13, color: 'var(--color-brand-gray)', marginTop: 2 }}>
+          <p style={{ fontSize: 15, color: 'var(--color-brand-gray)', marginTop: 2 }}>
             Transforme seus valores em regras concretas de vida
           </p>
         </div>
@@ -420,7 +493,7 @@ export default function BussolaValoresPage() {
             style={{ background: '#fff', border: '1px solid var(--color-brand-border)', boxShadow: 'var(--shadow-card)' }}>
             <div className="flex items-center gap-2">
               <span style={{ fontSize: 20 }}>{campo.emoji}</span>
-              <label style={{ fontSize: 14, fontWeight: 600, color: campo.cor, fontFamily: 'var(--font-body)' }}>
+              <label style={{ fontSize: 16, fontWeight: 600, color: campo.cor, fontFamily: 'var(--font-body)' }}>
                 {campo.label}
               </label>
             </div>
@@ -432,7 +505,7 @@ export default function BussolaValoresPage() {
               className="w-full rounded-xl resize-none outline-none"
               style={{
                 padding: '12px 14px',
-                fontSize: 13,
+                fontSize: 15,
                 fontFamily: 'var(--font-body)',
                 color: 'var(--color-brand-dark-green)',
                 background: 'rgba(30,57,42,0.03)',
@@ -446,179 +519,26 @@ export default function BussolaValoresPage() {
     );
   };
 
-  // ── Render painel direito ─────────────────────────────────────────────────
-
-  const renderDireita = () => {
-    const listaRanking = passo >= 2 ? ranking : selecionados.map((id) => ({ id, porque: '' }));
-
-    return (
-      <>
-        <div className="p-5" style={{ borderBottom: '1px solid var(--color-brand-border)' }}>
-          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 15, fontWeight: 700, color: 'var(--color-brand-dark-green)' }}>
-            Seus Valores
-          </h3>
-          <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginTop: 2 }}>
-            {selecionados.length === 0 ? 'Nenhum selecionado ainda' : `${selecionados.length} de ${MAX} escolhidos`}
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2 p-4">
-          {Array.from({ length: MAX }).map((_, i) => {
-            const rv = listaRanking[i];
-            if (!rv) return (
-              <div key={i} className="flex items-center gap-3 rounded-xl p-3"
-                style={{ background: 'rgba(30,57,42,0.03)', border: '1.5px dashed var(--color-brand-border)' }}>
-                <div className="flex items-center justify-center rounded-full flex-shrink-0"
-                  style={{ width: 24, height: 24, background: 'rgba(30,57,42,0.06)', color: 'rgba(30,57,42,0.25)', fontSize: 11, fontFamily: 'var(--font-heading)', fontWeight: 700 }}>
-                  {i + 1}
-                </div>
-                <p style={{ fontSize: 12, color: 'rgba(30,57,42,0.3)', fontStyle: 'italic' }}>Não selecionado</p>
-              </div>
-            );
-
-            const v = getValor(rv.id);
-            const cat = getCat(v.categoria);
-            return (
-              <div key={rv.id} className="flex items-center gap-3 rounded-xl p-3"
-                style={{ background: `${cat.cor}10`, border: `1.5px solid ${cat.cor}30` }}>
-                <div className="flex items-center justify-center rounded-full flex-shrink-0 font-bold"
-                  style={{ width: 24, height: 24, background: i === 0 && passo >= 2 ? 'var(--color-brand-gold)' : cat.cor, color: '#fff', fontSize: 11, fontFamily: 'var(--font-heading)' }}>
-                  {i + 1}
-                </div>
-                <span style={{ fontSize: 16 }}>{v.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <p style={{ fontSize: 13, fontWeight: 600, color: cat.cor, fontFamily: 'var(--font-body)' }}>{v.nome}</p>
-                  {rv.porque && (
-                    <p style={{ fontSize: 10, color: 'var(--color-brand-gray)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {rv.porque}
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Código de conduta resumo */}
-        {passo === 3 && (codigo.naoTolero || codigo.sobPressao || codigo.compromisso) && (
-          <div className="flex flex-col gap-2 px-4 pb-4" style={{ borderTop: '1px solid var(--color-brand-border)', paddingTop: 16 }}>
-            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-brand-gray)', marginBottom: 4 }}>
-              Código de conduta
-            </p>
-            {codigo.naoTolero && (
-              <div className="rounded-xl p-3" style={{ background: 'rgba(192,57,43,0.05)', border: '1px solid rgba(192,57,43,0.15)' }}>
-                <p style={{ fontSize: 10, fontWeight: 600, color: '#C0392B', marginBottom: 3 }}>🚫 Não tolero</p>
-                <p style={{ fontSize: 11, color: 'var(--color-brand-dark-green)', lineHeight: 1.5 }}>{codigo.naoTolero.slice(0, 80)}{codigo.naoTolero.length > 80 ? '…' : ''}</p>
-              </div>
-            )}
-            {codigo.compromisso && (
-              <div className="rounded-xl p-3" style={{ background: 'rgba(30,57,42,0.05)', border: '1px solid rgba(30,57,42,0.12)' }}>
-                <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 3 }}>✨ Compromisso</p>
-                <p style={{ fontSize: 11, color: 'var(--color-brand-dark-green)', lineHeight: 1.5 }}>{codigo.compromisso.slice(0, 80)}{codigo.compromisso.length > 80 ? '…' : ''}</p>
-              </div>
-            )}
-          </div>
-        )}
-      </>
-    );
-  };
-
-  // ── Layout ────────────────────────────────────────────────────────────────
-
   return (
-    <div style={{ background: '#f7f5ee', minHeight: '100vh', fontFamily: 'var(--font-body)' }}>
-
-      {/* Topbar */}
-      <div className="flex items-center gap-4 px-6 py-3 sticky top-0 z-20"
-        style={{ background: '#1E392A', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <a href="/ferramentas" className="flex items-center gap-1 text-sm transition-opacity hover:opacity-70"
-          style={{ color: 'rgba(244,241,222,0.6)', textDecoration: 'none' }}>
-          ← Ferramentas
-        </a>
-        <span style={{ color: 'rgba(255,255,255,0.2)' }}>/</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-brand-gold)', background: 'rgba(224,165,95,0.15)', padding: '2px 8px', borderRadius: 99 }}>
-          F02
-        </span>
-        <span style={{ fontFamily: 'var(--font-heading)', fontSize: 15, fontWeight: 700, color: 'var(--color-brand-cream)' }}>
-          Bússola de Valores
-        </span>
-        <div className="flex-1 mx-4">
-          <div className="rounded-full overflow-hidden" style={{ height: 3, background: 'rgba(255,255,255,0.1)' }}>
-            <div className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${((passo + 1) / 4) * 100}%`, background: 'var(--color-brand-gold)' }} />
-          </div>
+    <FerramentaLayout
+      codigo="F02"
+      nome="Bússola de Valores"
+      descricao="Identifique seus 5 valores essenciais e transforme-os em um Código de Conduta pessoal."
+      etapas={ETAPAS}
+      etapaAtual={passo}
+      progresso={progresso}
+      onAvancar={avancar}
+      onVoltar={() => setPasso((p) => Math.max(0, p - 1) as Passo)}
+      podeAvancar={podeAvancar}
+      totalItens={selecionados.length}
+      labelItens="valores"
+      resumo={painelResumo}
+    >
+      <div className="p-8">
+        <div className="max-w-xl mx-auto flex flex-col gap-4" style={{ minHeight: passo === 0 ? '100%' : 'auto' }}>
+          {renderCentro()}
         </div>
-        <span style={{ fontSize: 12, color: 'rgba(244,241,222,0.5)', whiteSpace: 'nowrap' }}>
-          Passo {passo + 1} de 4
-        </span>
       </div>
-
-      {/* 3 colunas */}
-      <div className="flex" style={{ height: 'calc(100vh - 49px)' }}>
-
-        {/* Esquerda */}
-        <aside className="flex flex-col flex-shrink-0 overflow-y-auto"
-          style={{ width: 280, background: '#fff', borderRight: '1px solid var(--color-brand-border)' }}>
-          <StepNav passo={passo} />
-          <div className="flex flex-col gap-4 p-5 flex-1">
-            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 16, fontWeight: 700, color: 'var(--color-brand-dark-green)', lineHeight: 1.25 }}>
-              {instrucao.titulo}
-            </h3>
-            <div className="flex flex-col gap-3">
-              {instrucao.corpo.map((t, i) => (
-                <p key={i} style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--color-brand-gray)' }}>{t}</p>
-              ))}
-            </div>
-            <div className="rounded-xl p-3" style={{ background: 'rgba(224,165,95,0.1)', border: '1px solid rgba(224,165,95,0.25)' }}>
-              <p style={{ fontSize: 12, color: '#a0692d', lineHeight: 1.6 }}>{instrucao.dica}</p>
-            </div>
-          </div>
-          <div className="p-5" style={{ borderTop: '1px solid var(--color-brand-border)' }}>
-            {passo < 3 ? (
-              <button onClick={avancar} disabled={!podeAvancar}
-                className="btn-primary w-full"
-                style={{ borderRadius: 10, padding: '12px 16px', justifyContent: 'center', opacity: podeAvancar ? 1 : 0.45, cursor: podeAvancar ? 'pointer' : 'not-allowed' }}>
-                {passo === 0 ? 'Escolher meus valores →' : passo === 1 ? 'Ranquear valores →' : 'Criar meu código →'}
-              </button>
-            ) : (
-              <a href="/ferramentas" className="btn-gold w-full"
-                style={{ display: 'flex', justifyContent: 'center', borderRadius: 10, padding: '12px 16px', textDecoration: 'none' }}>
-                Ver outras ferramentas →
-              </a>
-            )}
-            {passo > 0 && (
-              <button onClick={() => setPasso((p) => Math.max(0, p - 1) as Passo)}
-                className="w-full mt-2 text-sm transition-opacity hover:opacity-70"
-                style={{ color: 'var(--color-brand-gray)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}>
-                ← Voltar
-              </button>
-            )}
-            {passo === 1 && selecionados.length < MAX && (
-              <p className="text-center mt-2" style={{ fontSize: 11, color: 'var(--color-brand-gray)' }}>
-                Selecione {MAX - selecionados.length} valor{MAX - selecionados.length !== 1 ? 'es' : ''} para continuar
-              </p>
-            )}
-            {passo === 2 && !podeAvancar && (
-              <p className="text-center mt-2" style={{ fontSize: 11, color: 'var(--color-brand-gray)' }}>
-                Justifique todos os valores para continuar
-              </p>
-            )}
-          </div>
-        </aside>
-
-        {/* Centro */}
-        <main className="flex-1 overflow-y-auto p-6" style={{ background: '#f7f5ee', minWidth: 0 }}>
-          <div className="max-w-xl mx-auto flex flex-col gap-4" style={{ minHeight: passo === 0 ? '100%' : 'auto' }}>
-            {renderCentro()}
-          </div>
-        </main>
-
-        {/* Direita */}
-        <aside className="flex-shrink-0 flex flex-col overflow-y-auto"
-          style={{ width: 280, background: '#fff', borderLeft: '1px solid var(--color-brand-border)' }}>
-          {renderDireita()}
-        </aside>
-      </div>
-    </div>
+    </FerramentaLayout>
   );
 }
