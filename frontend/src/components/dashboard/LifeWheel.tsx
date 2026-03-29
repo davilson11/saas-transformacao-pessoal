@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Link from 'next/link';
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -45,7 +46,6 @@ function scoreColor(v: number): string {
 export default function LifeWheel() {
   const [areas, setAreas] = useState<Area[]>(AREAS_INICIAL);
   const [editing, setEditing] = useState<number | null>(null);
-  const [saved, setSaved] = useState(false);
 
   const media = (areas.reduce((s, a) => s + a.valor, 0) / areas.length).toFixed(1);
 
@@ -53,13 +53,7 @@ export default function LifeWheel() {
     setAreas((prev) =>
       prev.map((a, i) => (i === index ? { ...a, valor: value } : a))
     );
-    setSaved(false);
   }, []);
-
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
 
   // ── Chart.js data ──
   const chartData = {
@@ -248,17 +242,15 @@ export default function LifeWheel() {
         style={{ borderTop: '1px solid var(--color-brand-border)', background: 'rgba(30,57,42,0.02)' }}
       >
         <p style={{ fontSize: 12, color: 'var(--color-brand-gray)' }}>
-          {saved
-            ? '✅ Avaliação salva com sucesso!'
-            : 'Mova os sliders para refletir como está cada área da sua vida.'}
+          Mova os sliders para refletir como está cada área da sua vida.
         </p>
-        <button
-          onClick={handleSave}
+        <Link
+          href="/ferramentas/raio-x"
           className="btn-gold flex-shrink-0"
-          style={{ padding: '10px 20px', fontSize: 14, borderRadius: 10 }}
+          style={{ padding: '10px 20px', fontSize: 14, borderRadius: 10, textDecoration: 'none' }}
         >
-          {saved ? 'Salvo ✓' : 'Atualizar Avaliação'}
-        </button>
+          Atualizar Avaliação →
+        </Link>
       </div>
     </div>
   );

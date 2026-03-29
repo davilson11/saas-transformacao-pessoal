@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const FASES = [
   { numero: "01", nome: "Autoconhecimento",  pct: 75 },
   { numero: "02", nome: "Visão e Metas",     pct: 40 },
@@ -39,7 +41,12 @@ export default function PhaseProgress() {
       {/* Fases */}
       <div className="flex flex-col gap-5 px-6 py-5">
         {FASES.map((fase, i) => (
-          <div key={fase.numero} className="flex flex-col gap-2">
+          <Link
+            key={fase.numero}
+            href="/ferramentas"
+            className="flex flex-col gap-2 group"
+            style={{ textDecoration: "none" }}
+          >
             {/* Número + nome + percentual */}
             <div className="flex items-center gap-3">
               <span
@@ -60,7 +67,9 @@ export default function PhaseProgress() {
                   fontWeight: 500,
                   color: "var(--color-brand-dark-green)",
                   flex: 1,
+                  transition: "opacity 0.15s",
                 }}
+                className="group-hover:opacity-70"
               >
                 {fase.nome}
               </span>
@@ -98,7 +107,7 @@ export default function PhaseProgress() {
                 }}
               />
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 

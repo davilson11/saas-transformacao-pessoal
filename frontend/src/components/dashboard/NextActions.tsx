@@ -1,22 +1,24 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 type Action = {
   id: number;
   icon: string;
   texto: string;
   badge: string;
+  slug: string;
   prioridade: 'alta' | 'media' | 'baixa';
 };
 
 const ACTIONS_INICIAL: Action[] = [
-  { id: 1, icon: '🎯', texto: 'Completar as 3 últimas perguntas do Propósito de Vida',    badge: 'F03', prioridade: 'alta'  },
-  { id: 2, icon: '🌅', texto: 'Definir o bloco de manhã da sua Rotina Ideal',             badge: 'Rotina', prioridade: 'alta'  },
-  { id: 3, icon: '📊', texto: 'Revisar os OKRs do mês e ajustar metas',                  badge: 'F05', prioridade: 'media' },
-  { id: 4, icon: '💰', texto: 'Lançar os gastos da semana no Controle Financeiro',        badge: 'F07', prioridade: 'media' },
-  { id: 5, icon: '📔', texto: 'Fazer o registro de hoje no Diário de Bordo',             badge: 'F14', prioridade: 'baixa' },
-  { id: 6, icon: '🔄', texto: 'Agendar sua Revisão Mensal para o último dia do mês',     badge: 'F16', prioridade: 'baixa' },
+  { id: 1, icon: '🎯', texto: 'Completar as 3 últimas perguntas do SWOT Pessoal',        badge: 'F03', slug: 'swot-pessoal',        prioridade: 'alta'  },
+  { id: 2, icon: '🌅', texto: 'Definir o bloco de manhã da sua Rotina Ideal',            badge: 'F08', slug: 'rotina-ideal',         prioridade: 'alta'  },
+  { id: 3, icon: '📊', texto: 'Revisar os OKRs do mês e ajustar metas',                 badge: 'F05', slug: 'okrs-pessoais',         prioridade: 'media' },
+  { id: 4, icon: '💰', texto: 'Lançar os gastos da semana no DRE Pessoal',              badge: 'F07', slug: 'dre-pessoal',           prioridade: 'media' },
+  { id: 5, icon: '📔', texto: 'Fazer o registro de hoje no Diário de Bordo',            badge: 'F15', slug: 'diario-bordo',          prioridade: 'baixa' },
+  { id: 6, icon: '🛡', texto: 'Revisar seus planos SE-ENTÃO de Prevenção de Recaída',   badge: 'F16', slug: 'prevencao-recaida',     prioridade: 'baixa' },
 ];
 
 const PRIORIDADE_CONFIG = {
@@ -158,8 +160,10 @@ export default function NextActions() {
                     {action.texto}
                   </p>
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    {/* Badge ferramenta */}
-                    <span
+                    {/* Badge ferramenta — link para a página da ferramenta */}
+                    <Link
+                      href={`/ferramentas/${action.slug}`}
+                      onClick={(e) => e.stopPropagation()}
                       style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: 10,
@@ -169,10 +173,12 @@ export default function NextActions() {
                         padding: '2px 7px',
                         borderRadius: 99,
                         border: `1px solid ${isDone ? 'transparent' : 'rgba(224,165,95,0.25)'}`,
+                        textDecoration: 'none',
+                        cursor: 'pointer',
                       }}
                     >
-                      {action.badge}
-                    </span>
+                      {action.badge} ↗
+                    </Link>
                     {/* Prioridade */}
                     <span className="flex items-center gap-1" style={{ fontSize: 11, color: 'var(--color-brand-gray)' }}>
                       <span
@@ -199,12 +205,13 @@ export default function NextActions() {
             ? '🎉 Todas as ações concluídas hoje!'
             : `${total - concluidos} ação${total - concluidos !== 1 ? 'ões' : ''} pendente${total - concluidos !== 1 ? 's' : ''}`}
         </p>
-        <button
+        <Link
+          href="/ferramentas"
           className="btn-primary"
-          style={{ padding: '8px 18px', fontSize: 13, borderRadius: 10 }}
+          style={{ padding: '8px 18px', fontSize: 13, borderRadius: 10, textDecoration: 'none' }}
         >
           Ver Todas →
-        </button>
+        </Link>
       </div>
     </div>
   );
