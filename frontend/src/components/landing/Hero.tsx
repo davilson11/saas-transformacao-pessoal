@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -88,18 +89,32 @@ export default function Hero() {
           hábitos e propósito. Sem tela em branco. Sem confusão.
         </p>
 
-        {/* CTAs */}
-        <div className="animate-fade-up delay-300 flex flex-col sm:flex-row items-center gap-4">
-          <a
-            href="#comecar"
-            className="btn-gold text-base px-10 py-4"
-            style={{ animation: "pulse-glow 3s ease-in-out infinite" }}
+        {/* CTA principal */}
+        <div className="animate-fade-up delay-300 flex flex-col items-center gap-3">
+          <Link
+            href="/dashboard"
+            className="btn-gold"
+            style={{
+              fontSize: "1.0625rem",
+              padding: "17px 44px",
+              borderRadius: 14,
+              fontWeight: 700,
+              letterSpacing: "0.01em",
+              boxShadow: "0 0 0 0 rgba(224,165,95,0.7)",
+              animation: "pulse-glow 3s ease-in-out infinite",
+              textDecoration: "none",
+            }}
           >
-            Quero Começar Minha Virada →
-          </a>
-          <a href="#solucao" className="btn-outline text-sm">
-            Como funciona?
-          </a>
+            Começar agora — é grátis →
+          </Link>
+          <div className="flex items-center gap-4">
+            <a href="#comecar" className="btn-outline text-sm">
+              Quero Começar Minha Virada
+            </a>
+            <a href="#solucao" className="btn-outline text-sm">
+              Como funciona?
+            </a>
+          </div>
         </div>
 
         {/* Social proof */}
