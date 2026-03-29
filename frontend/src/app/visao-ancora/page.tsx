@@ -1,6 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
+import { salvarVisaoAncora, buscarVisaoAncora } from '@/lib/queries';
+import { useSupabaseClient } from '@/lib/useSupabaseClient';
+import type { ReferenciaJson } from '@/lib/database.types';
 
 // ─── Tokens de cor ────────────────────────────────────────────────────────────
 
@@ -179,9 +183,81 @@ function SecHeader({ num, titulo, sub }: { num: string; titulo: string; sub?: st
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
 export default function VisaoAncoraPage() {
   const [s, setS] = useState<Estado>(INICIAL);
   const [gerado, setGerado] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+
+  const { user } = useUser();
+  const { getClient } = useSupabaseClient();
+
+  // ── Carregar dados salvos ao montar ──────────────────────────────────────
+  useEffect(() => {
+    if (!user?.id) return;
+    (async () => {
+      const client = await getClient();
+      const data = await buscarVisaoAncora(user.id, client);
+      if (!data) return;
+      const refs = Array.isArray(data.referencias)
+        ? (data.referencias as ReferenciaJson[])
+        : [{} as ReferenciaJson, {} as ReferenciaJson, {} as ReferenciaJson, {} as ReferenciaJson];
+      const r = (i: number) => refs[i] ?? ({} as ReferenciaJson);
+      setS({
+        manchete:          data.manchete,
+        areaReferencia:    data.area_referencia,
+        obstaculoSuperado: data.obstaculo,
+        pedido1:           data.pedido1,
+        pedido2:           data.pedido2,
+        pedido3:           data.pedido3,
+        ref1nome:  r(0).nome   ?? '', ref1area:  r(0).area   ?? '', ref1admiro: r(0).admiro ?? '',
+        ref2nome:  r(1).nome   ?? '', ref2area:  r(1).area   ?? '', ref2admiro: r(1).admiro ?? '',
+        ref3nome:  r(2).nome   ?? '', ref3area:  r(2).area   ?? '', ref3admiro: r(2).admiro ?? '',
+        ref4nome:  r(3).nome   ?? '', ref4area:  r(3).area   ?? '', ref4admiro: r(3).admiro ?? '',
+        tiraSono:      data.tira_sono,
+        daEnergia:     data.da_energia,
+        fariaDeGraca:  data.faria_graca,
+        mundoPerderia: data.mundo_perderia,
+        declaracao:    data.declaracao,
+      });
+    })();
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Gerar e salvar ────────────────────────────────────────────────────────
+  async function handleGerar() {
+    setSaveStatus('saving');
+    if (user?.id) {
+      const client = await getClient();
+      await salvarVisaoAncora(
+        user.id,
+        {
+          manchete:       s.manchete,
+          area_referencia: s.areaReferencia,
+          obstaculo:       s.obstaculoSuperado,
+          pedido1:         s.pedido1,
+          pedido2:         s.pedido2,
+          pedido3:         s.pedido3,
+          referencias: [
+            { nome: s.ref1nome, area: s.ref1area, admiro: s.ref1admiro },
+            { nome: s.ref2nome, area: s.ref2area, admiro: s.ref2admiro },
+            { nome: s.ref3nome, area: s.ref3area, admiro: s.ref3admiro },
+            { nome: s.ref4nome, area: s.ref4area, admiro: s.ref4admiro },
+          ],
+          tira_sono:      s.tiraSono,
+          da_energia:     s.daEnergia,
+          faria_graca:    s.fariaDeGraca,
+          mundo_perderia: s.mundoPerderia,
+          declaracao:     s.declaracao,
+          financas:       '',
+          como_vive:      '',
+        },
+        client
+      );
+    }
+    setSaveStatus('saved');
+    setGerado(true);
+  }
 
   const set = (k: keyof Estado) =>
     (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) =>
@@ -528,10 +604,11 @@ ${s.tiraSono || s.daEnergia || s.fariaDeGraca || s.mundoPerderia ? `<hr><p class
         {!gerado && (
           <div style={{ textAlign: 'center', paddingTop: 56 }}>
             <p style={{ fontSize: 14, color: C.muted, marginBottom: 20 }}>
-              Quando terminar de preencher todas as seções, clique para gerar sua Visão Âncora.
+              Quando terminar de preencher todas as seções, clique para gerar e salvar sua Visão Âncora.
             </p>
             <button
-              onClick={() => setGerado(true)}
+              onClick={handleGerar}
+              disabled={saveStatus === 'saving'}
               style={{
                 fontFamily: '"Inter", system-ui, sans-serif',
                 fontSize: 16, fontWeight: 700,
@@ -540,13 +617,20 @@ ${s.tiraSono || s.daEnergia || s.fariaDeGraca || s.mundoPerderia ? `<hr><p class
                 border: 'none',
                 borderRadius: 14,
                 padding: '18px 44px',
-                cursor: 'pointer',
+                cursor: saveStatus === 'saving' ? 'wait' : 'pointer',
                 boxShadow: '0 4px 28px rgba(181,132,10,0.35)',
                 letterSpacing: '0.01em',
+                opacity: saveStatus === 'saving' ? 0.75 : 1,
+                transition: 'opacity 0.15s',
               }}
             >
-              Gerar minha Visão Âncora →
+              {saveStatus === 'saving' ? 'Salvando…' : 'Gerar minha Visão Âncora →'}
             </button>
+            {saveStatus === 'error' && (
+              <p style={{ fontSize: 13, color: '#f87171', marginTop: 12 }}>
+                Erro ao salvar. Sua visão será exibida mesmo assim.
+              </p>
+            )}
           </div>
         )}
 

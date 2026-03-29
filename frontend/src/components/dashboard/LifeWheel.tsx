@@ -1,7 +1,11 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
+import { useUser } from '@clerk/nextjs';
+import { salvarRodaVida, buscarRodaVida } from '@/lib/queries';
+import { useSupabaseClient } from '@/lib/useSupabaseClient';
+import type { RodaVida } from '@/lib/database.types';
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -24,6 +28,18 @@ type Area = {
   cor: string;
 };
 
+// Mapeamento label → coluna no banco
+const AREA_DB_KEY: Record<string, keyof Omit<RodaVida, 'id' | 'user_id' | 'created_at'>> = {
+  'Saúde':           'saude',
+  'Carreira':        'carreira',
+  'Finanças':        'financas',
+  'Relacionamentos': 'relacionamentos',
+  'Crescimento':     'crescimento',
+  'Lazer':           'lazer',
+  'Família':         'familia',
+  'Espiritualidade': 'espiritualidade',
+};
+
 const AREAS_INICIAL: Area[] = [
   { label: 'Saúde',          emoji: '💪', valor: 7, cor: '#27AE60' },
   { label: 'Carreira',       emoji: '💼', valor: 6, cor: '#2980B9' },
@@ -43,9 +59,31 @@ function scoreColor(v: number): string {
 
 // ─── Componente principal ────────────────────────────────────────────────────
 
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
 export default function LifeWheel() {
   const [areas, setAreas] = useState<Area[]>(AREAS_INICIAL);
   const [editing, setEditing] = useState<number | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+
+  const { user } = useUser();
+  const { getClient } = useSupabaseClient();
+
+  // ── Carregar dados salvos ao montar ──
+  useEffect(() => {
+    if (!user?.id) return;
+    (async () => {
+      const client = await getClient();
+      const data = await buscarRodaVida(user.id, client);
+      if (!data) return;
+      setAreas((prev) =>
+        prev.map((a) => {
+          const key = AREA_DB_KEY[a.label];
+          return key ? { ...a, valor: data[key] as number } : a;
+        })
+      );
+    })();
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const media = (areas.reduce((s, a) => s + a.valor, 0) / areas.length).toFixed(1);
 
@@ -53,7 +91,28 @@ export default function LifeWheel() {
     setAreas((prev) =>
       prev.map((a, i) => (i === index ? { ...a, valor: value } : a))
     );
+    setSaveStatus('idle');
   }, []);
+
+  // ── Salvar no Supabase ──
+  async function handleSalvar() {
+    if (!user?.id) return;
+    setSaveStatus('saving');
+    const scores = {
+      saude:           areas.find((a) => a.label === 'Saúde')?.valor           ?? 5,
+      carreira:        areas.find((a) => a.label === 'Carreira')?.valor        ?? 5,
+      financas:        areas.find((a) => a.label === 'Finanças')?.valor        ?? 5,
+      relacionamentos: areas.find((a) => a.label === 'Relacionamentos')?.valor ?? 5,
+      crescimento:     areas.find((a) => a.label === 'Crescimento')?.valor     ?? 5,
+      lazer:           areas.find((a) => a.label === 'Lazer')?.valor           ?? 5,
+      familia:         areas.find((a) => a.label === 'Família')?.valor         ?? 5,
+      espiritualidade: areas.find((a) => a.label === 'Espiritualidade')?.valor ?? 5,
+    };
+    const client = await getClient();
+    const result = await salvarRodaVida(user.id, scores, client);
+    setSaveStatus(result ? 'saved' : 'error');
+    if (result) setTimeout(() => setSaveStatus('idle'), 3000);
+  }
 
   // ── Chart.js data ──
   const chartData = {
@@ -242,15 +301,27 @@ export default function LifeWheel() {
         style={{ borderTop: '1px solid var(--color-brand-border)', background: 'rgba(30,57,42,0.02)' }}
       >
         <p style={{ fontSize: 12, color: 'var(--color-brand-gray)' }}>
-          Mova os sliders para refletir como está cada área da sua vida.
+          {saveStatus === 'saved'  && <span style={{ color: '#27AE60' }}>✓ Avaliação salva!</span>}
+          {saveStatus === 'saving' && <span style={{ color: 'var(--color-brand-gray)' }}>Salvando…</span>}
+          {saveStatus === 'error'  && <span style={{ color: '#C0392B' }}>Erro ao salvar. Tente novamente.</span>}
+          {saveStatus === 'idle'   && 'Mova os sliders para refletir cada área da sua vida.'}
         </p>
-        <Link
-          href="/ferramentas/raio-x"
-          className="btn-gold flex-shrink-0"
-          style={{ padding: '10px 20px', fontSize: 14, borderRadius: 10, textDecoration: 'none' }}
-        >
-          Atualizar Avaliação →
-        </Link>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={handleSalvar}
+            disabled={saveStatus === 'saving'}
+            className="btn-gold"
+            style={{ padding: '10px 20px', fontSize: 14, borderRadius: 10, opacity: saveStatus === 'saving' ? 0.7 : 1, cursor: saveStatus === 'saving' ? 'wait' : 'pointer' }}
+          >
+            {saveStatus === 'saving' ? 'Salvando…' : 'Salvar Avaliação'}
+          </button>
+          <Link
+            href="/ferramentas/raio-x"
+            style={{ fontSize: 13, color: 'var(--color-brand-gold)', fontWeight: 600, textDecoration: 'none' }}
+          >
+            Ver Raio-X →
+          </Link>
+        </div>
       </div>
     </div>
   );
