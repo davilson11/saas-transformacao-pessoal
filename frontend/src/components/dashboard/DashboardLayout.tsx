@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { UserButton } from '@clerk/nextjs';
 
 // ─── SVG Icons ──────────────────────────────────────────────────────────────
 
@@ -319,20 +320,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             >
               13 dias 🔥
             </span>
-            <div
-              className="flex items-center justify-center rounded-full font-bold flex-shrink-0"
-              style={{
-                width: 34,
-                height: 34,
-                background: 'var(--color-brand-dark-green)',
-                color: 'var(--color-brand-gold)',
-                fontFamily: 'var(--font-heading)',
-                fontSize: 13,
-                letterSpacing: '0.03em',
+            <UserButton
+              appearance={{
+                elements: {
+                  avatarBox: { width: 34, height: 34 },
+                },
               }}
-            >
-              DV
-            </div>
+            />
           </div>
         </header>
 
