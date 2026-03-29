@@ -191,7 +191,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const now = new Date();
   const dateLabel = now.toLocaleDateString('pt-BR', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
   });
 
   return (
@@ -263,37 +263,75 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           className="flex items-center justify-between flex-shrink-0 px-6"
           style={{ height: 56, background: '#ffffff', borderBottom: '1px solid var(--color-brand-border)' }}
         >
-          <div className="flex flex-col justify-center" style={{ gap: 1 }}>
-            <span style={{ fontFamily: 'var(--font-heading)', fontSize: 17, fontWeight: 700,
-              color: 'var(--color-brand-dark-green)', lineHeight: 1 }}>
-              The Cockpit
+          {/* Esquerda: logo + separador + título */}
+          <div className="flex items-center gap-3 min-w-0">
+            <span
+              style={{
+                fontFamily: 'var(--font-heading)',
+                fontStyle: 'italic',
+                fontSize: 20,
+                fontWeight: 400,
+                color: 'var(--color-brand-dark-green)',
+                lineHeight: 1,
+                letterSpacing: '-0.01em',
+                flexShrink: 0,
+              }}
+            >
+              A Virada
             </span>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--color-brand-gray)',
-              textTransform: 'capitalize', letterSpacing: '0.01em' }}>
-              {dateLabel}
+            <span
+              style={{
+                display: 'inline-block',
+                width: 1,
+                height: 18,
+                background: 'var(--color-brand-border)',
+                flexShrink: 0,
+              }}
+            />
+            <span
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                color: 'var(--color-brand-gray)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              The Cockpit · <span style={{ textTransform: 'capitalize' }}>{dateLabel}</span>
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Notificação */}
-            <button
-              className="flex items-center justify-center rounded-xl transition-colors duration-150"
-              style={{ width: 34, height: 34, background: 'rgba(30,57,42,0.05)', color: 'var(--color-brand-dark-green)', fontSize: 15 }}
-              aria-label="Notificações"
+          {/* Direita: streak badge + avatar */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <span
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                fontWeight: 600,
+                color: 'var(--color-brand-gold)',
+                background: 'rgba(181,132,10,0.1)',
+                border: '1px solid rgba(181,132,10,0.25)',
+                borderRadius: 99,
+                padding: '4px 12px',
+                whiteSpace: 'nowrap',
+              }}
             >
-              🔔
-            </button>
-            {/* Usuário */}
-            <div className="flex items-center gap-2 rounded-xl px-3 py-1.5"
-              style={{ background: 'rgba(30,57,42,0.05)', cursor: 'default' }}>
-              <div className="flex items-center justify-center rounded-full text-xs font-bold flex-shrink-0"
-                style={{ width: 24, height: 24, background: 'var(--color-brand-gold)',
-                  color: '#1E392A', fontFamily: 'var(--font-heading)' }}>
-                AV
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-brand-dark-green)' }}>
-                Ana Vitória
-              </span>
+              13 dias 🔥
+            </span>
+            <div
+              className="flex items-center justify-center rounded-full font-bold flex-shrink-0"
+              style={{
+                width: 34,
+                height: 34,
+                background: 'var(--color-brand-dark-green)',
+                color: 'var(--color-brand-gold)',
+                fontFamily: 'var(--font-heading)',
+                fontSize: 13,
+                letterSpacing: '0.03em',
+              }}
+            >
+              DV
             </div>
           </div>
         </header>

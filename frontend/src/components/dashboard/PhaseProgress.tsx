@@ -1,141 +1,200 @@
 import Link from "next/link";
 
-const FASES = [
-  { numero: "01", nome: "Autoconhecimento",  pct: 75 },
-  { numero: "02", nome: "Visão e Metas",     pct: 40 },
-  { numero: "03", nome: "Hábitos e Rotina",  pct: 20 },
-  { numero: "04", nome: "Mentalidade",       pct:  5 },
+// ─── Tipos e dados ────────────────────────────────────────────────────────────
+
+type FaseConfig = {
+  numero: string;
+  nome: string;
+  subtitulo: string;
+  pct: number;
+  cor: string;
+  ativa: boolean;
+};
+
+const FASES: FaseConfig[] = [
+  {
+    numero: "01",
+    nome: "Autoconhecimento",
+    subtitulo: "Raio-X · Valores · SWOT · Feedback",
+    pct: 75,
+    cor: "#4a8c6a",
+    ativa: true,
+  },
+  {
+    numero: "02",
+    nome: "Visão e Estratégia",
+    subtitulo: "OKRs · Design de Vida · DRE · Rotina",
+    pct: 40,
+    cor: "#d4905a",
+    ativa: false,
+  },
+  {
+    numero: "03",
+    nome: "Hábitos e Produtividade",
+    subtitulo: "Auditoria · Arquiteto · Sprint · Energia",
+    pct: 20,
+    cor: "#5a7abf",
+    ativa: false,
+  },
+  {
+    numero: "04",
+    nome: "Mentalidade",
+    subtitulo: "Crenças · CRM · Diário · Recaída",
+    pct: 5,
+    cor: "#9b6baf",
+    ativa: false,
+  },
 ];
+
+// ─── Componente ───────────────────────────────────────────────────────────────
 
 export default function PhaseProgress() {
   return (
-    <div
-      className="rounded-2xl overflow-hidden"
-      style={{
-        background: "#fff",
-        border: "1px solid var(--color-brand-border)",
-        boxShadow: "var(--shadow-card)",
-      }}
-    >
-      {/* Header */}
-      <div
-        className="px-6 py-4"
-        style={{ borderBottom: "1px solid var(--color-brand-border)" }}
-      >
+    <div className="flex flex-col gap-4">
+      {/* Cabeçalho da seção */}
+      <div className="flex items-center justify-between">
         <h3
           style={{
             fontFamily: "var(--font-heading)",
             fontSize: 17,
             fontWeight: 700,
             color: "var(--color-brand-dark-green)",
-            lineHeight: 1.2,
           }}
         >
           Progresso por Fase
         </h3>
-        <p style={{ fontSize: 12, color: "var(--color-brand-gray)", marginTop: 3 }}>
-          Jornada de 12 meses — 4 fases progressivas
-        </p>
+        <Link
+          href="/ferramentas"
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: "var(--color-brand-gold)",
+            textDecoration: "none",
+          }}
+        >
+          Ver ferramentas →
+        </Link>
       </div>
 
-      {/* Fases */}
-      <div className="flex flex-col gap-5 px-6 py-5">
+      {/* Grid 2×2 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {FASES.map((fase, i) => (
           <Link
             key={fase.numero}
             href="/ferramentas"
-            className="flex flex-col gap-2 group"
+            className="group"
             style={{ textDecoration: "none" }}
           >
-            {/* Número + nome + percentual */}
-            <div className="flex items-center gap-3">
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "var(--color-brand-gold)",
-                  minWidth: 24,
-                }}
-              >
-                {fase.numero}
-              </span>
-              <span
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: "var(--color-brand-dark-green)",
-                  flex: 1,
-                  transition: "opacity 0.15s",
-                }}
-                className="group-hover:opacity-70"
-              >
-                {fase.nome}
-              </span>
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: fase.pct >= 50
-                    ? "var(--color-brand-dark-green)"
-                    : "var(--color-brand-gray)",
-                  minWidth: 36,
-                  textAlign: "right",
-                }}
-              >
-                {fase.pct}%
-              </span>
-            </div>
-
-            {/* Barra de progresso */}
             <div
-              className="relative rounded-full overflow-hidden"
-              style={{ height: 8, background: "rgba(30,57,42,0.08)" }}
+              className="flex flex-col gap-3 rounded-2xl p-5 h-full transition-all duration-200 group-hover:shadow-md"
+              style={{
+                background: "#fff",
+                border: `1px solid ${fase.ativa ? fase.cor + "44" : "var(--color-brand-border)"}`,
+                boxShadow: fase.ativa
+                  ? `0 2px 14px ${fase.cor}1a`
+                  : "var(--shadow-card)",
+              }}
             >
+              {/* Topo: badge de fase + indicador ativa + percentual */}
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <span
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: fase.cor,
+                      background: fase.cor + "18",
+                      padding: "2px 8px",
+                      borderRadius: 99,
+                    }}
+                  >
+                    Fase {fase.numero}
+                  </span>
+                  {fase.ativa && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: fase.cor,
+                        fontFamily: "var(--font-body)",
+                      }}
+                    >
+                      ● Ativa
+                    </span>
+                  )}
+                </div>
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 22,
+                    fontWeight: 700,
+                    color: fase.pct >= 50 ? fase.cor : "var(--color-brand-gray)",
+                    lineHeight: 1,
+                  }}
+                >
+                  {fase.pct}%
+                </span>
+              </div>
+
+              {/* Nome + subtítulo */}
+              <div>
+                <p
+                  style={{
+                    fontFamily: "var(--font-heading)",
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: "var(--color-brand-dark-green)",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {fase.nome}
+                </p>
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: "var(--color-brand-gray)",
+                    marginTop: 4,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {fase.subtitulo}
+                </p>
+              </div>
+
+              {/* Barra de progresso */}
               <div
-                className="absolute left-0 top-0 h-full rounded-full"
-                style={{
-                  width: `${fase.pct}%`,
-                  background: fase.pct === 100
-                    ? "#27AE60"
-                    : i === 0
-                    ? "#1E392A"
-                    : `rgba(30,57,42,${0.85 - i * 0.18})`,
-                  animation: `growWidth 0.8s ease ${i * 150}ms both`,
-                }}
-              />
+                className="relative rounded-full overflow-hidden"
+                style={{ height: 6, background: "rgba(30,57,42,0.08)" }}
+              >
+                <div
+                  className="absolute left-0 top-0 h-full rounded-full"
+                  style={{
+                    width: `${fase.pct}%`,
+                    background: fase.cor,
+                    animation: `growWidth 0.8s ease ${i * 150}ms both`,
+                  }}
+                />
+              </div>
+
+              {/* Rodapé */}
+              <div className="flex items-center justify-between mt-auto">
+                <span style={{ fontSize: 11, color: "var(--color-brand-gray)" }}>
+                  4 ferramentas
+                </span>
+                <span
+                  className="transition-transform duration-200 group-hover:translate-x-0.5"
+                  style={{ fontSize: 12, color: fase.cor, fontWeight: 600 }}
+                >
+                  Acessar →
+                </span>
+              </div>
             </div>
           </Link>
         ))}
       </div>
 
-      {/* Footer */}
-      <div
-        className="px-6 py-3 flex items-center gap-2"
-        style={{
-          borderTop: "1px solid var(--color-brand-border)",
-          background: "rgba(30,57,42,0.02)",
-        }}
-      >
-        <div
-          className="rounded-full"
-          style={{ width: 8, height: 8, background: "var(--color-brand-gold)", flexShrink: 0 }}
-        />
-        <p style={{ fontSize: 12, color: "var(--color-brand-gray)" }}>
-          Fase ativa:{" "}
-          <strong style={{ color: "var(--color-brand-dark-green)" }}>
-            01 — Autoconhecimento
-          </strong>
-        </p>
-      </div>
-
-      <style>{`
-        @keyframes growWidth {
-          from { width: 0% }
-        }
-      `}</style>
+      <style>{`@keyframes growWidth { from { width: 0% } }`}</style>
     </div>
   );
 }
