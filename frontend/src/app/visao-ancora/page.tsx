@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
 import { salvarVisaoAncora, buscarVisaoAncora } from '@/lib/queries';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
@@ -730,6 +731,28 @@ ${s.tiraSono || s.daEnergia || s.fariaDeGraca || s.mundoPerderia ? `<hr><p class
               >
                 ← Editar respostas
               </button>
+            </div>
+
+            {/* Ir para o Dashboard */}
+            <div style={{ marginTop: 16 }}>
+              <Link
+                href="/dashboard"
+                style={{
+                  display: 'inline-block',
+                  fontFamily: '"Inter", system-ui, sans-serif',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: '#1a3a25',
+                  background: 'linear-gradient(135deg, #e8b84b 0%, #b5840a 100%)',
+                  borderRadius: 12,
+                  padding: '13px 32px',
+                  textDecoration: 'none',
+                  boxShadow: '0 4px 20px rgba(181,132,10,0.30)',
+                  letterSpacing: '0.01em',
+                }}
+              >
+                Ir para o Dashboard →
+              </Link>
             </div>
           </div>
         )}
