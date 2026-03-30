@@ -1,25 +1,44 @@
+'use client';
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import LifeWheel from "@/components/dashboard/LifeWheel";
 import NextActions from "@/components/dashboard/NextActions";
 import PhaseProgress from "@/components/dashboard/PhaseProgress";
-import Link from "next/link";
+import { buscarVisaoAncora } from "@/lib/queries";
+import { useSupabaseClient } from "@/lib/useSupabaseClient";
 
-// ─── Vitality ring (inline no hero, sem card branco) ─────────────────────────
+// ─── Vitality ring ────────────────────────────────────────────────────────────
 
 const VITALITY = 86;
 const V_R = 44;
 const V_CIRCUM = 2 * Math.PI * V_R;
 const V_OFFSET = V_CIRCUM * (1 - VITALITY / 100);
 
-function VisionAnchorHero() {
+// ─── Hero: Visão Âncora ───────────────────────────────────────────────────────
+
+type HeroProps = {
+  manchete:   string | null;
+  declaracao: string | null;
+  loading:    boolean;
+};
+
+function VisionAnchorHero({ manchete, declaracao, loading }: HeroProps) {
+  const temVisao = !loading && !!manchete;
+  const semVisao = !loading && !manchete;
+
   return (
     <div
       className="rounded-2xl overflow-hidden"
       style={{ background: "#1a5c3a" }}
     >
       <div className="flex flex-col sm:flex-row items-stretch">
-        {/* ── Esquerda: eyebrow + headline + declaração ── */}
+
+        {/* ── Esquerda ── */}
         <div className="flex flex-col justify-center gap-4 p-8 flex-1">
+
           {/* Eyebrow */}
           <span
             style={{
@@ -34,46 +53,116 @@ function VisionAnchorHero() {
             Sua Visão Âncora — F00
           </span>
 
-          {/* Manchete */}
-          <h2
-            style={{
-              fontFamily: "var(--font-heading)",
-              fontStyle: "italic",
-              fontSize: "clamp(20px, 3vw, 30px)",
-              fontWeight: 400,
-              color: "#f5f4f0",
-              lineHeight: 1.25,
-              letterSpacing: "-0.01em",
-              margin: 0,
-            }}
-          >
-            &ldquo;Em 12 meses serei a versão mais<br />
-            livre e realizada de mim mesmo.&rdquo;
-          </h2>
+          {/* Estado: carregando */}
+          {loading && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[240, 200, 160].map((w) => (
+                <div
+                  key={w}
+                  style={{
+                    height: 18,
+                    width: w,
+                    maxWidth: "100%",
+                    borderRadius: 6,
+                    background: "rgba(255,255,255,0.10)",
+                    animation: "pulse 1.5s ease-in-out infinite",
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
-          {/* Declaração complementar */}
-          <p
-            style={{
-              fontSize: 14,
-              color: "rgba(245,244,240,0.60)",
-              lineHeight: 1.7,
-              maxWidth: 480,
-            }}
-          >
-            Fase atual:{" "}
-            <strong style={{ color: "rgba(245,244,240,0.90)" }}>
-              01 — Autoconhecimento
-            </strong>
-            . Continue de onde parou — você está a 75% desta fase.
-          </p>
+          {/* Estado: tem Visão Âncora */}
+          {temVisao && (
+            <>
+              <h2
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontStyle: "italic",
+                  fontSize: "clamp(20px, 3vw, 30px)",
+                  fontWeight: 400,
+                  color: "#f5f4f0",
+                  lineHeight: 1.25,
+                  letterSpacing: "-0.01em",
+                  margin: 0,
+                }}
+              >
+                &ldquo;{manchete}&rdquo;
+              </h2>
+
+              {declaracao && (
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: "rgba(245,244,240,0.60)",
+                    lineHeight: 1.7,
+                    maxWidth: 480,
+                    overflow: "hidden",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: "vertical",
+                  }}
+                >
+                  {declaracao}
+                </p>
+              )}
+            </>
+          )}
+
+          {/* Estado: sem Visão Âncora */}
+          {semVisao && (
+            <>
+              <h2
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontStyle: "italic",
+                  fontSize: "clamp(20px, 3vw, 28px)",
+                  fontWeight: 400,
+                  color: "rgba(245,244,240,0.70)",
+                  lineHeight: 1.3,
+                  margin: 0,
+                }}
+              >
+                Você ainda não criou sua Visão Âncora.
+              </h2>
+              <p
+                style={{
+                  fontSize: 14,
+                  color: "rgba(245,244,240,0.50)",
+                  lineHeight: 1.65,
+                  maxWidth: 400,
+                }}
+              >
+                É o documento mais importante da sua jornada — leva 60 minutos
+                e ancora todas as suas decisões nos próximos 12 meses.
+              </p>
+              <div>
+                <Link
+                  href="/visao-ancora"
+                  style={{
+                    display: "inline-block",
+                    fontFamily: "var(--font-body)",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: "#1a5c3a",
+                    background: "var(--color-brand-gold)",
+                    padding: "11px 24px",
+                    borderRadius: 10,
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Criar minha Visão Âncora →
+                </Link>
+              </div>
+            </>
+          )}
         </div>
 
         {/* ── Direita: anel vitality + CTA ── */}
         <div
           className="flex flex-col items-center justify-center gap-5 p-8 flex-shrink-0"
-          style={{
-            borderTop: "1px solid rgba(255,255,255,0.08)",
-          }}
+          style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
         >
           {/* Anel SVG dourado */}
           <div className="relative flex items-center justify-center">
@@ -84,30 +173,21 @@ function VisionAnchorHero() {
               fill="none"
               style={{ transform: "rotate(-90deg)" }}
             >
-              {/* Trilha */}
               <circle
-                cx="62"
-                cy="62"
-                r={V_R}
+                cx="62" cy="62" r={V_R}
                 stroke="rgba(255,255,255,0.10)"
-                strokeWidth="9"
-                fill="none"
+                strokeWidth="9" fill="none"
               />
-              {/* Progresso dourado */}
               <circle
-                cx="62"
-                cy="62"
-                r={V_R}
+                cx="62" cy="62" r={V_R}
                 stroke="var(--color-brand-gold)"
-                strokeWidth="9"
-                fill="none"
+                strokeWidth="9" fill="none"
                 strokeLinecap="round"
                 strokeDasharray={V_CIRCUM}
                 strokeDashoffset={V_OFFSET}
                 style={{ transition: "stroke-dashoffset 1s ease" }}
               />
             </svg>
-            {/* Número centralizado */}
             <div className="absolute flex flex-col items-center">
               <span
                 style={{
@@ -135,26 +215,52 @@ function VisionAnchorHero() {
             </div>
           </div>
 
-          {/* CTA */}
-          <Link
-            href="/visao-ancora"
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#1a5c3a",
-              background: "var(--color-brand-gold)",
-              padding: "9px 22px",
-              borderRadius: 10,
-              textDecoration: "none",
-              whiteSpace: "nowrap",
-              display: "inline-block",
-            }}
-          >
-            Reler minha visão →
-          </Link>
+          {/* CTA condicional */}
+          {temVisao && (
+            <Link
+              href="/visao-ancora"
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#1a5c3a",
+                background: "var(--color-brand-gold)",
+                padding: "9px 22px",
+                borderRadius: 10,
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+                display: "inline-block",
+              }}
+            >
+              Reler minha visão →
+            </Link>
+          )}
+          {semVisao && (
+            <Link
+              href="/visao-ancora"
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "rgba(245,244,240,0.60)",
+                textDecoration: "underline",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Saber mais
+            </Link>
+          )}
         </div>
+
       </div>
+
+      {/* Keyframes para skeleton */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.5 }
+          50% { opacity: 1 }
+        }
+      `}</style>
     </div>
   );
 }
@@ -171,16 +277,10 @@ function BottomBar() {
         boxShadow: "var(--shadow-card)",
       }}
     >
-      {/* Contador */}
       <div className="flex items-center gap-3">
         <div
           className="flex items-center justify-center rounded-xl flex-shrink-0"
-          style={{
-            width: 40,
-            height: 40,
-            background: "rgba(26,92,58,0.08)",
-            fontSize: 18,
-          }}
+          style={{ width: 40, height: 40, background: "rgba(26,92,58,0.08)", fontSize: 18 }}
         >
           🛠
         </div>
@@ -201,8 +301,6 @@ function BottomBar() {
           </p>
         </div>
       </div>
-
-      {/* Botão */}
       <Link
         href="/ferramentas"
         className="btn-primary flex-shrink-0"
@@ -217,13 +315,39 @@ function BottomBar() {
 // ─── Página ───────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const { user, isLoaded } = useUser();
+  const { getClient } = useSupabaseClient();
+
+  const [manchete,   setManchete]   = useState<string | null>(null);
+  const [declaracao, setDeclaracao] = useState<string | null>(null);
+  const [heroLoading, setHeroLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!user?.id) {
+      setHeroLoading(false);
+      return;
+    }
+    (async () => {
+      const client = await getClient();
+      const data = await buscarVisaoAncora(user.id, client);
+      setManchete(data?.manchete   ?? null);
+      setDeclaracao(data?.declaracao ?? null);
+      setHeroLoading(false);
+    })();
+  }, [isLoaded, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-6">
-        {/* 1. Visão Âncora Hero */}
-        <VisionAnchorHero />
+        {/* 1. Visão Âncora Hero — dados reais do Supabase */}
+        <VisionAnchorHero
+          manchete={manchete}
+          declaracao={declaracao}
+          loading={heroLoading}
+        />
 
-        {/* 2. Grid central: Roda da Vida + Próximas Ações */}
+        {/* 2. Grid central: Roda da Vida (carrega do Supabase) + Próximas Ações */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <LifeWheel />
           <NextActions />
