@@ -83,6 +83,7 @@ export default function FerramentaLayout({
   const { user } = useUser();
   const { getClient } = useSupabaseClient();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [concluido, setConcluido] = useState(false);
   const pathname = usePathname();
 
   // Derive slug from URL path if not provided explicitly
@@ -116,6 +117,11 @@ export default function FerramentaLayout({
       setSaveStatus("error");
     }
     setTimeout(() => setSaveStatus("idle"), 3000);
+  }
+
+  function handleAvancar() {
+    onAvancar();
+    if (isUltimaEtapa) setConcluido(true);
   }
 
   // ── Shared: botão de salvar progress (usado na sidebar desktop e no bottom bar mobile) ──
@@ -499,7 +505,7 @@ export default function FerramentaLayout({
 
               {/* Botão principal */}
               <button
-                onClick={onAvancar}
+                onClick={handleAvancar}
                 disabled={!podeAvancar}
                 className="w-full rounded-xl py-2.5 font-semibold transition-all duration-200"
                 style={{
@@ -825,7 +831,7 @@ export default function FerramentaLayout({
 
             {/* Continuar — botão principal, ocupa o espaço restante */}
             <button
-              onClick={onAvancar}
+              onClick={handleAvancar}
               disabled={!podeAvancar}
               style={{
                 flex: 1,
@@ -853,6 +859,134 @@ export default function FerramentaLayout({
           </div>
         </div>
       </div>
+
+      {/* ════════════════════════════════════════════════════════════
+          MODAL DE CONCLUSÃO
+      ════════════════════════════════════════════════════════════ */}
+      {concluido && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(10, 30, 20, 0.82)", backdropFilter: "blur(6px)" }}
+          onClick={() => setConcluido(false)}
+        >
+          <div
+            className="flex flex-col items-center text-center w-full max-w-sm rounded-3xl"
+            style={{
+              background: "linear-gradient(160deg, #1e4d31 0%, #133028 100%)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              boxShadow: "0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(181,132,10,0.15)",
+              padding: "44px 36px 40px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Ícone troféu */}
+            <div
+              className="flex items-center justify-center rounded-2xl mb-6"
+              style={{
+                width: 72,
+                height: 72,
+                background: `linear-gradient(135deg, ${COR_GOLD}22, ${COR_GOLD}44)`,
+                border: `1px solid ${COR_GOLD}55`,
+                fontSize: 36,
+              }}
+            >
+              🏆
+            </div>
+
+            {/* Título */}
+            <h2
+              style={{
+                fontFamily: "var(--font-heading)",
+                fontStyle: "italic",
+                fontSize: "clamp(22px, 5vw, 28px)",
+                fontWeight: 400,
+                color: "#f5f4f0",
+                lineHeight: 1.2,
+                margin: "0 0 8px",
+              }}
+            >
+              Ferramenta concluída!
+            </h2>
+
+            {/* Emoji + badge do nome */}
+            <p
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 14,
+                color: "rgba(245,244,240,0.55)",
+                lineHeight: 1.5,
+                margin: "0 0 10px",
+              }}
+            >
+              Você completou
+            </p>
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 11,
+                fontWeight: 700,
+                color: COR_GOLD,
+                background: `${COR_GOLD}20`,
+                border: `1px solid ${COR_GOLD}44`,
+                padding: "4px 14px",
+                borderRadius: 99,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                marginBottom: 28,
+              }}
+            >
+              {codigo} · {nome}
+            </span>
+
+            {/* Separador dourado */}
+            <div
+              style={{
+                width: 48,
+                height: 1,
+                background: `linear-gradient(90deg, transparent, ${COR_GOLD}88, transparent)`,
+                margin: "0 0 28px",
+              }}
+            />
+
+            {/* Botões */}
+            <div className="flex flex-col gap-3 w-full">
+              <Link
+                href="/dashboard"
+                className="block w-full rounded-xl text-center transition-opacity duration-150 hover:opacity-90"
+                style={{
+                  background: `linear-gradient(135deg, ${COR_GOLD}, #e8b84b)`,
+                  color: "#fff",
+                  fontFamily: "var(--font-body)",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  padding: "14px 24px",
+                  textDecoration: "none",
+                  boxShadow: `0 6px 20px ${COR_GOLD}44`,
+                }}
+              >
+                Ir para o Dashboard →
+              </Link>
+
+              <Link
+                href="/ferramentas"
+                className="block w-full rounded-xl text-center transition-all duration-150 hover:opacity-90"
+                style={{
+                  background: "rgba(245,244,240,0.08)",
+                  color: "rgba(245,244,240,0.75)",
+                  fontFamily: "var(--font-body)",
+                  fontSize: 14,
+                  fontWeight: 500,
+                  padding: "13px 24px",
+                  textDecoration: "none",
+                  border: "1px solid rgba(245,244,240,0.12)",
+                }}
+              >
+                Ver todas as ferramentas
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
