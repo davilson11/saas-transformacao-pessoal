@@ -503,19 +503,17 @@ select {
   min-width: 0;
 }
 
-/* Dentro das ferramentas (.fl-central): garante que nada ultrapasse a largura */
-.fl-central *,
-.fl-central *::before,
-.fl-central *::after {
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* Remove min-width fixo que pode causar overflow em containers flex/grid */
+/* Dentro das ferramentas (.fl-central): apenas elementos de formulário e mídia
+   são limitados — containers flex/grid NÃO recebem max-width aqui */
 .fl-central input,
 .fl-central textarea,
-.fl-central select {
+.fl-central select,
+.fl-central img,
+.fl-central video,
+.fl-central iframe {
+  max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 @media (max-width: 767px) {
