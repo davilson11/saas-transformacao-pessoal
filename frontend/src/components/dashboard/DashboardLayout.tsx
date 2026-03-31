@@ -1,9 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 
 // ─── SVG Icons ──────────────────────────────────────────────────────────────
@@ -60,14 +58,12 @@ function IconConfiguracoes() {
 
 // ─── Nav config ─────────────────────────────────────────────────────────────
 
-type NavId = 'dashboard' | 'ferramentas' | 'progresso' | 'perfil' | 'configuracoes';
-
-const NAV_ITEMS: { id: NavId; label: string; icon: React.ReactNode }[] = [
-  { id: 'dashboard',     label: 'Dashboard',      icon: <IconDashboard /> },
-  { id: 'ferramentas',   label: 'Ferramentas',    icon: <IconFerramentas /> },
-  { id: 'progresso',     label: 'Progresso',      icon: <IconProgresso /> },
-  { id: 'perfil',        label: 'Perfil',         icon: <IconPerfil /> },
-  { id: 'configuracoes', label: 'Configurações',  icon: <IconConfiguracoes /> },
+const NAV_ITEMS: { label: string; href: string; icon: React.ReactNode; exact?: boolean }[] = [
+  { label: 'Dashboard',     href: '/dashboard',   icon: <IconDashboard />,     exact: true },
+  { label: 'Ferramentas',   href: '/ferramentas', icon: <IconFerramentas /> },
+  { label: 'Progresso',     href: '/perfil',      icon: <IconProgresso />,     exact: true },
+  { label: 'Perfil',        href: '/perfil',      icon: <IconPerfil />,        exact: true },
+  { label: 'Configurações', href: '/dashboard',   icon: <IconConfiguracoes />, exact: true },
 ];
 
 // ─── Mock content ────────────────────────────────────────────────────────────
@@ -191,9 +187,7 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [active, setActive] = useState<NavId>('dashboard');
   const pathname = usePathname();
-  const isPerfilActive = pathname === '/perfil';
 
   const now = new Date();
   const dateLabel = now.toLocaleDateString('pt-BR', {
@@ -218,18 +212,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Nav items */}
         {NAV_ITEMS.map((item) => {
-          const isActive = active === item.id;
+          const isActive = item.exact
+            ? pathname === item.href
+            : pathname.startsWith(item.href);
           return (
-            <button
-              key={item.id}
-              onClick={() => setActive(item.id)}
+            <Link
+              key={item.label}
+              href={item.href}
               className="flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-200 w-full px-1"
               style={{
                 height: 52,
                 background: isActive ? 'rgba(224,165,95,0.18)' : 'transparent',
                 color: isActive ? 'var(--color-brand-gold)' : 'rgba(244,241,222,0.4)',
                 border: `1px solid ${isActive ? 'rgba(224,165,95,0.35)' : 'transparent'}`,
-                cursor: 'pointer',
+                textDecoration: 'none',
               }}
               aria-label={item.label}
             >
@@ -244,38 +240,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               }}>
                 {item.label}
               </span>
-            </button>
+            </Link>
           );
         })}
 
         {/* Spacer */}
         <div style={{ flex: 1 }} />
-
-        {/* Meu Perfil */}
-        <Link
-          href="/perfil"
-          className="flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-200 w-full px-1 mb-1"
-          style={{
-            height: 52,
-            background: isPerfilActive ? 'rgba(224,165,95,0.18)' : 'transparent',
-            color: isPerfilActive ? 'var(--color-brand-gold)' : 'rgba(244,241,222,0.4)',
-            border: `1px solid ${isPerfilActive ? 'rgba(224,165,95,0.35)' : 'transparent'}`,
-            textDecoration: 'none',
-          }}
-          aria-label="Meu Perfil"
-        >
-          <User size={18} strokeWidth={1.5} />
-          <span style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 9,
-            fontWeight: isPerfilActive ? 600 : 400,
-            letterSpacing: '0.01em',
-            lineHeight: 1,
-            color: 'inherit',
-          }}>
-            Perfil
-          </span>
-        </Link>
 
         {/* Avatar */}
         <div className="flex items-center justify-center rounded-full font-bold text-xs flex-shrink-0"
