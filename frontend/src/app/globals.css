@@ -483,3 +483,67 @@ a:hover { color: var(--color-primary-hover); }
   background: color-mix(in srgb, var(--color-primary) 20%, transparent);
   color: var(--color-ink);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MOBILE — PREVENÇÃO DE OVERFLOW HORIZONTAL
+───────────────────────────────────────────────────────────────────────────── */
+
+/* Quebra de texto em qualquer elemento — evita overflow por palavras longas ou URLs */
+* {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Inputs, textareas e selects nunca ultrapassam o container */
+input,
+textarea,
+select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Dentro das ferramentas (.fl-central): garante que nada ultrapasse a largura */
+.fl-central *,
+.fl-central *::before,
+.fl-central *::after {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Remove min-width fixo que pode causar overflow em containers flex/grid */
+.fl-central input,
+.fl-central textarea,
+.fl-central select {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  /* Evita que qualquer elemento quebre o viewport */
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Imagens e iframes responsivos */
+  img, iframe, video, embed, object {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Tabelas: scroll horizontal em vez de overflow */
+  table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Código pré-formatado: scroll em vez de overflow */
+  pre, code {
+    max-width: 100%;
+    overflow-x: auto;
+    word-break: normal;
+    white-space: pre-wrap;
+  }
+}
