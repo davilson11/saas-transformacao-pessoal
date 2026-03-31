@@ -200,7 +200,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* ── Sidebar ─────────────────────────────────────────────────── */}
       <aside
         className="flex flex-col items-center py-4 flex-shrink-0"
-        style={{ width: 72, background: '#1E392A', gap: 2 }}
+        style={{ width: 60, background: '#1E392A', gap: 2 }}
       >
         {/* Logo mark */}
         <div className="flex items-center justify-center rounded-xl mb-4 flex-shrink-0"
@@ -221,7 +221,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               href={item.href}
               className="flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-200 w-full px-1"
               style={{
-                height: 52,
+                height: 48,
                 background: isActive ? 'rgba(224,165,95,0.18)' : 'transparent',
                 color: isActive ? 'var(--color-brand-gold)' : 'rgba(244,241,222,0.4)',
                 border: `1px solid ${isActive ? 'rgba(224,165,95,0.35)' : 'transparent'}`,
