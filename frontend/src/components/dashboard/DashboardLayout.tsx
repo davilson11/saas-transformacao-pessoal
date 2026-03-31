@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { User } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 
 // ─── SVG Icons ──────────────────────────────────────────────────────────────
@@ -189,6 +192,8 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [active, setActive] = useState<NavId>('dashboard');
+  const pathname = usePathname();
+  const isPerfilActive = pathname === '/perfil';
 
   const now = new Date();
   const dateLabel = now.toLocaleDateString('pt-BR', {
@@ -246,6 +251,34 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Spacer */}
         <div style={{ flex: 1 }} />
+
+        {/* Meu Perfil */}
+        <div className="relative group mb-1">
+          <Link
+            href="/perfil"
+            className="flex items-center justify-center rounded-xl transition-all duration-200"
+            style={{
+              width: 40,
+              height: 40,
+              background: isPerfilActive ? 'rgba(224,165,95,0.18)' : 'transparent',
+              color: isPerfilActive ? 'var(--color-brand-gold)' : 'rgba(244,241,222,0.4)',
+              border: `1px solid ${isPerfilActive ? 'rgba(224,165,95,0.35)' : 'transparent'}`,
+              textDecoration: 'none',
+            }}
+            aria-label="Meu Perfil"
+          >
+            <User size={18} strokeWidth={1.5} />
+          </Link>
+          {/* Tooltip */}
+          <div
+            className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1 rounded-lg whitespace-nowrap z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+            style={{ background: '#162c20', color: 'var(--color-brand-cream)', fontSize: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}
+          >
+            Meu Perfil
+            <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent"
+              style={{ borderRightColor: '#162c20' }} />
+          </div>
+        </div>
 
         {/* Avatar */}
         <div className="flex items-center justify-center rounded-full font-bold text-xs flex-shrink-0"
