@@ -243,6 +243,8 @@ export default function RaioXPage() {
     responsive: true,
     maintainAspectRatio: true,
     animation: { duration: 250 },
+    // Padding externo empurra o gráfico para dentro, dando espaço aos labels
+    layout: { padding: 24 },
     plugins: {
       legend: { display: false },
       tooltip: {
@@ -264,11 +266,25 @@ export default function RaioXPage() {
           font: { size: 9, family: 'DM Mono' },
           backdropColor: 'transparent',
         },
-        grid:        { color: 'rgba(26,92,58,0.08)' },
-        angleLines:  { color: 'rgba(26,92,58,0.1)' },
+        grid:       { color: 'rgba(26,92,58,0.08)' },
+        angleLines: { color: 'rgba(26,92,58,0.1)'  },
         pointLabels: {
+          padding: 10,   // espaço entre o polígono e o label
           color: COR_PRIMARY,
-          font: { size: 10, weight: 'bold' as const, family: 'Inter' },
+          font: { size: 9, weight: 'bold' as const, family: 'Inter' },
+          // Labels longos quebram em duas linhas
+          callback: (label: string): string | string[] => {
+            if (label.includes(' & ')) {
+              const idx = label.indexOf(' & ');
+              return [label.slice(0, idx + 2).trim(), label.slice(idx + 2).trim()];
+            }
+            const words = label.split(' ');
+            if (words.length >= 2 && label.length > 12) {
+              const mid = Math.ceil(words.length / 2);
+              return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
+            }
+            return label;
+          },
         },
       },
     },
