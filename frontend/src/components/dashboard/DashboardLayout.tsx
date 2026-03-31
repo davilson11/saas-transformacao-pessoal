@@ -206,10 +206,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* ── Sidebar ─────────────────────────────────────────────────── */}
       <aside
         className="flex flex-col items-center py-4 flex-shrink-0"
-        style={{ width: 56, background: '#1E392A', gap: 6 }}
+        style={{ width: 72, background: '#1E392A', gap: 2 }}
       >
         {/* Logo mark */}
-        <div className="flex items-center justify-center rounded-xl mb-3 flex-shrink-0"
+        <div className="flex items-center justify-center rounded-xl mb-4 flex-shrink-0"
           style={{ width: 34, height: 34, background: 'var(--color-brand-gold)' }}>
           <span style={{ color: '#1E392A', fontWeight: 700, fontSize: 14, fontFamily: 'var(--font-heading)', lineHeight: 1 }}>
             V
@@ -220,32 +220,31 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {NAV_ITEMS.map((item) => {
           const isActive = active === item.id;
           return (
-            <div key={item.id} className="relative group">
-              <button
-                onClick={() => setActive(item.id)}
-                className="flex items-center justify-center rounded-xl transition-all duration-200"
-                style={{
-                  width: 40,
-                  height: 40,
-                  background: isActive ? 'rgba(224,165,95,0.18)' : 'transparent',
-                  color: isActive ? 'var(--color-brand-gold)' : 'rgba(244,241,222,0.4)',
-                  border: `1px solid ${isActive ? 'rgba(224,165,95,0.35)' : 'transparent'}`,
-                }}
-                aria-label={item.label}
-              >
-                {item.icon}
-              </button>
-              {/* Tooltip */}
-              <div
-                className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1 rounded-lg text-xs whitespace-nowrap z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-                style={{ background: '#162c20', color: 'var(--color-brand-cream)', fontSize: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}
-              >
+            <button
+              key={item.id}
+              onClick={() => setActive(item.id)}
+              className="flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-200 w-full px-1"
+              style={{
+                height: 52,
+                background: isActive ? 'rgba(224,165,95,0.18)' : 'transparent',
+                color: isActive ? 'var(--color-brand-gold)' : 'rgba(244,241,222,0.4)',
+                border: `1px solid ${isActive ? 'rgba(224,165,95,0.35)' : 'transparent'}`,
+                cursor: 'pointer',
+              }}
+              aria-label={item.label}
+            >
+              {item.icon}
+              <span style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 9,
+                fontWeight: isActive ? 600 : 400,
+                letterSpacing: '0.01em',
+                lineHeight: 1,
+                color: 'inherit',
+              }}>
                 {item.label}
-                {/* seta */}
-                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent"
-                  style={{ borderRightColor: '#162c20' }} />
-              </div>
-            </div>
+              </span>
+            </button>
           );
         })}
 
@@ -253,32 +252,30 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div style={{ flex: 1 }} />
 
         {/* Meu Perfil */}
-        <div className="relative group mb-1">
-          <Link
-            href="/perfil"
-            className="flex items-center justify-center rounded-xl transition-all duration-200"
-            style={{
-              width: 40,
-              height: 40,
-              background: isPerfilActive ? 'rgba(224,165,95,0.18)' : 'transparent',
-              color: isPerfilActive ? 'var(--color-brand-gold)' : 'rgba(244,241,222,0.4)',
-              border: `1px solid ${isPerfilActive ? 'rgba(224,165,95,0.35)' : 'transparent'}`,
-              textDecoration: 'none',
-            }}
-            aria-label="Meu Perfil"
-          >
-            <User size={18} strokeWidth={1.5} />
-          </Link>
-          {/* Tooltip */}
-          <div
-            className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1 rounded-lg whitespace-nowrap z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-            style={{ background: '#162c20', color: 'var(--color-brand-cream)', fontSize: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}
-          >
-            Meu Perfil
-            <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent"
-              style={{ borderRightColor: '#162c20' }} />
-          </div>
-        </div>
+        <Link
+          href="/perfil"
+          className="flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-200 w-full px-1 mb-1"
+          style={{
+            height: 52,
+            background: isPerfilActive ? 'rgba(224,165,95,0.18)' : 'transparent',
+            color: isPerfilActive ? 'var(--color-brand-gold)' : 'rgba(244,241,222,0.4)',
+            border: `1px solid ${isPerfilActive ? 'rgba(224,165,95,0.35)' : 'transparent'}`,
+            textDecoration: 'none',
+          }}
+          aria-label="Meu Perfil"
+        >
+          <User size={18} strokeWidth={1.5} />
+          <span style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 9,
+            fontWeight: isPerfilActive ? 600 : 400,
+            letterSpacing: '0.01em',
+            lineHeight: 1,
+            color: 'inherit',
+          }}>
+            Perfil
+          </span>
+        </Link>
 
         {/* Avatar */}
         <div className="flex items-center justify-center rounded-full font-bold text-xs flex-shrink-0"

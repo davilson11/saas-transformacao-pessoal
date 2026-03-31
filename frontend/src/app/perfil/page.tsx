@@ -21,26 +21,34 @@ const C = {
 
 const TOTAL_FERRAMENTAS = 16;
 
-type ToolInfo = { nome: string; emoji: string; codigo: string };
+type ToolInfo = { nome: string; emoji: string; codigo: string; descricao: string };
 
 const TOOL_MAP: Record<string, ToolInfo> = {
-  "raio-x":               { codigo: "F01", emoji: "🎯", nome: "Raio-X 360°" },
-  "bussola-valores":      { codigo: "F02", emoji: "🧭", nome: "Bússola de Valores" },
-  "swot-pessoal":         { codigo: "F03", emoji: "⭐", nome: "SWOT Pessoal" },
-  "feedback-360":         { codigo: "F04", emoji: "🔮", nome: "Feedback 360°" },
-  "okrs-pessoais":        { codigo: "F05", emoji: "📊", nome: "OKRs Pessoais" },
-  "design-vida":          { codigo: "F06", emoji: "📅", nome: "Design de Vida" },
-  "dre-pessoal":          { codigo: "F07", emoji: "💰", nome: "DRE Pessoal" },
-  "rotina-ideal":         { codigo: "F08", emoji: "🌅", nome: "Rotina Ideal" },
-  "auditoria-tempo":      { codigo: "F09", emoji: "⏱",  nome: "Auditoria de Tempo" },
-  "arquiteto-rotinas":    { codigo: "F10", emoji: "🏗",  nome: "Arquiteto de Rotinas" },
-  "sprint-aprendizado":   { codigo: "F11", emoji: "🎓", nome: "Sprint de Aprendizado" },
-  "energia-vitalidade":   { codigo: "F12", emoji: "⚡", nome: "Energia e Vitalidade" },
-  "desconstrutor-crencas":{ codigo: "F13", emoji: "🧠", nome: "Desconstrutor de Crenças" },
-  "crm-relacionamentos":  { codigo: "F14", emoji: "🤝", nome: "CRM de Relacionamentos" },
-  "diario-bordo":         { codigo: "F15", emoji: "📔", nome: "Diário de Bordo" },
-  "prevencao-recaida":    { codigo: "F16", emoji: "🛡",  nome: "Prevenção de Recaída" },
+  "raio-x":               { codigo: "F01", emoji: "🎯", nome: "Raio-X 360°",             descricao: "Diagnóstico completo das 8 áreas da sua vida." },
+  "bussola-valores":      { codigo: "F02", emoji: "🧭", nome: "Bússola de Valores",       descricao: "Identifique os valores que guiam suas decisões." },
+  "swot-pessoal":         { codigo: "F03", emoji: "⭐", nome: "SWOT Pessoal",             descricao: "Mapeie forças, fraquezas, oportunidades e ameaças." },
+  "feedback-360":         { codigo: "F04", emoji: "🔮", nome: "Feedback 360°",            descricao: "Colete perspectivas de pessoas próximas." },
+  "okrs-pessoais":        { codigo: "F05", emoji: "📊", nome: "OKRs Pessoais",            descricao: "Objetivos ambiciosos com resultados-chave mensuráveis." },
+  "design-vida":          { codigo: "F06", emoji: "📅", nome: "Design de Vida",           descricao: "Trace horizontes de 1, 5 e 10 anos com clareza." },
+  "dre-pessoal":          { codigo: "F07", emoji: "💰", nome: "DRE Pessoal",              descricao: "Demonstrativo financeiro pessoal com metas de patrimônio." },
+  "rotina-ideal":         { codigo: "F08", emoji: "🌅", nome: "Rotina Ideal",             descricao: "Monte blocos de tempo que maximizam energia e foco." },
+  "auditoria-tempo":      { codigo: "F09", emoji: "⏱",  nome: "Auditoria de Tempo",       descricao: "Inventarie como você usa seu tempo e redesenhe sua semana." },
+  "arquiteto-rotinas":    { codigo: "F10", emoji: "🏗",  nome: "Arquiteto de Rotinas",     descricao: "Construa rituais matinais e noturnos com rastreador." },
+  "sprint-aprendizado":   { codigo: "F11", emoji: "🎓", nome: "Sprint de Aprendizado",    descricao: "Domine uma habilidade em 30 dias com tracker diário." },
+  "energia-vitalidade":   { codigo: "F12", emoji: "⚡", nome: "Energia e Vitalidade",     descricao: "Diagnostique as 4 dimensões da energia." },
+  "desconstrutor-crencas":{ codigo: "F13", emoji: "🧠", nome: "Desconstrutor de Crenças", descricao: "Desconstrua crenças limitantes com 9 perguntas socráticas." },
+  "crm-relacionamentos":  { codigo: "F14", emoji: "🤝", nome: "CRM de Relacionamentos",   descricao: "Mapeie contatos-chave e frequência ideal de contato." },
+  "diario-bordo":         { codigo: "F15", emoji: "📔", nome: "Diário de Bordo",          descricao: "Ritual matinal + noturno com revisão semanal." },
+  "prevencao-recaida":    { codigo: "F16", emoji: "🛡",  nome: "Prevenção de Recaída",     descricao: "Planos SE-ENTÃO para cenários de risco e recuperação." },
 };
+
+// Ordem canônica F01→F16 para recomendação da próxima ferramenta
+const TOOL_ORDER = [
+  "raio-x", "bussola-valores", "swot-pessoal", "feedback-360",
+  "okrs-pessoais", "design-vida", "dre-pessoal", "rotina-ideal",
+  "auditoria-tempo", "arquiteto-rotinas", "sprint-aprendizado", "energia-vitalidade",
+  "desconstrutor-crencas", "crm-relacionamentos", "diario-bordo", "prevencao-recaida",
+];
 
 type RodaKey = keyof Omit<RodaVida, "id" | "user_id" | "created_at">;
 
@@ -171,6 +179,11 @@ export default function PerfilPage() {
   const emProgresso = respostas.filter((r) => !r.concluida && r.progresso > 0);
   const pctGeral    = Math.round((concluidas.length / TOTAL_FERRAMENTAS) * 100);
 
+  // Próxima ferramenta recomendada: primeira da ordem canônica ainda não iniciada
+  const slugsIniciadas = new Set(respostas.map((r) => r.ferramenta_slug));
+  const proximaSlug = TOOL_ORDER.find((s) => !slugsIniciadas.has(s)) ?? TOOL_ORDER[0];
+  const proximaTool = TOOL_MAP[proximaSlug];
+
   const primeiroNome = user?.firstName ?? user?.fullName?.split(" ")[0] ?? "Usuário";
   const nomeCompleto = user?.fullName ?? primeiroNome;
   const email        = user?.primaryEmailAddress?.emailAddress ?? "—";
@@ -254,6 +267,27 @@ export default function PerfilPage() {
                       Membro desde {memberSince(new Date(user.createdAt).toISOString())}
                     </p>
                   )}
+                  {!loading && visao?.manchete && (
+                    <p
+                      style={{
+                        fontFamily: "var(--font-body)",
+                        fontSize: 13,
+                        color: `rgba(181,132,10,0.90)`,
+                        margin: 0,
+                        marginTop: 8,
+                        lineHeight: 1.4,
+                        overflow: "hidden",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                      }}
+                    >
+                      ✦ Você está construindo:{" "}
+                      <em style={{ fontFamily: "var(--font-heading)", fontStyle: "italic", fontWeight: 400 }}>
+                        {visao.manchete}
+                      </em>
+                    </p>
+                  )}
                 </>
               )}
             </div>
@@ -287,9 +321,12 @@ export default function PerfilPage() {
           </h2>
 
           <div className="flex flex-col sm:flex-row items-center gap-6">
-            {/* Anel */}
+            {/* Anel — mínimo 3% para arc visível quando pct > 0 */}
             <div className="relative flex-shrink-0" style={{ width: 96, height: 96 }}>
-              <ProgressRing pct={loading ? 0 : pctGeral} />
+              <ProgressRing
+                pct={loading ? 0 : (pctGeral > 0 && pctGeral < 3 ? 3 : pctGeral)}
+                color={C.gold}
+              />
               <div
                 className="absolute inset-0 flex flex-col items-center justify-center"
                 style={{ textAlign: "center" }}
@@ -315,7 +352,7 @@ export default function PerfilPage() {
                 {
                   label: "Em progresso",
                   valor: loading ? null : emProgresso.length,
-                  total: "ferramentas",
+                  total: " ferramentas",
                   cor: C.gold,
                 },
                 {
@@ -552,7 +589,95 @@ export default function PerfilPage() {
         </Card>
 
         {/* ══════════════════════════════════════════════════════════════
-            4 + 5. Grid: Visão Âncora + Roda da Vida
+            4. PRÓXIMA FERRAMENTA RECOMENDADA
+        ══════════════════════════════════════════════════════════════ */}
+        {!loading && proximaTool && concluidas.length < TOTAL_FERRAMENTAS && (
+          <Card
+            style={{
+              background: `linear-gradient(135deg, ${C.green} 0%, #1e4d31 100%)`,
+              border: "none",
+            }}
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              {/* Ícone */}
+              <div
+                className="flex items-center justify-center rounded-2xl flex-shrink-0"
+                style={{
+                  width: 56,
+                  height: 56,
+                  background: "rgba(245,244,240,0.10)",
+                  fontSize: 26,
+                  border: "1px solid rgba(245,244,240,0.10)",
+                }}
+              >
+                {proximaTool.emoji}
+              </div>
+
+              {/* Texto */}
+              <div className="flex flex-col gap-1 flex-1 min-w-0">
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: C.gold,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.10em",
+                  }}
+                >
+                  {proximaTool.codigo} · Próxima recomendada
+                </span>
+                <h3
+                  style={{
+                    fontFamily: "var(--font-heading)",
+                    fontStyle: "italic",
+                    fontSize: "clamp(16px, 2vw, 20px)",
+                    fontWeight: 400,
+                    color: "#f5f4f0",
+                    margin: 0,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {proximaTool.nome}
+                </h3>
+                <p
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: 13,
+                    color: "rgba(245,244,240,0.60)",
+                    margin: 0,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {proximaTool.descricao}
+                </p>
+              </div>
+
+              {/* CTA */}
+              <Link
+                href={`/ferramentas/${proximaSlug}`}
+                className="flex-shrink-0"
+                style={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: C.green,
+                  background: `linear-gradient(135deg, ${C.gold}, #e8b84b)`,
+                  padding: "12px 22px",
+                  borderRadius: 12,
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                  boxShadow: `0 4px 16px rgba(181,132,10,0.35)`,
+                }}
+              >
+                Começar agora →
+              </Link>
+            </div>
+          </Card>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════
+            5 + 6. Grid: Visão Âncora + Roda da Vida
         ══════════════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
