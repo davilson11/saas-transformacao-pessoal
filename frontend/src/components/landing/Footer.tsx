@@ -24,7 +24,7 @@ export default function Footer() {
               letterSpacing: "-0.02em",
             }}
           >
-            A Virada
+            Kairos
           </span>
           <span
             style={{
@@ -92,7 +92,7 @@ export default function Footer() {
 
         {/* Copy */}
         <p style={{ fontSize: 12, color: "rgba(244,241,222,0.25)" }}>
-          © {ano} A Virada. Todos os direitos reservados.
+          © {ano} Kairos. Todos os direitos reservados.
         </p>
       </div>
     </footer>

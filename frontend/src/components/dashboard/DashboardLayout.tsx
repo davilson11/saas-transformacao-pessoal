@@ -200,14 +200,32 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* ── Sidebar ─────────────────────────────────────────────────── */}
       <aside
         className="flex flex-col items-center py-4 flex-shrink-0"
-        style={{ width: 60, background: '#1E392A', gap: 2 }}
+        style={{ width: 60, background: '#080808', gap: 2 }}
       >
         {/* Logo mark */}
-        <div className="flex items-center justify-center rounded-xl mb-4 flex-shrink-0"
-          style={{ width: 34, height: 34, background: 'var(--color-brand-gold)' }}>
-          <span style={{ color: '#1E392A', fontWeight: 700, fontSize: 14, fontFamily: 'var(--font-heading)', lineHeight: 1 }}>
-            V
+        <div className="flex flex-col items-center mb-3 flex-shrink-0 gap-0.5">
+          <span
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: 11,
+              fontWeight: 400,
+              color: '#F5F0E8',
+              letterSpacing: '0.20em',
+              textTransform: 'uppercase',
+              lineHeight: 1,
+            }}
+          >
+            KAIROS
           </span>
+          <span
+            style={{
+              width: 5,
+              height: 5,
+              background: '#B5840A',
+              borderRadius: '50%',
+              display: 'inline-block',
+            }}
+          />
         </div>
 
         {/* Nav items */}
@@ -278,7 +296,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 flexShrink: 0,
               }}
             >
-              A Virada
+              Kairos
             </span>
             <span
               style={{

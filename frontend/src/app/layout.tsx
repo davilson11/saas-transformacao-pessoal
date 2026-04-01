@@ -3,11 +3,11 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "A Virada — Transforme Sua Vida em 12 Meses",
+  title: "Kairos — Seu Momento de Virada",
   description:
     "Um sistema completo com 16 ferramentas guiadas para transformar todas as áreas da sua vida. Sem tela em branco. Sem confusão.",
   openGraph: {
-    title: "A Virada — Transforme Sua Vida em 12 Meses",
+    title: "Kairos — Seu Momento de Virada",
     description:
       "Um sistema completo com 16 ferramentas guiadas para transformar todas as áreas da sua vida.",
     type: "website",

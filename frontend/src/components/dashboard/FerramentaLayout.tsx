@@ -368,7 +368,7 @@ export default function FerramentaLayout({
                   lineHeight: 1.1,
                 }}
               >
-                A Virada
+                Kairos
               </span>
               <span
                 style={{

@@ -176,7 +176,7 @@ export default function Pricing() {
                   color: "var(--color-brand-dark-green)",
                 }}
               >
-                A Virada
+                Kairos
               </p>
               <p
                 className="text-center mb-6"
@@ -276,7 +276,7 @@ export default function Pricing() {
                   animation: "pulse-glow 3s ease-in-out infinite",
                 }}
               >
-                Quero A Virada Agora →
+                Quero o Kairos Agora →
               </a>
 
               {/* Segurança */}

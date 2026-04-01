@@ -136,7 +136,7 @@ export default function Problema() {
           >
             Se você reconheceu pelo menos um desses cenários,{" "}
             <span style={{ color: "var(--color-brand-gold)", fontFamily: "var(--font-heading)" }}>
-              A Virada foi feita para você.
+              O Kairos foi feito para você.
             </span>
           </p>
         </div>
