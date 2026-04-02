@@ -13,7 +13,7 @@ import '../styles/landing.css'
 
 export default function Home() {
   return (
-    <>
+    <div className="landing-root">
       <Navbar />
       <main>
         <Hero />
@@ -34,6 +34,6 @@ export default function Home() {
         <CTAFinal />
       </main>
       <Footer />
-    </>
+    </div>
   )
 }

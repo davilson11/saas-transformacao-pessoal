@@ -18,17 +18,18 @@
 }
 
 /* =====================
-   BASE
+   BASE — só na landing page
    ===================== */
-html { scroll-behavior: smooth; background: #0E0E0E; }
+html:has(.landing-root) { scroll-behavior: smooth; background: #0E0E0E; }
 
-body {
+.landing-root {
   background: #0E0E0E;
   color: #F5F0E8;
   font-family: var(--sans);
   font-weight: 300;
   line-height: 1.7;
   overflow-x: hidden;
+  min-height: 100vh;
 }
 
 /* =====================

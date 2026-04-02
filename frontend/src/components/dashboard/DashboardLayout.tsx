@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserButton } from '@clerk/nextjs';
+import { UserButton, useAuth } from '@clerk/nextjs';
 
 // ─── SVG Icons ──────────────────────────────────────────────────────────────
 
@@ -186,8 +186,39 @@ interface DashboardLayoutProps {
   children?: React.ReactNode;
 }
 
+function DashboardSkeleton() {
+  return (
+    <div className="flex overflow-hidden" style={{ height: '100dvh', background: '#f7f5ee' }}>
+      {/* Sidebar skeleton */}
+      <aside className="flex flex-col items-center py-4 flex-shrink-0" style={{ width: 60, background: '#080808', gap: 2 }}>
+        <div style={{ width: 32, height: 12, background: 'rgba(255,255,255,0.08)', borderRadius: 2, marginBottom: 12 }} />
+        {[...Array(5)].map((_, i) => (
+          <div key={i} style={{ width: 44, height: 44, background: 'rgba(255,255,255,0.05)', borderRadius: 12, marginBottom: 2 }} />
+        ))}
+      </aside>
+      {/* Main skeleton */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <header style={{ height: 56, background: '#ffffff', borderBottom: '1px solid #e5e0d0' }} />
+        <main className="flex-1 p-6" style={{ background: '#f7f5ee' }}>
+          <div style={{ width: 200, height: 24, background: '#e5e0d0', borderRadius: 4, marginBottom: 8 }} />
+          <div style={{ width: 300, height: 14, background: '#ede9de', borderRadius: 4, marginBottom: 24 }} />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" style={{ marginBottom: 24 }}>
+            {[...Array(4)].map((_, i) => (
+              <div key={i} style={{ height: 80, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 16 }} />
+            ))}
+          </div>
+          <div style={{ height: 200, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 16 }} />
+        </main>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { isLoaded } = useAuth();
   const pathname = usePathname();
+
+  if (!isLoaded) return <DashboardSkeleton />;
 
   const now = new Date();
   const dateLabel = now.toLocaleDateString('pt-BR', {
