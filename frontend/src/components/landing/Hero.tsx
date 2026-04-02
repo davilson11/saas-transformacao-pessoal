@@ -25,11 +25,15 @@ export function Hero() {
         Sistema Completo · 16 Ferramentas
       </div>
 
-      <h1>Transforme sua vida<br />em <em>12 meses.</em></h1>
+      <h1>
+        O momento certo para<br />
+        <em>virar o jogo</em> é agora.
+      </h1>
 
       <p className="hero-sub">
-        Um sistema passo a passo com 16 ferramentas guiadas para clareza, hábitos e propósito.
-        Sem tela em branco. Sem confusão.
+        Kairos é o maior sistema de desenvolvimento pessoal em português.
+        16 ferramentas guiadas para você se conhecer, criar um plano real
+        e executar sua transformação.
       </p>
 
       <div className="social-proof">
@@ -47,15 +51,15 @@ export function Hero() {
       </div>
 
       <div className="hero-actions">
-        <Link href="#precos" className="btn-primary">Quero começar minha virada →</Link>
-        <Link href="#como-funciona" className="btn-ghost">Como funciona?</Link>
+        <Link href="/sign-up" className="btn-primary">Começar gratuitamente</Link>
+        <Link href="#como-funciona" className="btn-ghost">Ver como funciona →</Link>
       </div>
 
       <div className="hero-stat-row">
         {[
-          { n: '16', l: 'Ferramentas' },
-          { n: '4',  l: 'Fases' },
-          { n: '12', l: 'Meses' },
+          { n: '16',   l: 'Ferramentas' },
+          { n: '4',    l: 'Fases' },
+          { n: '12',   l: 'Meses' },
           { n: '100%', l: 'Em português' },
         ].map((s) => (
           <div key={s.l} className="hero-stat">
