@@ -167,7 +167,8 @@ export default function LifeWheel() {
         },
         pointLabels: {
           color: '#1E392A',
-          font: { size: 12, weight: 'bold' as const, family: 'DM Sans' },
+          font: { size: 11, weight: 'bold' as const, family: 'DM Sans' },
+          padding: 8,
         },
       },
     },
@@ -175,11 +176,12 @@ export default function LifeWheel() {
 
   return (
     <div
-      className="rounded-2xl overflow-hidden"
       style={{
         background: '#fff',
         border: '1px solid var(--color-brand-border)',
         boxShadow: 'var(--shadow-card)',
+        borderRadius: 16,
+        /* overflow:hidden removido — cortava os pointLabels do radar chart */
       }}
     >
       {/* Header */}
@@ -208,17 +210,22 @@ export default function LifeWheel() {
       </div>
 
       <div className="flex flex-col lg:flex-row">
-        {/* Gráfico radar */}
-        <div className="flex items-center justify-center p-6 flex-1" style={{ minWidth: 0 }}>
-          <div style={{ width: '100%', maxWidth: 360 }}>
+        {/* Gráfico radar — padding extra para os pointLabels não serem cortados */}
+        <div className="flex items-center justify-center flex-1" style={{ minWidth: 0, padding: '32px 24px 24px' }}>
+          <div style={{ width: '100%', maxWidth: 360, overflow: 'visible' }}>
             <Radar data={chartData} options={chartOptions} />
           </div>
         </div>
 
         {/* Sliders */}
         <div
-          className="flex flex-col gap-3 p-6 lg:w-72 flex-shrink-0"
-          style={{ borderTop: '1px solid var(--color-brand-border)' }}
+          className="flex flex-col gap-3 p-6 flex-shrink-0"
+          style={{
+            borderTop: '1px solid var(--color-brand-border)',
+            width: 'clamp(220px, 100%, 288px)',
+            minWidth: 0,
+            overflow: 'visible',
+          }}
         >
           <p
             style={{
@@ -240,9 +247,17 @@ export default function LifeWheel() {
               onFocus={() => setEditing(i)}
               onBlur={() => setEditing(null)}
             >
-              <div className="flex items-center justify-between">
-                <span style={{ fontSize: 13, fontFamily: 'var(--font-body)', color: 'var(--color-brand-dark-green)' }}>
-                  <span className="mr-1">{area.emoji}</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, minWidth: 0 }}>
+                <span style={{
+                  fontSize: 13,
+                  fontFamily: 'var(--font-body)',
+                  color: 'var(--color-brand-dark-green)',
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  minWidth: 0,
+                  flex: 1,
+                }}>
+                  <span style={{ marginRight: 4 }}>{area.emoji}</span>
                   {area.label}
                 </span>
                 <span
@@ -253,6 +268,7 @@ export default function LifeWheel() {
                     color: scoreColor(area.valor),
                     minWidth: 28,
                     textAlign: 'right',
+                    flexShrink: 0,
                   }}
                 >
                   {area.valor}
