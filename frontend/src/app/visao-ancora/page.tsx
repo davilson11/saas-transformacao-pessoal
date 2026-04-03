@@ -10,18 +10,19 @@ import type { ReferenciaJson } from '@/lib/database.types';
 // ─── Tokens de cor ────────────────────────────────────────────────────────────
 
 const C = {
-  bg:          '#1a5c3a',
-  bgDark:      '#133028',
-  bgCard:      'rgba(255,255,255,0.05)',
-  border:      'rgba(255,255,255,0.10)',
-  borderGold:  'rgba(181,132,10,0.40)',
-  gold:        '#b5840a',
-  goldLight:   '#e8b84b',
-  goldBg:      'rgba(181,132,10,0.12)',
-  cream:       '#f5f4f0',
-  muted:       'rgba(245,244,240,0.55)',
-  inputBg:     'rgba(0,0,0,0.18)',
-  inputBorder: 'rgba(255,255,255,0.13)',
+  bg:          '#0E0E0E',
+  bgDark:      '#111111',
+  bgCard:      '#1A1A1A',
+  border:      'rgba(200,160,48,0.20)',
+  borderGold:  'rgba(200,160,48,0.35)',
+  gold:        '#C8A030',
+  goldLight:   '#C8A030',
+  goldBg:      'rgba(200,160,48,0.10)',
+  cream:       '#F5F0E8',
+  muted:       'rgba(245,240,232,0.50)',
+  inputBg:     '#111111',
+  inputBorder: 'rgba(200,160,48,0.30)',
+  btnText:     '#0E0E0E',
 };
 
 // ─── Helpers de estilo ────────────────────────────────────────────────────────
@@ -278,14 +279,14 @@ export default function VisaoAncoraPage() {
 <title>Minha Visão Âncora — A Virada</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:#1a5c3a;color:#f5f4f0;font-family:Georgia,serif;max-width:760px;margin:0 auto;padding:60px 32px}
+  body{background:#0E0E0E;color:#F5F0E8;font-family:Georgia,serif;max-width:760px;margin:0 auto;padding:60px 32px}
   .eyebrow{font-family:monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,244,240,.5);margin-bottom:16px}
   h1{font-style:italic;font-size:clamp(28px,5vw,46px);font-weight:400;line-height:1.2;color:#f5f4f0;margin-bottom:12px}
-  .gold{color:#e8b84b}
+  .gold{color:#C8A030}
   hr{border:none;border-top:1px solid rgba(232,184,75,.25);margin:36px 0}
   .label{font-family:monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(245,244,240,.45);margin-bottom:10px}
   .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:22px;margin-bottom:16px}
-  .gold-card{background:rgba(181,132,10,.12);border:1.5px solid rgba(181,132,10,.4);border-radius:12px;padding:24px;margin-bottom:16px}
+  .gold-card{background:rgba(200,160,48,.10);border:1.5px solid rgba(200,160,48,.35);border-radius:12px;padding:24px;margin-bottom:16px}
   .body{font-size:15px;line-height:1.7;color:rgba(245,244,240,.8)}
   .italic{font-style:italic;font-size:18px;line-height:1.6;color:#f5f4f0}
   .footer{text-align:center;margin-top:48px;font-size:12px;color:rgba(245,244,240,.3)}
@@ -420,7 +421,7 @@ ${s.tiraSono || s.daEnergia || s.fariaDeGraca || s.mundoPerderia ? `<hr><p class
                 fontStyle: 'italic',
                 fontSize: 20,
                 lineHeight: 1.5,
-                background: 'rgba(0,0,0,0.22)',
+                background: '#0a0a0a',
                 border: `1px solid ${C.borderGold}`,
               }}
             />
@@ -563,7 +564,7 @@ ${s.tiraSono || s.daEnergia || s.fariaDeGraca || s.mundoPerderia ? `<hr><p class
 
           <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
             <div style={{
-              background: 'rgba(0,0,0,0.15)',
+              background: '#141414',
               border: `1.5px solid ${C.borderGold}`,
               borderRadius: 20,
               padding: '36px 40px',
@@ -613,13 +614,13 @@ ${s.tiraSono || s.daEnergia || s.fariaDeGraca || s.mundoPerderia ? `<hr><p class
               style={{
                 fontFamily: '"Inter", system-ui, sans-serif',
                 fontSize: 16, fontWeight: 700,
-                color: '#1a3a25',
-                background: 'linear-gradient(135deg, #e8b84b 0%, #b5840a 100%)',
+                color: '#0E0E0E',
+                background: C.gold,
                 border: 'none',
                 borderRadius: 14,
                 padding: '18px 44px',
                 cursor: saveStatus === 'saving' ? 'wait' : 'pointer',
-                boxShadow: '0 4px 28px rgba(181,132,10,0.35)',
+                boxShadow: '0 4px 28px rgba(200,160,48,0.35)',
                 letterSpacing: '0.01em',
                 opacity: saveStatus === 'saving' ? 0.75 : 1,
                 transition: 'opacity 0.15s',
@@ -639,7 +640,7 @@ ${s.tiraSono || s.daEnergia || s.fariaDeGraca || s.mundoPerderia ? `<hr><p class
         {gerado && (
           <div style={{
             marginTop: 56,
-            background: 'rgba(0,0,0,0.18)',
+            background: '#1A1A1A',
             border: `2px solid ${C.goldLight}`,
             borderRadius: 24,
             padding: '52px 48px',
@@ -706,8 +707,8 @@ ${s.tiraSono || s.daEnergia || s.fariaDeGraca || s.mundoPerderia ? `<hr><p class
                 style={{
                   fontFamily: '"Inter", system-ui',
                   fontSize: 14, fontWeight: 600,
-                  color: '#1a3a25',
-                  background: 'linear-gradient(135deg, #e8b84b 0%, #b5840a 100%)',
+                  color: '#0E0E0E',
+                  background: C.gold,
                   border: 'none',
                   borderRadius: 10,
                   padding: '12px 28px',
@@ -742,12 +743,12 @@ ${s.tiraSono || s.daEnergia || s.fariaDeGraca || s.mundoPerderia ? `<hr><p class
                   fontFamily: '"Inter", system-ui, sans-serif',
                   fontSize: 15,
                   fontWeight: 700,
-                  color: '#1a3a25',
-                  background: 'linear-gradient(135deg, #e8b84b 0%, #b5840a 100%)',
+                  color: '#0E0E0E',
+                  background: C.gold,
                   borderRadius: 12,
                   padding: '13px 32px',
                   textDecoration: 'none',
-                  boxShadow: '0 4px 20px rgba(181,132,10,0.30)',
+                  boxShadow: '0 4px 20px rgba(200,160,48,0.30)',
                   letterSpacing: '0.01em',
                 }}
               >
