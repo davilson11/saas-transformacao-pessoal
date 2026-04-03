@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, ChevronRight, ArrowRight, CheckCircle, Circle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useSupabaseClient } from "@/lib/useSupabaseClient";
 import { salvarRespostaFerramenta } from "@/lib/queries";
@@ -19,46 +18,29 @@ export type Etapa = {
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 type FerramentaLayoutProps = {
-  /** Código exibido no badge: "F01", "F02", etc. */
   codigo: string;
-  /** Slug da ferramenta para salvar no banco: "raio-x", "bussola-valores", etc.
-   *  Se omitido, é derivado automaticamente do pathname da URL. */
   slug?: string;
-  /** Nome exibido no breadcrumb e na sidebar */
   nome: string;
-  /** Descrição curta na sidebar */
   descricao: string;
-  /** Lista de etapas da ferramenta */
   etapas: Etapa[];
-  /** Índice da etapa atual (0-based) */
   etapaAtual: number;
-  /** Percentual de progresso 0–100 */
   progresso: number;
-  /** Callback do botão principal (Continuar / Salvar) */
   onAvancar: () => void;
-  /** Callback do botão Voltar (omitido na etapa 0) */
   onVoltar?: () => void;
-  /** Habilita ou desabilita o botão Continuar */
   podeAvancar?: boolean;
-  /** Label do botão de ação principal */
   labelAvancar?: string;
-  /** Contador opcional exibido na topbar (itens preenchidos, fontes, etc.) */
   totalItens?: number;
-  /** Label do contador */
   labelItens?: string;
-  /** Conteúdo da área central */
   children: React.ReactNode;
-  /** Conteúdo do painel lateral direito */
   resumo?: React.ReactNode;
-  /** Dados atuais do formulário para salvar como progresso parcial */
   respostas?: Record<string, unknown>;
 };
 
-// ─── Constantes ───────────────────────────────────────────────────────────────
+// ─── Tokens ───────────────────────────────────────────────────────────────────
 
-const COR_SIDEBAR = "#0E0E0E";
-const COR_GOLD    = "#C8A030";
-const COR_CREAM   = "#F8F4EE";
+const G    = "#1E392A";
+const GOLD = "#C9A84C";
+const CREAM = "#FAF8F5";
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 
@@ -86,13 +68,14 @@ export default function FerramentaLayout({
   const [concluido, setConcluido] = useState(false);
   const pathname = usePathname();
 
-  // Derive slug from URL path if not provided explicitly
-  const resolvedSlug = slug ?? pathname.split("/").filter(Boolean).pop() ?? codigo.toLowerCase();
+  const resolvedSlug =
+    slug ?? pathname.split("/").filter(Boolean).pop() ?? codigo.toLowerCase();
 
   const isUltimaEtapa = etapaAtual === etapas.length - 1;
 
-  const btnLabel = labelAvancar
-    ?? (etapaAtual === 0
+  const btnLabel =
+    labelAvancar ??
+    (etapaAtual === 0
       ? "Começar →"
       : isUltimaEtapa
       ? `Salvar ${nome.split(" ")[0]} ✓`
@@ -103,16 +86,16 @@ export default function FerramentaLayout({
     setSaveStatus("saving");
     try {
       const client = await getClient();
-      const result = await salvarRespostaFerramenta(
+      const ok = await salvarRespostaFerramenta(
         user.id,
         codigo,
         resolvedSlug,
-        respostas as Json ?? {},
+        (respostas as Json) ?? {},
         progresso,
         false,
         client,
       );
-      setSaveStatus(result ? "saved" : "error");
+      setSaveStatus(ok ? "saved" : "error");
     } catch {
       setSaveStatus("error");
     }
@@ -124,639 +107,668 @@ export default function FerramentaLayout({
     if (isUltimaEtapa) setConcluido(true);
   }
 
-  // ── Shared: botão de salvar progress (usado na sidebar desktop e no bottom bar mobile) ──
-  const salvarBtn = (
-    <button
-      onClick={handleSalvarProgresso}
-      disabled={saveStatus === "saving"}
-      className="w-full rounded-xl py-2 transition-all duration-150"
-      style={{
-        background: "transparent",
-        color: saveStatus === "saved"
-          ? "#4dbb7a"
-          : saveStatus === "error"
-          ? "#e05c5c"
-          : "rgba(245,244,240,0.7)",
-        fontFamily: "var(--font-body)",
-        fontSize: 12,
-        fontWeight: 500,
-        border: `1px solid ${
-          saveStatus === "saved"
-            ? "#4dbb7a55"
-            : saveStatus === "error"
-            ? "#e05c5c55"
-            : "rgba(245,244,240,0.18)"
-        }`,
-        cursor: saveStatus === "saving" ? "not-allowed" : "pointer",
-      }}
-    >
-      {saveStatus === "saving" && "Salvando..."}
-      {saveStatus === "saved"  && "✓ Salvo!"}
-      {saveStatus === "error"  && "Erro ao salvar"}
-      {saveStatus === "idle"   && "Salvar progresso"}
-    </button>
-  );
+  // Anel SVG
+  const R = 14;
+  const CIRC = 2 * Math.PI * R;
+  const ringOffset = CIRC * (1 - progresso / 100);
 
   return (
     <>
       <style>{`
-        /* ── Estilos da área central (desktop) ── */
-        .fl-central h1 {
-          font-family: 'Instrument Serif', Georgia, serif !important;
-          font-size: 2rem !important;
-          font-weight: 400 !important;
-          line-height: 1.12 !important;
-        }
-        .fl-central h2 {
-          font-family: 'Instrument Serif', Georgia, serif !important;
-          font-size: 1.5rem !important;
-          font-weight: 400 !important;
-          line-height: 1.18 !important;
-        }
-        .fl-central h3 { font-size: 1.15rem !important; }
-        .fl-central p   { font-size: 15px !important; line-height: 1.65 !important; }
-        .fl-central label { font-size: 15px !important; }
-        .fl-central li  { font-size: 15px !important; }
-        .fl-central textarea,
-        .fl-central input[type="text"],
-        .fl-central input[type="number"] { font-size: 15px !important; }
-        .fl-central textarea::placeholder,
-        .fl-central input::placeholder   { font-size: 15px !important; }
-        .fl-central .card,
-        .fl-central [data-card] { padding: 24px !important; border-radius: 12px !important; }
-        .fl-central .fl-gap     { gap: 20px !important; }
-        .fl-central .max-w-xl,
-        .fl-central .max-w-2xl,
-        .fl-central .max-w-3xl { max-width: 100% !important; }
-
-        /* ── Mobile overrides: font-size ≥ 16px para evitar zoom iOS ── */
-        @media (max-width: 767px) {
-          .fl-central h1 { font-size: 1.5rem !important; }
-          .fl-central h2 { font-size: 1.25rem !important; }
-          .fl-central p, .fl-central label, .fl-central li { font-size: 16px !important; }
-          .fl-central textarea,
-          .fl-central input[type="text"],
-          .fl-central input[type="number"],
-          .fl-central input[type="range"],
-          .fl-central select { font-size: 16px !important; }
-          .fl-central textarea::placeholder,
-          .fl-central input::placeholder { font-size: 16px !important; }
-          .fl-central .card,
-          .fl-central [data-card] { padding: 16px !important; }
+        /* ROOT */
+        .fl-root {
+          display: flex;
+          flex-direction: column;
+          height: 100dvh;
+          overflow: hidden;
+          font-family: 'DM Sans', sans-serif;
+          background: ${CREAM};
         }
 
-        /* ── Esconde scrollbar horizontal no strip de etapas mobile ── */
+        /* TOPBAR */
+        .fl-topbar {
+          height: 52px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 0 20px;
+          background: ${G};
+          border-bottom: 1px solid rgba(255,255,255,0.07);
+          z-index: 20;
+        }
+        .fl-breadcrumb {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex: 1;
+          min-width: 0;
+          font-size: 12px;
+        }
+        .fl-breadcrumb a {
+          color: rgba(250,248,245,0.45);
+          text-decoration: none;
+          white-space: nowrap;
+        }
+        .fl-breadcrumb a:hover { color: rgba(250,248,245,0.75); }
+        .fl-breadcrumb-sep { color: rgba(250,248,245,0.22); font-size: 10px; }
+        .fl-breadcrumb-current {
+          color: rgba(250,248,245,0.9);
+          font-weight: 500;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .fl-code-badge {
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          font-weight: 600;
+          color: ${GOLD};
+          background: ${GOLD}22;
+          border: 1px solid ${GOLD}44;
+          padding: 1px 8px;
+          border-radius: 99px;
+          letter-spacing: 0.04em;
+          flex-shrink: 0;
+          margin-left: 4px;
+        }
+        .fl-progress-wrap {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+        .fl-progress-track {
+          width: 100px;
+          height: 4px;
+          background: rgba(255,255,255,0.12);
+          border-radius: 99px;
+          position: relative;
+          overflow: hidden;
+        }
+        .fl-progress-fill {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(90deg, ${GOLD}, #e8c76a);
+          border-radius: 99px;
+          transition: right 0.6s ease;
+        }
+        .fl-progress-pct {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          font-weight: 600;
+          min-width: 28px;
+          text-align: right;
+        }
+        .fl-counter-badge {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: rgba(250,248,245,0.6);
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.1);
+          padding: 2px 9px;
+          border-radius: 99px;
+          display: none;
+        }
+        @media (min-width: 480px) { .fl-counter-badge { display: inline; } }
+        @media (max-width: 639px) {
+          .fl-progress-wrap { display: none; }
+          .fl-breadcrumb-current { max-width: 120px; }
+        }
+
+        /* BODY */
+        .fl-body {
+          flex: 1;
+          display: flex;
+          overflow: hidden;
+        }
+
+        /* SIDEBAR ESQUERDA */
+        .fl-sidebar {
+          width: 220px;
+          flex-shrink: 0;
+          display: flex;
+          flex-direction: column;
+          background: ${G};
+          border-right: 1px solid rgba(255,255,255,0.07);
+          overflow-y: auto;
+        }
+        .fl-sidebar-logo {
+          padding: 20px 18px 14px;
+          border-bottom: 1px solid rgba(255,255,255,0.07);
+          flex-shrink: 0;
+        }
+        .fl-sidebar-logo-name {
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: 18px;
+          font-weight: 400;
+          font-style: italic;
+          color: ${CREAM};
+          line-height: 1.1;
+          margin-bottom: 4px;
+        }
+        .fl-sidebar-logo-sub {
+          font-family: 'DM Mono', monospace;
+          font-size: 9px;
+          color: ${GOLD};
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+        }
+        .fl-sidebar-desc {
+          padding: 12px 18px;
+          border-bottom: 1px solid rgba(255,255,255,0.05);
+          font-size: 13px;
+          color: rgba(250,248,245,0.45);
+          line-height: 1.55;
+          flex-shrink: 0;
+        }
+        .fl-steps {
+          flex: 1;
+          padding: 12px 10px;
+          overflow-y: auto;
+        }
+        .fl-steps-label {
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          font-weight: 600;
+          color: rgba(250,248,245,0.26);
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          padding-left: 8px;
+          margin-bottom: 8px;
+        }
+        .fl-step {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 9px 10px;
+          border-radius: 8px;
+          margin-bottom: 2px;
+          transition: background 0.15s;
+        }
+        .fl-step-num {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          font-weight: 700;
+          margin-top: 1px;
+        }
+        .fl-step-text { flex: 1; min-width: 0; }
+        .fl-step-title {
+          display: block;
+          font-size: 13px;
+          line-height: 1.35;
+        }
+        .fl-step-sub {
+          display: block;
+          font-size: 11px;
+          color: rgba(250,248,245,0.38);
+          line-height: 1.4;
+          margin-top: 2px;
+        }
+        .fl-sidebar-footer {
+          padding: 12px 14px;
+          border-top: 1px solid rgba(255,255,255,0.07);
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+        .fl-btn-save {
+          width: 100%;
+          padding: 7px 0;
+          border-radius: 8px;
+          background: transparent;
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+        .fl-btn-main {
+          width: 100%;
+          padding: 9px 0;
+          border-radius: 8px;
+          border: none;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+        .fl-btn-back {
+          width: 100%;
+          padding: 6px 0;
+          border-radius: 8px;
+          border: 1px solid rgba(255,255,255,0.1);
+          background: transparent;
+          color: rgba(250,248,245,0.35);
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+        .fl-btn-back:hover { color: rgba(250,248,245,0.6); }
+
+        /* ÁREA CENTRAL */
+        .fl-main {
+          flex: 1;
+          overflow-y: auto;
+          background: ${CREAM};
+          padding: 32px 36px 80px;
+          font-size: 15px;
+          line-height: 1.65;
+          color: #3d3d3d;
+        }
+        .fl-main h1 {
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: 1.9rem;
+          font-weight: 400;
+          line-height: 1.15;
+          color: ${G};
+          margin-bottom: 8px;
+        }
+        .fl-main h2 {
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: 1.4rem;
+          font-weight: 400;
+          line-height: 1.2;
+          color: ${G};
+          margin-bottom: 6px;
+        }
+        .fl-main h3 {
+          font-size: 1.05rem;
+          font-weight: 600;
+          color: ${G};
+          margin-bottom: 4px;
+        }
+        .fl-main textarea,
+        .fl-main input[type="text"],
+        .fl-main input[type="number"],
+        .fl-main select {
+          background: #fff;
+          border: 1px solid #d8d0c4;
+          border-radius: 6px;
+          padding: 10px 12px;
+          font-size: 15px;
+          color: #2a2a2a;
+          width: 100%;
+        }
+        .fl-main textarea:focus,
+        .fl-main input:focus,
+        .fl-main select:focus {
+          outline: 2px solid ${GOLD};
+          outline-offset: 1px;
+          border-color: ${GOLD};
+        }
+
+        /* PAINEL DIREITO */
+        .fl-aside {
+          width: 248px;
+          flex-shrink: 0;
+          display: flex;
+          flex-direction: column;
+          background: ${G};
+          border-left: 1px solid rgba(255,255,255,0.07);
+          overflow-y: auto;
+        }
+        .fl-aside-header {
+          padding: 16px 18px 14px;
+          border-bottom: 1px solid rgba(255,255,255,0.07);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          position: sticky;
+          top: 0;
+          background: ${G};
+          z-index: 5;
+          flex-shrink: 0;
+        }
+        .fl-aside-ring { position: relative; flex-shrink: 0; }
+        .fl-aside-ring-pct {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'DM Mono', monospace;
+          font-size: 8px;
+          font-weight: 700;
+        }
+        .fl-aside-title {
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: 16px;
+          font-weight: 400;
+          font-style: italic;
+          color: ${GOLD};
+          line-height: 1.2;
+          margin: 0;
+        }
+        .fl-aside-sub {
+          font-size: 11px;
+          color: rgba(250,248,245,0.38);
+          margin: 2px 0 0;
+          line-height: 1;
+        }
+        .fl-aside-body { padding: 16px 18px; flex: 1; }
+
+        /* MOBILE BREAKPOINTS */
+        @media (max-width: 899px) { .fl-aside { display: none; } }
+        @media (max-width: 639px) {
+          .fl-sidebar { display: none; }
+          .fl-main { padding: 20px 16px 140px; }
+          .fl-main h1 { font-size: 1.4rem; }
+          .fl-main h2 { font-size: 1.15rem; }
+          .fl-main textarea,
+          .fl-main input[type="text"],
+          .fl-main input[type="number"],
+          .fl-main input[type="range"],
+          .fl-main select { font-size: 16px; }
+        }
+
+        /* MOBILE BOTTOM BAR */
+        .fl-mobile-bar {
+          display: none;
+          position: fixed;
+          bottom: 0; left: 0; right: 0;
+          background: ${G};
+          border-top: 1px solid rgba(255,255,255,0.1);
+          padding: 10px 16px max(12px, env(safe-area-inset-bottom, 12px));
+          flex-direction: column;
+          gap: 8px;
+          z-index: 40;
+        }
+        @media (max-width: 639px) { .fl-mobile-bar { display: flex; } }
+
+        .fl-steps-strip {
+          display: flex;
+          overflow-x: auto;
+          gap: 6px;
+          padding-bottom: 6px;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
         .fl-steps-strip::-webkit-scrollbar { display: none; }
-        .fl-steps-strip { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          background: COR_CREAM,
-        }}
-      >
-        {/* ════════════════════════════════════════════════════════════
-            TOPBAR
-        ════════════════════════════════════════════════════════════ */}
-        <header
-          className="sticky top-0 z-30 flex items-center gap-4 px-5"
-          style={{
-            height: 52,
-            background: COR_SIDEBAR,
-            borderBottom: `1px solid rgba(255,255,255,0.08)`,
-            boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
-          }}
-        >
-          {/* Breadcrumb */}
-          <nav
-            className="flex items-center gap-1.5 flex-1 min-w-0"
-            style={{ fontFamily: "var(--font-body)", fontSize: 12 }}
-          >
-            <Link
-              href="/ferramentas"
-              className="transition-opacity duration-150 hover:opacity-100 whitespace-nowrap"
-              style={{ color: "rgba(245,244,240,0.55)", textDecoration: "none" }}
-            >
-              Ferramentas
-            </Link>
-            <span style={{ color: "rgba(245,244,240,0.3)", display: "flex", alignItems: "center" }}>
-              <ChevronRight size={12} />
-            </span>
-            <span
-              className="truncate"
-              style={{ color: "rgba(245,244,240,0.9)", fontWeight: 500 }}
-            >
-              {nome}
-            </span>
+      <div className="fl-root">
 
-            {/* Badge código */}
-            <span
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: 10,
-                fontWeight: 700,
-                color: COR_GOLD,
-                background: `${COR_GOLD}22`,
-                border: `1px solid ${COR_GOLD}44`,
-                padding: "2px 8px",
-                borderRadius: 99,
-                marginLeft: 6,
-                letterSpacing: "0.04em",
-                flexShrink: 0,
-              }}
-            >
-              {codigo}
-            </span>
+        {/* ══════════════════════════════════════════
+            TOPBAR
+        ══════════════════════════════════════════ */}
+        <header className="fl-topbar">
+
+          {/* Breadcrumb + badge */}
+          <nav className="fl-breadcrumb">
+            <Link href="/ferramentas">Ferramentas</Link>
+            <span className="fl-breadcrumb-sep">›</span>
+            <span className="fl-breadcrumb-current">{nome}</span>
+            <span className="fl-code-badge">{codigo}</span>
           </nav>
 
-          {/* Progresso + contador */}
-          <div className="flex items-center gap-4 shrink-0">
-            {/* Barra de progresso — oculta no mobile */}
-            <div className="hidden sm:flex items-center gap-2.5">
-              <div
-                className="relative rounded-full overflow-hidden"
-                style={{ width: 140, height: 5, background: "rgba(255,255,255,0.12)" }}
-              >
-                <div
-                  className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
-                  style={{
-                    width: `${progresso}%`,
-                    background: `linear-gradient(90deg, ${COR_GOLD}, #e8b84b)`,
-                    boxShadow: `0 0 8px ${COR_GOLD}60`,
-                  }}
-                />
-              </div>
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: progresso >= 100 ? "#4dbb7a" : "rgba(245,244,240,0.8)",
-                  minWidth: 32,
-                }}
-              >
-                {progresso}%
-              </span>
-            </div>
+          {/* Contador (opcional) */}
+          {totalItens !== undefined && totalItens > 0 && (
+            <span className="fl-counter-badge">
+              {totalItens} {labelItens}
+            </span>
+          )}
 
-            {/* Percentual compacto no mobile */}
+          {/* Barra de progresso */}
+          <div className="fl-progress-wrap">
+            <div className="fl-progress-track">
+              <div
+                className="fl-progress-fill"
+                style={{ right: `${100 - progresso}%` }}
+              />
+            </div>
             <span
-              className="flex sm:hidden"
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: 11,
-                fontWeight: 600,
-                color: progresso >= 100 ? "#4dbb7a" : COR_GOLD,
-              }}
+              className="fl-progress-pct"
+              style={{ color: progresso >= 100 ? "#4dbb7a" : "rgba(250,248,245,0.75)" }}
             >
               {progresso}%
             </span>
-
-            {/* Contador de itens */}
-            {totalItens !== undefined && totalItens > 0 && (
-              <span
-                className="hidden sm:inline"
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "rgba(245,244,240,0.7)",
-                  background: "rgba(255,255,255,0.1)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  padding: "3px 10px",
-                  borderRadius: 99,
-                }}
-              >
-                {totalItens} {labelItens}
-              </span>
-            )}
           </div>
+
         </header>
 
-        {/* ════════════════════════════════════════════════════════════
-            CORPO  (sidebar + central + painel)
-            • Desktop: flex-row, cada coluna rola independentemente
-            • Mobile:  flex-col, rola como página normal
-        ════════════════════════════════════════════════════════════ */}
-        <div className="flex flex-col md:flex-row flex-1 md:overflow-hidden">
+        {/* ══════════════════════════════════════════
+            BODY
+        ══════════════════════════════════════════ */}
+        <div className="fl-body">
 
-          {/* ── Sidebar Esquerda — oculta no mobile ── */}
-          <aside
-            className="hidden md:flex flex-col shrink-0 overflow-y-auto"
-            style={{
-              width: 220,
-              background: COR_SIDEBAR,
-              borderRight: "1px solid rgba(255,255,255,0.06)",
-            }}
-          >
+          {/* ── Sidebar esquerda ── */}
+          <aside className="fl-sidebar">
+
             {/* Logo */}
-            <div
-              className="flex flex-col gap-0.5 px-5 pt-6 pb-5"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
-            >
-              <span
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  fontSize: 20,
-                  fontWeight: 400,
-                  color: "#f5f4f0",
-                  letterSpacing: "-0.01em",
-                  fontStyle: "italic",
-                  lineHeight: 1.1,
-                }}
-              >
-                Kairos
-              </span>
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 9,
-                  fontWeight: 500,
-                  color: COR_GOLD,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                }}
-              >
-                {codigo} · {nome}
-              </span>
+            <div className="fl-sidebar-logo">
+              <div className="fl-sidebar-logo-name">Kairos</div>
+              <div className="fl-sidebar-logo-sub">{codigo} · {nome}</div>
             </div>
 
             {/* Descrição */}
-            <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              <p
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: 14,
-                  color: "rgba(245,244,240,0.55)",
-                  lineHeight: 1.55,
-                }}
-              >
-                {descricao}
-              </p>
-            </div>
+            <div className="fl-sidebar-desc">{descricao}</div>
 
             {/* Etapas */}
-            <nav className="flex flex-col gap-1 px-3 py-4 flex-1">
-              <p
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "rgba(245,244,240,0.35)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  paddingLeft: 8,
-                  marginBottom: 4,
-                }}
-              >
-                Etapas
-              </p>
+            <nav className="fl-steps">
+              <div className="fl-steps-label">Etapas</div>
 
               {etapas.map((etapa, idx) => {
-                const ativa    = etapaAtual === idx;
+                const ativa     = etapaAtual === idx;
                 const concluida = etapaAtual > idx;
-                const pendente = etapaAtual < idx;
+                const pendente  = etapaAtual < idx;
 
                 return (
                   <div
                     key={idx}
-                    className="flex items-start gap-2.5 rounded-lg px-2.5 py-2.5 transition-all duration-200"
+                    className="fl-step"
                     style={{
-                      background: ativa ? "rgba(245,244,240,0.1)" : "transparent",
+                      background: ativa ? `${GOLD}1e` : "transparent",
                       opacity: pendente ? 0.45 : 1,
                       cursor: concluida ? "pointer" : "default",
                     }}
                   >
-                    {/* Indicador */}
-                    <div className="flex items-center justify-center shrink-0 mt-0.5" style={{ width: 20, height: 20 }}>
-                      {concluida ? (
-                        <CheckCircle size={20} color={COR_GOLD} strokeWidth={2} />
-                      ) : pendente ? (
-                        <Circle size={20} color="rgba(245,244,240,0.25)" strokeWidth={1.5} />
-                      ) : (
-                        <div
-                          className="flex items-center justify-center rounded-full"
-                          style={{
-                            width: 20,
-                            height: 20,
-                            background: "rgba(245,244,240,0.9)",
-                            color: COR_SIDEBAR,
-                            fontFamily: "var(--font-mono)",
-                            fontSize: 9,
-                            fontWeight: 700,
-                          }}
-                        >
-                          {idx + 1}
-                        </div>
-                      )}
+                    {/* Indicador numérico */}
+                    <div
+                      className="fl-step-num"
+                      style={
+                        concluida
+                          ? { background: GOLD, color: G }
+                          : ativa
+                          ? { background: "rgba(250,248,245,0.92)", color: G }
+                          : { background: "rgba(255,255,255,0.08)", color: "rgba(250,248,245,0.38)" }
+                      }
+                    >
+                      {concluida ? "✓" : idx + 1}
                     </div>
 
                     {/* Texto */}
-                    <div className="flex flex-col gap-0.5 min-w-0">
+                    <div className="fl-step-text">
                       <span
+                        className="fl-step-title"
                         style={{
-                          fontFamily: "var(--font-body)",
-                          fontSize: 15,
                           fontWeight: ativa ? 600 : 400,
                           color: ativa
-                            ? "#f5f4f0"
+                            ? CREAM
                             : concluida
-                            ? "rgba(245,244,240,0.7)"
-                            : "rgba(245,244,240,0.4)",
-                          lineHeight: 1.3,
+                            ? "rgba(250,248,245,0.65)"
+                            : "rgba(250,248,245,0.32)",
                         }}
                       >
                         {etapa.label}
                       </span>
-                      {etapa.descricao && ativa && (
-                        <span
-                          style={{
-                            fontFamily: "var(--font-body)",
-                            fontSize: 13,
-                            color: "rgba(245,244,240,0.45)",
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          {etapa.descricao}
-                        </span>
+                      {ativa && etapa.descricao && (
+                        <span className="fl-step-sub">{etapa.descricao}</span>
                       )}
                     </div>
 
-                    {/* Seta na etapa ativa */}
                     {ativa && (
-                      <div className="ml-auto shrink-0 mt-0.5" style={{ color: COR_GOLD }}>
-                        <ArrowRight size={14} strokeWidth={2} />
-                      </div>
+                      <span style={{ color: GOLD, fontSize: 12, flexShrink: 0, marginTop: 3 }}>›</span>
                     )}
                   </div>
                 );
               })}
             </nav>
 
-            {/* Rodapé com botões — desktop only */}
-            <div
-              className="flex flex-col gap-2 p-4"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
-            >
-              {salvarBtn}
+            {/* Footer da sidebar */}
+            <div className="fl-sidebar-footer">
 
-              {/* Botão principal */}
+              {/* Salvar progresso */}
               <button
+                className="fl-btn-save"
+                onClick={handleSalvarProgresso}
+                disabled={saveStatus === "saving"}
+                style={{
+                  border: `1px solid ${
+                    saveStatus === "saved"  ? "#4dbb7a55" :
+                    saveStatus === "error"  ? "#e05c5c55" :
+                    `${GOLD}55`
+                  }`,
+                  color:
+                    saveStatus === "saved"  ? "#4dbb7a" :
+                    saveStatus === "error"  ? "#e05c5c" :
+                    GOLD,
+                  cursor: saveStatus === "saving" ? "not-allowed" : "pointer",
+                }}
+              >
+                {saveStatus === "saving" && "Salvando…"}
+                {saveStatus === "saved"  && "✓ Salvo!"}
+                {saveStatus === "error"  && "Erro ao salvar"}
+                {saveStatus === "idle"   && "Salvar progresso"}
+              </button>
+
+              {/* Botão principal (Continuar / Concluir) */}
+              <button
+                className="fl-btn-main"
                 onClick={handleAvancar}
                 disabled={!podeAvancar}
-                className="w-full rounded-xl py-2.5 font-semibold transition-all duration-200"
                 style={{
                   background: podeAvancar
                     ? isUltimaEtapa
-                      ? `linear-gradient(135deg, ${COR_GOLD}, #e8b84b)`
-                      : "rgba(245,244,240,0.9)"
-                    : "rgba(245,244,240,0.12)",
-                  color: podeAvancar
-                    ? isUltimaEtapa ? "#ffffff" : COR_SIDEBAR
-                    : "rgba(245,244,240,0.3)",
-                  fontFamily: "var(--font-body)",
-                  fontSize: 13,
-                  border: "none",
+                      ? `linear-gradient(135deg, ${GOLD}, #e8c76a)`
+                      : "rgba(250,248,245,0.92)"
+                    : "rgba(255,255,255,0.1)",
+                  color: podeAvancar ? G : "rgba(250,248,245,0.25)",
                   cursor: podeAvancar ? "pointer" : "not-allowed",
-                  boxShadow: podeAvancar && isUltimaEtapa ? `0 4px 16px ${COR_GOLD}44` : "none",
+                  boxShadow:
+                    podeAvancar && isUltimaEtapa ? `0 4px 16px ${GOLD}44` : "none",
                 }}
               >
                 {btnLabel}
               </button>
 
-              {/* Botão Voltar */}
+              {/* ← Voltar */}
               {etapaAtual > 0 && onVoltar && (
-                <button
-                  onClick={onVoltar}
-                  className="w-full rounded-xl py-2 transition-all duration-150"
-                  style={{
-                    background: "transparent",
-                    color: "rgba(245,244,240,0.45)",
-                    fontFamily: "var(--font-body)",
-                    fontSize: 12,
-                    border: "1px solid rgba(245,244,240,0.12)",
-                    cursor: "pointer",
-                  }}
-                >
+                <button className="fl-btn-back" onClick={onVoltar}>
                   ← Voltar
                 </button>
               )}
+
             </div>
           </aside>
 
-          {/* ── Área Central ── */}
-          <main
-            className="flex-1 overflow-y-auto"
-            style={{ background: COR_CREAM, fontSize: 16 }}
-          >
-            <div
-              className="fl-central"
-              style={{
-                padding: "28px 20px 160px",
-                minHeight: "100%",
-              }}
-            >
-              {/* Em desktop, ajusta o padding lateral */}
-              <style>{`
-                @media (min-width: 768px) {
-                  .fl-central-inner { padding: 28px 32px 28px 36px !important; }
-                }
-              `}</style>
-              <div className="fl-central-inner" style={{ maxWidth: "100%" }}>
-                {children}
-              </div>
-            </div>
+          {/* ── Área central ── */}
+          <main className="fl-main">
+            {children}
           </main>
 
-          {/* ── Painel Direito ──
-              Desktop: coluna fixa à direita
-              Mobile:  bloco abaixo do conteúdo (dentro do scroll normal) */}
+          {/* ── Painel direito ── */}
           {resumo !== undefined && (
-            <aside
-              className="shrink-0 flex flex-col overflow-y-auto"
-              style={{
-                width: "100%",
-                background: "#ffffff",
-                borderTop: "1px solid var(--color-brand-border)",
-              }}
-            >
-              {/* Aplicar width 280px apenas em desktop via CSS */}
-              <style>{`
-                @media (min-width: 768px) {
-                  .fl-right-panel {
-                    width: 280px !important;
-                    border-left: 1px solid var(--color-brand-border) !important;
-                    border-top: none !important;
-                  }
-                }
-              `}</style>
-
-              <div className="fl-right-panel flex flex-col overflow-y-auto flex-1" style={{ width: "100%", background: "#fff" }}>
-                {/* Header do painel */}
-                <div
-                  className="px-5 py-4 flex items-center gap-2 shrink-0"
-                  style={{
-                    borderBottom: "1px solid var(--color-brand-border)",
-                    background: "#fff",
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 10,
-                  }}
-                >
-                  <div
-                    className="flex items-center justify-center rounded-lg shrink-0"
-                    style={{ width: 26, height: 26, background: `${COR_GOLD}18` }}
+            <aside className="fl-aside">
+              <div className="fl-aside-header">
+                {/* Mini anel de progresso */}
+                <div className="fl-aside-ring">
+                  <svg
+                    width="36" height="36" viewBox="0 0 36 36" fill="none"
+                    style={{ transform: "rotate(-90deg)", display: "block" }}
                   >
-                    <BookOpen size={14} color={COR_GOLD} strokeWidth={2} />
-                  </div>
-                  <div>
-                    <h3
-                      style={{
-                        fontFamily: "'Playfair Display', Georgia, serif",
-                        fontSize: 18,
-                        fontWeight: 400,
-                        color: "#C8A030",
-                        lineHeight: 1.2,
-                        fontStyle: "italic",
-                      }}
-                    >
-                      Resumo Visual
-                    </h3>
-                    <p
-                      style={{
-                        fontFamily: "var(--font-body)",
-                        fontSize: 13,
-                        color: "var(--color-brand-gray)",
-                        marginTop: 1,
-                      }}
-                    >
-                      Atualizado em tempo real
-                    </p>
-                  </div>
-
-                  {/* Progresso no painel */}
-                  <div className="ml-auto flex items-center gap-1.5">
-                    <div className="relative" style={{ width: 36, height: 36 }}>
-                      <svg width="36" height="36" viewBox="0 0 36 36" fill="none" style={{ transform: "rotate(-90deg)" }}>
-                        <circle cx="18" cy="18" r="14" stroke="rgba(26,92,58,0.08)" strokeWidth="3.5" fill="none" />
-                        <circle
-                          cx="18" cy="18" r="14"
-                          stroke={progresso >= 100 ? "#1e8a4c" : COR_GOLD}
-                          strokeWidth="3.5"
-                          fill="none"
-                          strokeLinecap="round"
-                          strokeDasharray={2 * Math.PI * 14}
-                          strokeDashoffset={2 * Math.PI * 14 * (1 - progresso / 100)}
-                          style={{ transition: "stroke-dashoffset 0.6s ease" }}
-                        />
-                      </svg>
-                      <div
-                        className="absolute inset-0 flex items-center justify-center"
-                        style={{
-                          fontFamily: "var(--font-mono)",
-                          fontSize: 8,
-                          fontWeight: 700,
-                          color: progresso >= 100 ? "#1e8a4c" : COR_GOLD,
-                        }}
-                      >
-                        {progresso}%
-                      </div>
-                    </div>
+                    <circle
+                      cx="18" cy="18" r={R}
+                      stroke="rgba(255,255,255,0.1)"
+                      strokeWidth="3.5"
+                      fill="none"
+                    />
+                    <circle
+                      cx="18" cy="18" r={R}
+                      stroke={progresso >= 100 ? "#4dbb7a" : GOLD}
+                      strokeWidth="3.5"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeDasharray={CIRC}
+                      strokeDashoffset={ringOffset}
+                      style={{ transition: "stroke-dashoffset 0.6s ease" }}
+                    />
+                  </svg>
+                  <div
+                    className="fl-aside-ring-pct"
+                    style={{ color: progresso >= 100 ? "#4dbb7a" : GOLD }}
+                  >
+                    {progresso}%
                   </div>
                 </div>
 
-                {/* Conteúdo do resumo */}
-                <div className="flex flex-col gap-4 p-5 flex-1">
-                  {resumo}
+                <div>
+                  <h3 className="fl-aside-title">Resumo Visual</h3>
+                  <p className="fl-aside-sub">Atualizado em tempo real</p>
                 </div>
               </div>
+
+              <div className="fl-aside-body">{resumo}</div>
             </aside>
           )}
+
         </div>
 
-        {/* ════════════════════════════════════════════════════════════
-            MOBILE BOTTOM BAR — fixo no rodapé, visível apenas em mobile
-        ════════════════════════════════════════════════════════════ */}
-        <div
-          className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex flex-col"
-          style={{
-            background: COR_SIDEBAR,
-            boxShadow: "0 -4px 24px rgba(0,0,0,0.28)",
-            borderTop: "1px solid rgba(255,255,255,0.10)",
-          }}
-        >
-          {/* Strip de etapas — scroll horizontal */}
-          <div
-            className="fl-steps-strip flex overflow-x-auto gap-0 px-1"
-            style={{
-              borderBottom: "1px solid rgba(255,255,255,0.08)",
-              padding: "8px 8px 6px",
-            }}
-          >
-            {etapas.map((etapa, idx) => {
-              const ativa    = etapaAtual === idx;
-              const concluida = etapaAtual > idx;
-              const pendente = etapaAtual < idx;
+        {/* ══════════════════════════════════════════
+            MOBILE BOTTOM BAR (< 640px)
+        ══════════════════════════════════════════ */}
+        <div className="fl-mobile-bar">
 
+          {/* Strip de etapas */}
+          <div className="fl-steps-strip">
+            {etapas.map((etapa, idx) => {
+              const ativa     = etapaAtual === idx;
+              const concluida = etapaAtual > idx;
               return (
                 <div
                   key={idx}
-                  className="flex flex-col items-center shrink-0 px-3 py-1 rounded-lg transition-all duration-200"
                   style={{
-                    minWidth: 64,
-                    background: ativa ? "rgba(245,244,240,0.12)" : "transparent",
-                    opacity: pendente ? 0.45 : 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 3,
+                    padding: "4px 10px",
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    background: ativa ? `${GOLD}20` : "transparent",
+                    border: ativa ? `1px solid ${GOLD}44` : "1px solid transparent",
                   }}
                 >
-                  {/* Ícone */}
-                  <div style={{ width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {concluida ? (
-                      <CheckCircle size={16} color={COR_GOLD} strokeWidth={2} />
-                    ) : pendente ? (
-                      <Circle size={16} color="rgba(245,244,240,0.25)" strokeWidth={1.5} />
-                    ) : (
-                      <div
-                        style={{
-                          width: 18,
-                          height: 18,
-                          borderRadius: "50%",
-                          background: "rgba(245,244,240,0.9)",
-                          color: COR_SIDEBAR,
-                          fontFamily: "var(--font-mono)",
-                          fontSize: 8,
-                          fontWeight: 700,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {idx + 1}
-                      </div>
-                    )}
+                  <div
+                    style={{
+                      width: 20, height: 20, borderRadius: "50%",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontFamily: "'DM Mono', monospace",
+                      fontSize: 9, fontWeight: 700,
+                      ...(concluida
+                        ? { background: GOLD, color: G }
+                        : ativa
+                        ? { background: CREAM, color: G }
+                        : { background: "rgba(255,255,255,0.1)", color: "rgba(250,248,245,0.4)" }),
+                    }}
+                  >
+                    {concluida ? "✓" : idx + 1}
                   </div>
-
-                  {/* Label */}
                   <span
                     style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: 10,
-                      fontWeight: ativa ? 600 : 400,
-                      color: ativa
-                        ? "#f5f4f0"
-                        : concluida
-                        ? "rgba(245,244,240,0.65)"
-                        : "rgba(245,244,240,0.35)",
-                      textAlign: "center",
-                      lineHeight: 1.2,
-                      marginTop: 3,
-                      maxWidth: 56,
+                      fontSize: 9,
+                      color: ativa ? GOLD : "rgba(250,248,245,0.35)",
+                      whiteSpace: "nowrap",
+                      maxWidth: 64,
                       overflow: "hidden",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
+                      textOverflow: "ellipsis",
                     }}
                   >
                     {etapa.label}
@@ -766,227 +778,131 @@ export default function FerramentaLayout({
             })}
           </div>
 
-          {/* Botões de ação — padding extra no fundo para safe area (iPhone notch) */}
-          <div
-            className="flex items-center gap-2 px-4 pt-2"
-            style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))" }}
-          >
-            {/* Voltar */}
+          {/* Botões */}
+          <div style={{ display: "flex", gap: 8 }}>
             {etapaAtual > 0 && onVoltar && (
               <button
                 onClick={onVoltar}
                 style={{
-                  flex: "0 0 auto",
+                  flexShrink: 0,
+                  padding: "11px 16px",
+                  borderRadius: 8,
+                  border: "1px solid rgba(255,255,255,0.15)",
                   background: "transparent",
-                  color: "rgba(245,244,240,0.6)",
-                  fontFamily: "var(--font-body)",
-                  fontSize: 14,
-                  fontWeight: 500,
-                  border: "1px solid rgba(245,244,240,0.18)",
-                  borderRadius: 12,
-                  padding: "13px 16px",
+                  color: "rgba(250,248,245,0.55)",
+                  fontSize: 13,
                   cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  minHeight: 48,
+                  minHeight: 44,
                 }}
               >
-                ← Voltar
+                ←
               </button>
             )}
-
-            {/* Salvar progresso */}
-            <button
-              onClick={handleSalvarProgresso}
-              disabled={saveStatus === "saving"}
-              style={{
-                flex: "0 0 auto",
-                background: "transparent",
-                color: saveStatus === "saved"
-                  ? "#4dbb7a"
-                  : saveStatus === "error"
-                  ? "#e05c5c"
-                  : "rgba(245,244,240,0.6)",
-                fontFamily: "var(--font-body)",
-                fontSize: 13,
-                fontWeight: 500,
-                border: `1px solid ${
-                  saveStatus === "saved"
-                    ? "#4dbb7a55"
-                    : saveStatus === "error"
-                    ? "#e05c5c55"
-                    : "rgba(245,244,240,0.18)"
-                }`,
-                borderRadius: 12,
-                padding: "13px 14px",
-                cursor: saveStatus === "saving" ? "not-allowed" : "pointer",
-                whiteSpace: "nowrap",
-                minHeight: 48,
-              }}
-            >
-              {saveStatus === "saving" && "Salvando..."}
-              {saveStatus === "saved"  && "✓ Salvo!"}
-              {saveStatus === "error"  && "Erro"}
-              {saveStatus === "idle"   && "Salvar"}
-            </button>
-
-            {/* Continuar — botão principal, ocupa o espaço restante */}
             <button
               onClick={handleAvancar}
               disabled={!podeAvancar}
               style={{
                 flex: 1,
-                background: podeAvancar
-                  ? isUltimaEtapa
-                    ? `linear-gradient(135deg, ${COR_GOLD}, #e8b84b)`
-                    : "rgba(245,244,240,0.9)"
-                  : "rgba(245,244,240,0.12)",
-                color: podeAvancar
-                  ? isUltimaEtapa ? "#ffffff" : COR_SIDEBAR
-                  : "rgba(245,244,240,0.3)",
-                fontFamily: "var(--font-body)",
-                fontSize: 15,
-                fontWeight: 700,
+                padding: "11px 0",
+                borderRadius: 8,
                 border: "none",
-                borderRadius: 12,
-                padding: "13px 20px",
+                background: podeAvancar
+                  ? isUltimaEtapa ? `linear-gradient(135deg, ${GOLD}, #e8c76a)` : CREAM
+                  : "rgba(255,255,255,0.1)",
+                color: podeAvancar ? G : "rgba(250,248,245,0.25)",
+                fontSize: 14, fontWeight: 600,
                 cursor: podeAvancar ? "pointer" : "not-allowed",
-                boxShadow: podeAvancar && isUltimaEtapa ? `0 4px 16px ${COR_GOLD}44` : "none",
-                minHeight: 48,
+                minHeight: 44,
+                transition: "all 0.15s",
               }}
             >
               {btnLabel}
             </button>
           </div>
         </div>
-      </div>
 
-      {/* ════════════════════════════════════════════════════════════
-          MODAL DE CONCLUSÃO
-      ════════════════════════════════════════════════════════════ */}
-      {concluido && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(10, 30, 20, 0.82)", backdropFilter: "blur(6px)" }}
-          onClick={() => setConcluido(false)}
-        >
+        {/* ══════════════════════════════════════════
+            MODAL DE CONCLUSÃO
+        ══════════════════════════════════════════ */}
+        {concluido && (
           <div
-            className="flex flex-col items-center text-center w-full max-w-sm rounded-3xl"
             style={{
-              background: "linear-gradient(160deg, #1e4d31 0%, #133028 100%)",
-              border: "1px solid rgba(255,255,255,0.10)",
-              boxShadow: "0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(181,132,10,0.15)",
-              padding: "44px 36px 40px",
+              position: "fixed", inset: 0,
+              background: "rgba(0,0,0,0.65)",
+              backdropFilter: "blur(4px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              zIndex: 100, padding: 24,
             }}
-            onClick={(e) => e.stopPropagation()}
           >
-            {/* Ícone troféu */}
-            <div
-              className="flex items-center justify-center rounded-2xl mb-6"
-              style={{
-                width: 72,
-                height: 72,
-                background: `linear-gradient(135deg, ${COR_GOLD}22, ${COR_GOLD}44)`,
-                border: `1px solid ${COR_GOLD}55`,
-                fontSize: 36,
-              }}
-            >
-              🏆
-            </div>
-
-            {/* Título */}
-            <h2
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontStyle: "italic",
-                fontSize: "clamp(22px, 5vw, 28px)",
-                fontWeight: 400,
-                color: "#f5f4f0",
-                lineHeight: 1.2,
-                margin: "0 0 8px",
-              }}
-            >
-              Ferramenta concluída!
-            </h2>
-
-            {/* Emoji + badge do nome */}
-            <p
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: 14,
-                color: "rgba(245,244,240,0.55)",
-                lineHeight: 1.5,
-                margin: "0 0 10px",
-              }}
-            >
-              Você completou
-            </p>
-            <span
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: 11,
-                fontWeight: 700,
-                color: COR_GOLD,
-                background: `${COR_GOLD}20`,
-                border: `1px solid ${COR_GOLD}44`,
-                padding: "4px 14px",
-                borderRadius: 99,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                marginBottom: 28,
-              }}
-            >
-              {codigo} · {nome}
-            </span>
-
-            {/* Separador dourado */}
             <div
               style={{
-                width: 48,
-                height: 1,
-                background: `linear-gradient(90deg, transparent, ${COR_GOLD}88, transparent)`,
-                margin: "0 0 28px",
+                background: G,
+                border: `1px solid ${GOLD}44`,
+                borderRadius: 16,
+                padding: "40px 36px",
+                maxWidth: 420, width: "100%",
+                textAlign: "center",
+                boxShadow: "0 32px 80px rgba(0,0,0,0.5)",
               }}
-            />
-
-            {/* Botões */}
-            <div className="flex flex-col gap-3 w-full">
-              <Link
-                href="/dashboard"
-                className="block w-full rounded-xl text-center transition-opacity duration-150 hover:opacity-90"
+            >
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🏆</div>
+              <div
                 style={{
-                  background: `linear-gradient(135deg, ${COR_GOLD}, #e8b84b)`,
-                  color: "#fff",
-                  fontFamily: "var(--font-body)",
-                  fontSize: 15,
-                  fontWeight: 700,
-                  padding: "14px 24px",
-                  textDecoration: "none",
-                  boxShadow: `0 6px 20px ${COR_GOLD}44`,
+                  fontFamily: "'DM Mono', monospace",
+                  fontSize: 10, color: GOLD,
+                  letterSpacing: "0.18em", textTransform: "uppercase",
+                  marginBottom: 12,
                 }}
               >
-                Ir para o Dashboard →
-              </Link>
-
-              <Link
-                href="/ferramentas"
-                className="block w-full rounded-xl text-center transition-all duration-150 hover:opacity-90"
+                {codigo} Concluído
+              </div>
+              <h2
                 style={{
-                  background: "rgba(245,244,240,0.08)",
-                  color: "rgba(245,244,240,0.75)",
-                  fontFamily: "var(--font-body)",
+                  fontFamily: "'Playfair Display', Georgia, serif",
+                  fontSize: "1.6rem", fontWeight: 400,
+                  color: CREAM, lineHeight: 1.2, margin: "0 0 12px",
+                }}
+              >
+                {nome}
+              </h2>
+              <p
+                style={{
                   fontSize: 14,
-                  fontWeight: 500,
-                  padding: "13px 24px",
-                  textDecoration: "none",
-                  border: "1px solid rgba(245,244,240,0.12)",
+                  color: "rgba(250,248,245,0.55)",
+                  lineHeight: 1.65, marginBottom: 28,
                 }}
               >
-                Ver todas as ferramentas
-              </Link>
+                Ferramenta concluída com sucesso. Seu progresso foi salvo.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <Link
+                  href="/dashboard"
+                  style={{
+                    display: "block", padding: "12px 0", borderRadius: 8,
+                    background: `linear-gradient(135deg, ${GOLD}, #e8c76a)`,
+                    color: G, fontWeight: 700, fontSize: 14,
+                    textDecoration: "none", textAlign: "center",
+                  }}
+                >
+                  Ir para o Dashboard
+                </Link>
+                <Link
+                  href="/ferramentas"
+                  style={{
+                    display: "block", padding: "11px 0", borderRadius: 8,
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    color: "rgba(250,248,245,0.65)",
+                    fontSize: 14, textDecoration: "none", textAlign: "center",
+                  }}
+                >
+                  Ver todas as ferramentas
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+      </div>
     </>
   );
 }
