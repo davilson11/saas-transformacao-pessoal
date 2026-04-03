@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FerramentaLayout from "@/components/dashboard/FerramentaLayout";
+import { useCarregarRespostas } from "@/lib/useCarregarRespostas";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -311,6 +312,9 @@ export default function SwotPessoalPage() {
     ameacas: { texto: "" },
   });
   const [estrategias, setEstrategias] = useState<Estrategias>({ fo: "", wo: "", ft: "", wt: "" });
+
+  const { dados: dadosSalvos } = useCarregarRespostas("swot-pessoal");
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).swot) setSwot((dadosSalvos as any).swot); if ((dadosSalvos as any).estrategias) setEstrategias((dadosSalvos as any).estrategias); }, [dadosSalvos]);
 
   const update = (quad: keyof SwotData, texto: string) =>
     setSwot((prev) => ({ ...prev, [quad]: { texto } }));

@@ -155,6 +155,9 @@ export default function BussolaValoresPage() {
   const [passo, setPasso] = useState<Passo>(0);
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [ranking, setRanking] = useState<ValorRankeado[]>([]);
+
+  const { dados: dadosSalvos } = useCarregarRespostas("bussola-valores");
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).selecionados) setSelecionados((dadosSalvos as any).selecionados); if ((dadosSalvos as any).ranking) setRanking((dadosSalvos as any).ranking); }, [dadosSalvos]);
   const [codigo, setCodigo] = useState<CodigoConduta>({ naoTolero: '', sobPressao: '', compromisso: '' });
 
   const instrucao = INSTRUCOES[passo];

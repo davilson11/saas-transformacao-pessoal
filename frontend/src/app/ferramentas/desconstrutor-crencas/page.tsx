@@ -185,6 +185,9 @@ export default function DesconstritorCrencasPage() {
   const [crencaAtiva, setCrencaAtiva] = useState(0);
 
   const [crencas, setCrencas] = useState<CrencaItem[]>([
+
+  const { dados: dadosSalvos } = useCarregarRespostas("desconstrutor-crencas");
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).crencaAtiva) setCrencaAtiva((dadosSalvos as any).crencaAtiva); if ((dadosSalvos as any).crencas) setCrencas((dadosSalvos as any).crencas); }, [dadosSalvos]);
     structuredClone(CRENCA_DEFAULT),
     structuredClone(CRENCA_DEFAULT),
     structuredClone(CRENCA_DEFAULT),

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FerramentaLayout from "@/components/dashboard/FerramentaLayout";
+import { useCarregarRespostas } from "@/lib/useCarregarRespostas";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -678,6 +679,9 @@ export default function OKRsPessoaisPage() {
     OBJETIVO_VAZIO(2),
   ]);
   const [semanas, setSemanas] = useState<Semana[]>(
+
+  const { dados: dadosSalvos } = useCarregarRespostas("okrs-pessoais");
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).trimestre) setTrimestre((dadosSalvos as any).trimestre); if ((dadosSalvos as any).objetivos) setObjetivos((dadosSalvos as any).objetivos); if ((dadosSalvos as any).semanas) setSemanas((dadosSalvos as any).semanas); }, [dadosSalvos]);
     Array.from({ length: SEMANAS_TOTAL }, SEMANA_VAZIA)
   );
 

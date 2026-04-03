@@ -215,6 +215,9 @@ export default function RaioXPage() {
   const [passo, setPasso] = useState<Passo>(0);
   const [valores, setValores] = useState<number[]>(AREAS.map(() => 5));
 
+  const { dados: dadosSalvos } = useCarregarRespostas("raio-x");
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).valores) setValores((dadosSalvos as any).valores); }, [dadosSalvos]);
+
   const media = useMemo(
     () => valores.reduce((s, v) => s + v, 0) / valores.length,
     [valores]

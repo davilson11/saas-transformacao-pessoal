@@ -327,6 +327,9 @@ export default function EnergiaVitalidadePage() {
   );
 
   const [rastreador, setRastreador] = useState<DiaSemana[]>(
+
+  const { dados: dadosSalvos } = useCarregarRespostas("energia-vitalidade");
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).diag) setDiag((dadosSalvos as any).diag); if ((dadosSalvos as any).drenadores) setDrenadores((dadosSalvos as any).drenadores); if ((dadosSalvos as any).recarregadores) setRecarregadores((dadosSalvos as any).recarregadores); if ((dadosSalvos as any).rastreador) setRastreador((dadosSalvos as any).rastreador); }, [dadosSalvos]);
     Array.from({ length: 7 }, () => ({ ...DIA_DEFAULT }))
   );
 

@@ -405,6 +405,9 @@ export default function RotinaIdealPage() {
   });
 
   const [noturno, setNoturno] = useState<RitualNoturno>({
+
+  const { dados: dadosSalvos } = useCarregarRespostas("rotina-ideal");
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).matinal) setMatinal((dadosSalvos as any).matinal); if ((dadosSalvos as any).blocos) setBlocos((dadosSalvos as any).blocos); if ((dadosSalvos as any).noturno) setNoturno((dadosSalvos as any).noturno); }, [dadosSalvos]);
     diario:      { horario: '' },
     desconexao:  { horario: '' },
     higiene:     { horario: '' },

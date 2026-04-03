@@ -322,6 +322,9 @@ export default function CrmRelacionamentosPage() {
 
   const [reflexao, setReflexao] = useState<Reflexao>({ ...REFL_DEFAULT });
 
+  const { dados: dadosSalvos } = useCarregarRespostas("crm-relacionamentos");
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).contatos) setContatos((dadosSalvos as any).contatos); if ((dadosSalvos as any).frequencias) setFrequencias((dadosSalvos as any).frequencias); if ((dadosSalvos as any).reflexao) setReflexao((dadosSalvos as any).reflexao); }, [dadosSalvos]);
+
   // ─── Métricas ──────────────────────────────────────────────────────────────
 
   const contatosPreenchidos = contatos.filter(c => c.nome.trim().length > 0).length;

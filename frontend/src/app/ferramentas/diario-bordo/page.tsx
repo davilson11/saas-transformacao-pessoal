@@ -216,6 +216,9 @@ export default function DiarioBordoPage() {
   const [revisao, setRevisao] = useState<RevisaoSemanal>({ ...REVISAO_DEFAULT });
 
   const [historico, setHistorico] = useState<EntradaDiaria[]>(() => {
+
+  const { dados: dadosSalvos } = useCarregarRespostas("diario-bordo");
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).entrada) setEntrada((dadosSalvos as any).entrada); if ((dadosSalvos as any).revisao) setRevisao((dadosSalvos as any).revisao); if ((dadosSalvos as any).historico) setHistorico((dadosSalvos as any).historico); }, [dadosSalvos]);
     const hoje = new Date();
     const scores: [number, number, number][] = [
       [7, 6, 8], [5, 7, 6], [8, 8, 7], [6, 5, 7], [9, 8, 8], [7, 7, 6],

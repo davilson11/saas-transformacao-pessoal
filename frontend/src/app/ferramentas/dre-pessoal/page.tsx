@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FerramentaLayout from "@/components/dashboard/FerramentaLayout";
+import { useCarregarRespostas } from "@/lib/useCarregarRespostas";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -284,6 +285,9 @@ export default function DREPessoalPage() {
   const [fixos, setFixos] = useState<CustosFixos>({ moradia: "", saude: "", internet: "", transporte: "", escola: "" });
   const [variaveis, setVariaveis] = useState<CustosVariaveis>({ alimentacao: "", lazer: "", assinaturas: "", roupas: "", outros: "" });
   const [invest, setInvest] = useState<Investimentos>({ reserva: "", investimentos: "", previdencia: "" });
+
+  const { dados: dadosSalvos } = useCarregarRespostas("dre-pessoal");
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).mes) setMes((dadosSalvos as any).mes); if ((dadosSalvos as any).receitas) setReceitas((dadosSalvos as any).receitas); if ((dadosSalvos as any).fixos) setFixos((dadosSalvos as any).fixos); if ((dadosSalvos as any).variaveis) setVariaveis((dadosSalvos as any).variaveis); if ((dadosSalvos as any).invest) setInvest((dadosSalvos as any).invest); }, [dadosSalvos]);
 
   const totalReceitas = soma(receitas.salario, receitas.freelance, receitas.rendimentos, receitas.aluguel, receitas.outras);
   const totalFixos = soma(fixos.moradia, fixos.saude, fixos.internet, fixos.transporte, fixos.escola);
