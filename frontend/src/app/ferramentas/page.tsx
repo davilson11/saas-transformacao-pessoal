@@ -207,12 +207,12 @@ const FASES: Fase[] = [
 
 function FrequenciaBadge({ frequencia }: { frequencia: string }) {
   const map: Record<string, { bg: string; color: string }> = {
-    Diária:      { bg: "rgba(30,57,42,0.08)",   color: "#1E392A" },
-    Semanal:     { bg: "rgba(41,128,185,0.10)",  color: "#2980B9" },
-    Mensal:      { bg: "rgba(224,165,95,0.15)",  color: "#a0692d" },
-    Trimestral:  { bg: "rgba(155,107,175,0.12)", color: "#7b4b8f" },
-    Semestral:   { bg: "rgba(220,90,90,0.10)",   color: "#b03030" },
-    Anual:       { bg: "rgba(39,174,96,0.10)",   color: "#1a7a40" },
+    Diária:      { bg: "rgba(200,160,48,0.12)",  color: "#C8A030" },
+    Semanal:     { bg: "rgba(80,160,220,0.12)",  color: "rgba(100,180,230,0.9)" },
+    Mensal:      { bg: "rgba(200,160,48,0.10)",  color: "rgba(200,160,48,0.85)" },
+    Trimestral:  { bg: "rgba(180,120,220,0.12)", color: "rgba(190,140,220,0.9)" },
+    Semestral:   { bg: "rgba(220,90,90,0.12)",   color: "rgba(220,130,130,0.9)" },
+    Anual:       { bg: "rgba(80,200,140,0.12)",  color: "rgba(100,200,150,0.9)" },
   };
   const s = map[frequencia] ?? map["Mensal"];
   return (
@@ -242,10 +242,9 @@ function FerramentaCard({ f, faseCor }: { f: Ferramenta; faseCor: string }) {
     <div
       className="group relative flex flex-col gap-4 rounded-2xl p-5 h-full transition-all duration-300"
       style={{
-        background: "#fff",
-        border: `1px solid var(--color-brand-border)`,
-        boxShadow: "var(--shadow-card)",
-        opacity: disponivel ? 1 : 0.72,
+        background: "#1A1A1A",
+        border: `1px solid rgba(200,160,48,0.14)`,
+        opacity: disponivel ? 1 : 0.55,
         cursor: disponivel ? "pointer" : "default",
       }}
     >
@@ -261,7 +260,7 @@ function FerramentaCard({ f, faseCor }: { f: Ferramenta; faseCor: string }) {
       <div className="flex items-start justify-between gap-2">
         <div
           className="flex items-center justify-center rounded-xl flex-shrink-0"
-          style={{ width: 44, height: 44, background: `${faseCor}18`, fontSize: 22 }}
+          style={{ width: 44, height: 44, background: `rgba(200,160,48,0.08)`, fontSize: 22 }}
         >
           {f.emoji}
         </div>
@@ -302,10 +301,10 @@ function FerramentaCard({ f, faseCor }: { f: Ferramenta; faseCor: string }) {
       <div className="flex flex-col gap-1 flex-1">
         <h3
           style={{
-            fontFamily: "var(--font-heading)",
+            fontFamily: "'Playfair Display', Georgia, serif",
             fontSize: 16,
-            fontWeight: 700,
-            color: "var(--color-brand-dark-green)",
+            fontWeight: 400,
+            color: "#F5F0E8",
             lineHeight: 1.25,
           }}
         >
@@ -315,7 +314,7 @@ function FerramentaCard({ f, faseCor }: { f: Ferramenta; faseCor: string }) {
           style={{
             fontSize: 13,
             lineHeight: 1.6,
-            color: "var(--color-brand-gray)",
+            color: "rgba(245,240,232,0.5)",
           }}
         >
           {f.descricao}
@@ -324,12 +323,12 @@ function FerramentaCard({ f, faseCor }: { f: Ferramenta; faseCor: string }) {
 
       {/* Rodapé: frequência + seta */}
       <div className="flex items-center justify-between mt-auto pt-3"
-        style={{ borderTop: "1px solid var(--color-brand-border)" }}>
+        style={{ borderTop: "1px solid rgba(200,160,48,0.1)" }}>
         <FrequenciaBadge frequencia={f.frequencia} />
         {disponivel && (
           <span
             className="text-sm font-semibold transition-transform duration-200 group-hover:translate-x-1"
-            style={{ color: faseCor }}
+            style={{ color: "#C8A030" }}
           >
             Abrir →
           </span>
@@ -354,33 +353,36 @@ export default function FeramentasPage() {
   const disponiveis = FASES.flatMap((f) => f.ferramentas).filter((f) => f.status === "disponivel").length;
 
   return (
-    <div style={{ background: "#f7f5ee", minHeight: "100vh" }}>
+    <div style={{ background: "#0E0E0E", minHeight: "100vh" }}>
       {/* Header da página */}
       <div
         className="py-16"
         style={{
-          background: "linear-gradient(135deg, #1E392A 0%, #2D5A4F 100%)",
+          background: "#0E0E0E",
+          borderBottom: "1px solid rgba(200,160,48,0.12)",
         }}
       >
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", textAlign: "center" }}>
-          <span className="badge badge-white mb-4">Sistema Completo</span>
+          <div style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#C8A030", border: "1px solid rgba(200,160,48,0.3)", padding: "4px 14px", borderRadius: 2, marginBottom: 20 }}>
+            Sistema Completo
+          </div>
           <h1
             style={{
-              fontFamily: "var(--font-heading)",
+              fontFamily: "'Playfair Display', Georgia, serif",
               fontSize: "clamp(28px, 5vw, 44px)",
-              fontWeight: 700,
-              color: "var(--color-brand-cream)",
+              fontWeight: 400,
+              color: "#F5F0E8",
               lineHeight: 1.15,
               marginBottom: 12,
               textAlign: "center",
             }}
           >
             16 Ferramentas para{" "}
-            <span style={{ color: "var(--color-brand-gold)", fontStyle: "italic" }}>
+            <em style={{ color: "#C8A030" }}>
               Transformar Sua Vida
-            </span>
+            </em>
           </h1>
-          <p style={{ fontSize: 15, color: "rgba(244,241,222,0.7)", lineHeight: 1.65 }}>
+          <p style={{ fontSize: 15, color: "rgba(245,240,232,0.55)", lineHeight: 1.65 }}>
             Organizadas em 4 fases progressivas. Cada ferramenta resolve um problema
             específico da sua jornada de 12 meses.
           </p>
@@ -424,10 +426,12 @@ export default function FeramentasPage() {
                 style={{
                   width: 40,
                   height: 40,
-                  background: fase.cor,
-                  color: "#fff",
-                  fontFamily: "var(--font-heading)",
-                  fontSize: 14,
+                  background: "transparent",
+                  border: "1px solid rgba(200,160,48,0.35)",
+                  color: "#C8A030",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 12,
+                  letterSpacing: "0.08em",
                 }}
               >
                 {fase.numero}
@@ -435,16 +439,16 @@ export default function FeramentasPage() {
               <div>
                 <h2
                   style={{
-                    fontFamily: "var(--font-heading)",
+                    fontFamily: "'Playfair Display', Georgia, serif",
                     fontSize: "clamp(20px, 3vw, 26px)",
-                    fontWeight: 700,
-                    color: "var(--color-brand-dark-green)",
+                    fontWeight: 400,
+                    color: "#F5F0E8",
                     lineHeight: 1.2,
                   }}
                 >
                   Fase {fase.numero} — {fase.titulo}
                 </h2>
-                <p style={{ fontSize: 14, color: "var(--color-brand-gray)", marginTop: 4 }}>
+                <p style={{ fontSize: 14, color: "rgba(245,240,232,0.45)", marginTop: 4 }}>
                   {fase.descricao}
                 </p>
               </div>
@@ -462,9 +466,9 @@ export default function FeramentasPage() {
       </div>
 
       {/* Footer CTA */}
-      <div className="py-16" style={{ borderTop: "1px solid var(--color-brand-border)" }}>
+      <div className="py-16" style={{ borderTop: "1px solid rgba(200,160,48,0.12)" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", textAlign: "center" }}>
-          <p style={{ fontSize: 14, color: "var(--color-brand-gray)", marginBottom: 16 }}>
+          <p style={{ fontSize: 14, color: "rgba(245,240,232,0.45)", marginBottom: 16 }}>
             Comece pela Fase 01 — cada ferramenta leva de 20 a 60 minutos.
           </p>
           <Link href="/ferramentas/raio-x" className="btn-gold" style={{ textDecoration: "none" }}>

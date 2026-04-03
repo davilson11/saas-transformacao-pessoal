@@ -56,9 +56,9 @@ type FerramentaLayoutProps = {
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
-const COR_SIDEBAR = "#1a5c3a";
-const COR_GOLD    = "#b5840a";
-const COR_CREAM   = "#f5f4f0";
+const COR_SIDEBAR = "#0E0E0E";
+const COR_GOLD    = "#C8A030";
+const COR_CREAM   = "#F8F4EE";
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 
@@ -615,10 +615,10 @@ export default function FerramentaLayout({
                   <div>
                     <h3
                       style={{
-                        fontFamily: "var(--font-heading)",
+                        fontFamily: "'Playfair Display', Georgia, serif",
                         fontSize: 18,
                         fontWeight: 400,
-                        color: "var(--color-brand-dark-green)",
+                        color: "#C8A030",
                         lineHeight: 1.2,
                         fontStyle: "italic",
                       }}

@@ -32,7 +32,7 @@ function VisionAnchorHero({ manchete, declaracao, loading }: HeroProps) {
   return (
     <div
       className="rounded-2xl overflow-hidden"
-      style={{ background: "#1a5c3a" }}
+      style={{ background: "#0E0E0E", border: "1px solid rgba(200,160,48,0.18)" }}
     >
       <div className="flex flex-col sm:flex-row items-stretch">
 
@@ -272,31 +272,30 @@ function BottomBar() {
     <div
       className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl px-6 py-5"
       style={{
-        background: "#fff",
-        border: "1px solid var(--color-brand-border)",
-        boxShadow: "var(--shadow-card)",
+        background: "#1A1A1A",
+        border: "1px solid rgba(200,160,48,0.18)",
       }}
     >
       <div className="flex items-center gap-3">
         <div
           className="flex items-center justify-center rounded-xl flex-shrink-0"
-          style={{ width: 40, height: 40, background: "rgba(26,92,58,0.08)", fontSize: 18 }}
+          style={{ width: 40, height: 40, background: "rgba(200,160,48,0.1)", fontSize: 18 }}
         >
           🛠
         </div>
         <div>
           <p
             style={{
-              fontFamily: "var(--font-heading)",
+              fontFamily: "'Playfair Display', Georgia, serif",
               fontSize: 15,
               fontWeight: 700,
-              color: "var(--color-brand-dark-green)",
+              color: "#F5F0E8",
               lineHeight: 1,
             }}
           >
             7 de 16 ferramentas acessadas
           </p>
-          <p style={{ fontSize: 12, color: "var(--color-brand-gray)", marginTop: 3 }}>
+          <p style={{ fontSize: 12, color: "rgba(245,240,232,0.5)", marginTop: 3 }}>
             Continue explorando as 9 restantes para desbloquear todo o potencial
           </p>
         </div>

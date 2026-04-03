@@ -102,10 +102,10 @@ function MockContent() {
     <div className="flex flex-col gap-6">
       {/* Boas-vindas */}
       <div>
-        <h2 style={{ fontFamily: 'var(--font-heading)', color: 'var(--color-brand-dark-green)', fontSize: 22, fontWeight: 700 }}>
+        <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#F5F0E8', fontSize: 22, fontWeight: 400, fontStyle: 'italic' }}>
           Bom dia, Ana 👋
         </h2>
-        <p style={{ fontSize: 14, color: 'var(--color-brand-gray)', marginTop: 4 }}>
+        <p style={{ fontSize: 14, color: 'rgba(245,240,232,0.5)', marginTop: 4 }}>
           Você está na Fase 1 — Autoconhecimento. Continue de onde parou.
         </p>
       </div>
@@ -114,8 +114,8 @@ function MockContent() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {MOCK_STATS.map((s) => (
           <div key={s.label} className="rounded-2xl p-5 flex flex-col gap-1"
-            style={{ background: '#fff', border: '1px solid var(--color-brand-border)', boxShadow: 'var(--shadow-card)' }}>
-            <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', fontFamily: 'var(--font-body)' }}>
+            style={{ background: '#1A1A1A', border: '1px solid rgba(200,160,48,0.15)' }}>
+            <p style={{ fontSize: 12, color: 'rgba(245,240,232,0.45)', fontFamily: 'var(--font-body)' }}>
               {s.label}
             </p>
             <p style={{ fontFamily: 'var(--font-heading)', fontSize: 32, fontWeight: 700, lineHeight: 1, color: s.cor }}>
@@ -130,18 +130,18 @@ function MockContent() {
 
         {/* Ferramentas recentes */}
         <div className="lg:col-span-2 rounded-2xl p-6"
-          style={{ background: '#fff', border: '1px solid var(--color-brand-border)', boxShadow: 'var(--shadow-card)' }}>
-          <p style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15, color: 'var(--color-brand-dark-green)', marginBottom: 16 }}>
+          style={{ background: '#1A1A1A', border: '1px solid rgba(200,160,48,0.15)' }}>
+          <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 400, fontStyle: 'italic', fontSize: 15, color: '#C8A030', marginBottom: 16 }}>
             Fase 1 — Autoconhecimento
           </p>
           <div className="flex flex-col gap-3">
             {MOCK_FERRAMENTAS.map((f) => (
               <div key={f.codigo} className="flex items-center gap-4">
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-brand-gold)',
-                  background: 'rgba(224,165,95,0.12)', padding: '2px 8px', borderRadius: 99, whiteSpace: 'nowrap' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#C8A030',
+                  background: 'rgba(200,160,48,0.1)', padding: '2px 8px', borderRadius: 99, whiteSpace: 'nowrap' }}>
                   {f.codigo}
                 </span>
-                <span style={{ fontSize: 14, color: 'var(--color-brand-dark-green)', flex: 1 }}>{f.nome}</span>
+                <span style={{ fontSize: 14, color: '#F5F0E8', flex: 1 }}>{f.nome}</span>
                 {/* barra de progresso */}
                 <div className="rounded-full overflow-hidden flex-shrink-0" style={{ width: 64, height: 4, background: 'var(--color-brand-border)' }}>
                   <div className="h-full rounded-full transition-all duration-500"
@@ -188,26 +188,26 @@ interface DashboardLayoutProps {
 
 function DashboardSkeleton() {
   return (
-    <div className="flex overflow-hidden" style={{ height: '100dvh', background: '#f7f5ee' }}>
+    <div className="flex overflow-hidden" style={{ height: '100dvh', background: '#0E0E0E' }}>
       {/* Sidebar skeleton */}
-      <aside className="flex flex-col items-center py-4 flex-shrink-0" style={{ width: 60, background: '#080808', gap: 2 }}>
-        <div style={{ width: 32, height: 12, background: 'rgba(255,255,255,0.08)', borderRadius: 2, marginBottom: 12 }} />
+      <aside className="flex flex-col items-center py-4 flex-shrink-0" style={{ width: 60, background: '#0E0E0E', gap: 2, borderRight: '1px solid rgba(200,160,48,0.08)' }}>
+        <div style={{ width: 32, height: 12, background: 'rgba(200,160,48,0.12)', borderRadius: 2, marginBottom: 12 }} />
         {[...Array(5)].map((_, i) => (
-          <div key={i} style={{ width: 44, height: 44, background: 'rgba(255,255,255,0.05)', borderRadius: 12, marginBottom: 2 }} />
+          <div key={i} style={{ width: 44, height: 44, background: 'rgba(255,255,255,0.04)', borderRadius: 12, marginBottom: 2 }} />
         ))}
       </aside>
       {/* Main skeleton */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        <header style={{ height: 56, background: '#ffffff', borderBottom: '1px solid #e5e0d0' }} />
-        <main className="flex-1 p-6" style={{ background: '#f7f5ee' }}>
-          <div style={{ width: 200, height: 24, background: '#e5e0d0', borderRadius: 4, marginBottom: 8 }} />
-          <div style={{ width: 300, height: 14, background: '#ede9de', borderRadius: 4, marginBottom: 24 }} />
+        <header style={{ height: 56, background: '#111111', borderBottom: '1px solid rgba(200,160,48,0.12)' }} />
+        <main className="flex-1 p-6" style={{ background: '#0E0E0E' }}>
+          <div style={{ width: 200, height: 24, background: 'rgba(200,160,48,0.1)', borderRadius: 4, marginBottom: 8 }} />
+          <div style={{ width: 300, height: 14, background: 'rgba(255,255,255,0.06)', borderRadius: 4, marginBottom: 24 }} />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" style={{ marginBottom: 24 }}>
             {[...Array(4)].map((_, i) => (
-              <div key={i} style={{ height: 80, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 16 }} />
+              <div key={i} style={{ height: 80, background: '#1A1A1A', border: '1px solid rgba(200,160,48,0.12)', borderRadius: 16 }} />
             ))}
           </div>
-          <div style={{ height: 200, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 16 }} />
+          <div style={{ height: 200, background: '#1A1A1A', border: '1px solid rgba(200,160,48,0.12)', borderRadius: 16 }} />
         </main>
       </div>
     </div>
@@ -226,12 +226,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   });
 
   return (
-    <div className="flex overflow-hidden" style={{ height: '100dvh', fontFamily: 'var(--font-body)', background: '#f7f5ee' }}>
+    <div className="flex overflow-hidden" style={{ height: '100dvh', fontFamily: 'var(--font-body)', background: '#0E0E0E' }}>
 
       {/* ── Sidebar ─────────────────────────────────────────────────── */}
       <aside
         className="flex flex-col items-center py-4 flex-shrink-0"
-        style={{ width: 60, background: '#080808', gap: 2 }}
+        style={{ width: 60, background: '#0E0E0E', gap: 2, borderRight: '1px solid rgba(200,160,48,0.08)' }}
       >
         {/* Logo mark */}
         <div className="flex flex-col items-center mb-3 flex-shrink-0 gap-0.5">
@@ -271,9 +271,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               className="flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-200 w-full px-1"
               style={{
                 height: 48,
-                background: isActive ? 'rgba(224,165,95,0.18)' : 'transparent',
-                color: isActive ? 'var(--color-brand-gold)' : 'rgba(244,241,222,0.4)',
-                border: `1px solid ${isActive ? 'rgba(224,165,95,0.35)' : 'transparent'}`,
+                background: isActive ? 'rgba(200,160,48,0.12)' : 'transparent',
+                color: isActive ? '#C8A030' : 'rgba(245,240,232,0.4)',
+                border: `1px solid ${isActive ? 'rgba(200,160,48,0.25)' : 'transparent'}`,
                 textDecoration: 'none',
               }}
               aria-label={item.label}
@@ -311,17 +311,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Topbar */}
         <header
           className="flex items-center justify-between flex-shrink-0 px-6"
-          style={{ height: 56, background: '#ffffff', borderBottom: '1px solid var(--color-brand-border)' }}
+          style={{ height: 56, background: '#111111', borderBottom: '1px solid rgba(200,160,48,0.12)' }}
         >
           {/* Esquerda: logo + separador + título */}
           <div className="flex items-center gap-3 min-w-0">
             <span
               style={{
-                fontFamily: 'var(--font-heading)',
+                fontFamily: "'Playfair Display', Georgia, serif",
                 fontStyle: 'italic',
                 fontSize: 20,
                 fontWeight: 400,
-                color: 'var(--color-brand-dark-green)',
+                color: '#C8A030',
                 lineHeight: 1,
                 letterSpacing: '-0.01em',
                 flexShrink: 0,
@@ -334,7 +334,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 display: 'inline-block',
                 width: 1,
                 height: 18,
-                background: 'var(--color-brand-border)',
+                background: 'rgba(200,160,48,0.2)',
                 flexShrink: 0,
               }}
             />
@@ -342,7 +342,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: 13,
-                color: 'var(--color-brand-gray)',
+                color: 'rgba(245,240,232,0.5)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -380,7 +380,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-auto p-6" style={{ background: '#f7f5ee' }}>
+        <main className="flex-1 overflow-auto p-6" style={{ background: '#0E0E0E' }}>
           {children ?? <MockContent />}
         </main>
       </div>
