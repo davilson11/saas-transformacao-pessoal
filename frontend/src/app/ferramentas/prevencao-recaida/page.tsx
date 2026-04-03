@@ -908,6 +908,7 @@ export default function PrevencaoRecaidaPage() {
       totalItens={totalItens}
       labelItens={labelItens}
       resumo={painelResumo}
+  respostas={{ cenarios, protocolo, milestones }}
     >
       {steps[etapa]}
     </FerramentaLayout>

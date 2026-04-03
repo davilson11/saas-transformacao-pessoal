@@ -921,6 +921,7 @@ export default function OKRsPessoaisPage() {
       podeAvancar={podeAvancar()}
       labelAvancar={passo === 0 ? "Começar →" : passo === ETAPAS.length - 1 ? "Salvar OKRs ✓" : "Continuar →"}
       resumo={painelResumo}
+  respostas={{ trimestre, objetivos, semanas }}
     >
       <div className="p-8">
 

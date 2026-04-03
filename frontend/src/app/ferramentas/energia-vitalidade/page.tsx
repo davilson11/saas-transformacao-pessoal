@@ -845,6 +845,7 @@ export default function EnergiaVitalidadePage() {
       totalItens={totalItens}
       labelItens={labelItens}
       resumo={painelResumo}
+  respostas={{ diag, drenadores, recarregadores, rastreador }}
     >
       {steps[etapa]}
     </FerramentaLayout>

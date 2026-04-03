@@ -533,6 +533,7 @@ export default function BussolaValoresPage() {
       totalItens={selecionados.length}
       labelItens="valores"
       resumo={painelResumo}
+  respostas={{ selecionados, ranking }}
     >
       <div className="p-8">
         <div className="max-w-xl mx-auto flex flex-col gap-4" style={{ minHeight: passo === 0 ? '100%' : 'auto' }}>

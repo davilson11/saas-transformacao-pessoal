@@ -445,6 +445,7 @@ export default function SwotPessoalPage() {
       totalItens={totalItens}
       labelItens="itens"
       resumo={painelResumo}
+  respostas={{ swot, estrategias }}
     >
       <div className="p-8">
 

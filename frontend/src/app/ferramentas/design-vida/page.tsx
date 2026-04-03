@@ -816,6 +816,7 @@ export default function DesignVidaPage() {
       podeAvancar={podeAvancar()}
       labelAvancar={passo === 0 ? "Começar →" : passo === ETAPAS.length - 1 ? "Salvar Visão ✓" : "Continuar →"}
       resumo={painelResumo}
+  respostas={{ dia, visao, porque }}
     >
       <div className="p-8">
 

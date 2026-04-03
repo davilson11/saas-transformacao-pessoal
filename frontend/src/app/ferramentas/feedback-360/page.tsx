@@ -720,6 +720,7 @@ export default function Feedback360Page() {
       totalItens={fontesPreenchidas.length}
       labelItens={fontesPreenchidas.length === 1 ? "fonte" : "fontes"}
       resumo={painelResumo}
+  respostas={{ fontes, aspectos, insights }}
     >
       <div className="p-8">
 

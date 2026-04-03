@@ -402,6 +402,7 @@ export default function RaioXPage() {
       podeAvancar
       labelAvancar={labelAvancar}
       resumo={painelResumo}
+  respostas={{ valores }}
     >
       {/* ── Conteúdo central ── */}
       <div className="p-8">

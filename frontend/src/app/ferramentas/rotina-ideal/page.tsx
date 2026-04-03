@@ -597,6 +597,7 @@ export default function RotinaIdealPage() {
       totalItens={totalItens > 0 ? totalItens : undefined}
       labelItens="atividades"
       resumo={painelResumo}
+  respostas={{ matinal, blocos, noturno }}
     >
       <div className="p-8">
 

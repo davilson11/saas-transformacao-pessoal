@@ -886,6 +886,7 @@ export default function ArquitetoRotinasPage() {
       totalItens={totalItens}
       labelItens={labelItens}
       resumo={painelResumo}
+  respostas={{ matinal, blocos, noturno, rastreador }}
     >
       {steps[etapa]}
     </FerramentaLayout>

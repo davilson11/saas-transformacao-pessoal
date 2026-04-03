@@ -905,6 +905,7 @@ export default function SprintAprendizadoPage() {
       totalItens={totalItens}
       labelItens={labelItens}
       resumo={painelResumo}
+  respostas={{ config, recursos, projetos, dias }}
     >
       {steps[etapa]}
     </FerramentaLayout>

@@ -741,6 +741,7 @@ export default function CrmRelacionamentosPage() {
       totalItens={totalItens}
       labelItens={labelItens}
       resumo={painelResumo}
+  respostas={{ contatos, frequencias, reflexao }}
     >
       {steps[etapa]}
     </FerramentaLayout>

@@ -412,6 +412,7 @@ export default function DREPessoalPage() {
       podeAvancar={podeAvancar()}
       labelAvancar={passo === 0 ? "Começar →" : passo === ETAPAS.length - 1 ? "Salvar DRE ✓" : "Continuar →"}
       resumo={painelResumo}
+  respostas={{ mes, receitas, fixos, variaveis, invest }}
     >
       <div className="p-8">
 

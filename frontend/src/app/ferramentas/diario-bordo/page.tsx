@@ -850,6 +850,7 @@ export default function DiarioBordoPage() {
       totalItens={totalItens}
       labelItens="campos preenchidos"
       resumo={painelResumo}
+  respostas={{ entrada, revisao, historico }}
     >
       {steps[etapa]}
     </FerramentaLayout>

@@ -554,6 +554,7 @@ export default function AuditoriaTempoPage() {
       totalItens={totalItens > 0 ? totalItens : undefined}
       labelItens="atividades"
       resumo={painelResumo}
+  respostas={{ inventario, ade, reflexao }}
     >
       <div className="p-8">
 

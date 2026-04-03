@@ -816,6 +816,7 @@ export default function DesconstritorCrencasPage() {
       totalItens={etapa >= 1 ? identPreenchidas : undefined}
       labelItens="crenças identificadas"
       resumo={painelResumo}
+  respostas={{ crencaAtiva, crencas }}
     >
       {steps[etapa]}
     </FerramentaLayout>
