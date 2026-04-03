@@ -38,9 +38,10 @@ type FerramentaLayoutProps = {
 
 // ─── Tokens ───────────────────────────────────────────────────────────────────
 
-const G    = "#1E392A";
-const GOLD = "#C9A84C";
-const CREAM = "#FAF8F5";
+const G        = "#0E0E0E";
+const GOLD     = "#C8A030";
+const CREAM    = "#F8F4EE";
+const ASIDE_BG = "#FFFFFF";
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 
@@ -164,8 +165,8 @@ export default function FerramentaLayout({
           font-size: 10px;
           font-weight: 600;
           color: ${GOLD};
-          background: ${GOLD}22;
-          border: 1px solid ${GOLD}44;
+          background: rgba(200,160,48,0.15);
+          border: 1px solid ${GOLD}55;
           padding: 1px 8px;
           border-radius: 99px;
           letter-spacing: 0.04em;
@@ -368,7 +369,7 @@ export default function FerramentaLayout({
           font-size: 1.9rem;
           font-weight: 400;
           line-height: 1.15;
-          color: ${G};
+          color: ${GOLD};
           margin-bottom: 8px;
         }
         .fl-main h2 {
@@ -376,13 +377,13 @@ export default function FerramentaLayout({
           font-size: 1.4rem;
           font-weight: 400;
           line-height: 1.2;
-          color: ${G};
+          color: ${GOLD};
           margin-bottom: 6px;
         }
         .fl-main h3 {
           font-size: 1.05rem;
           font-weight: 600;
-          color: ${G};
+          color: ${GOLD};
           margin-bottom: 4px;
         }
         .fl-main textarea,
@@ -411,19 +412,19 @@ export default function FerramentaLayout({
           flex-shrink: 0;
           display: flex;
           flex-direction: column;
-          background: ${G};
-          border-left: 1px solid rgba(255,255,255,0.07);
+          background: ${ASIDE_BG};
+          border-left: 1px solid rgba(0,0,0,0.08);
           overflow-y: auto;
         }
         .fl-aside-header {
           padding: 16px 18px 14px;
-          border-bottom: 1px solid rgba(255,255,255,0.07);
+          border-bottom: 1px solid rgba(0,0,0,0.07);
           display: flex;
           align-items: center;
           gap: 10px;
           position: sticky;
           top: 0;
-          background: ${G};
+          background: ${ASIDE_BG};
           z-index: 5;
           flex-shrink: 0;
         }
@@ -449,7 +450,7 @@ export default function FerramentaLayout({
         }
         .fl-aside-sub {
           font-size: 11px;
-          color: rgba(250,248,245,0.38);
+          color: rgba(0,0,0,0.38);
           margin: 2px 0 0;
           line-height: 1;
         }
@@ -646,14 +647,11 @@ export default function FerramentaLayout({
                 disabled={!podeAvancar}
                 style={{
                   background: podeAvancar
-                    ? isUltimaEtapa
-                      ? `linear-gradient(135deg, ${GOLD}, #e8c76a)`
-                      : "rgba(250,248,245,0.92)"
+                    ? `linear-gradient(135deg, ${GOLD}, #e8c76a)`
                     : "rgba(255,255,255,0.1)",
-                  color: podeAvancar ? G : "rgba(250,248,245,0.25)",
+                  color: podeAvancar ? "#0E0E0E" : "rgba(250,248,245,0.25)",
                   cursor: podeAvancar ? "pointer" : "not-allowed",
-                  boxShadow:
-                    podeAvancar && isUltimaEtapa ? `0 4px 16px ${GOLD}44` : "none",
+                  boxShadow: podeAvancar ? `0 4px 16px ${GOLD}44` : "none",
                 }}
               >
                 {btnLabel}
@@ -686,7 +684,7 @@ export default function FerramentaLayout({
                   >
                     <circle
                       cx="18" cy="18" r={R}
-                      stroke="rgba(255,255,255,0.1)"
+                      stroke="rgba(0,0,0,0.1)"
                       strokeWidth="3.5"
                       fill="none"
                     />
@@ -807,9 +805,9 @@ export default function FerramentaLayout({
                 borderRadius: 8,
                 border: "none",
                 background: podeAvancar
-                  ? isUltimaEtapa ? `linear-gradient(135deg, ${GOLD}, #e8c76a)` : CREAM
+                  ? `linear-gradient(135deg, ${GOLD}, #e8c76a)`
                   : "rgba(255,255,255,0.1)",
-                color: podeAvancar ? G : "rgba(250,248,245,0.25)",
+                color: podeAvancar ? "#0E0E0E" : "rgba(250,248,245,0.25)",
                 fontSize: 14, fontWeight: 600,
                 cursor: podeAvancar ? "pointer" : "not-allowed",
                 minHeight: 44,
