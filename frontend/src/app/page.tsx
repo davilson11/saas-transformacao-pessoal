@@ -1,5 +1,6 @@
 import { Navbar } from '@/components/landing/Navbar'
 import { Hero } from '@/components/landing/Hero'
+import { ProdutoEmAcao } from '@/components/landing/ProdutoEmAcao'
 import { Problema } from '@/components/landing/Problema'
 import { Metodologia } from '@/components/landing/Metodologia'
 import { Ferramentas } from '@/components/landing/Ferramentas'
@@ -17,6 +18,7 @@ export default function Home() {
       <Navbar />
       <main>
         <Hero />
+        <ProdutoEmAcao />
         <div className="divider" />
         <Problema />
         <div className="divider" />
