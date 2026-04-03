@@ -224,7 +224,7 @@ export default function PerfilPage() {
   const ferramentasAbertas = respostas.length;
   const faseAtiva = (FASES.findIndex((f) => f.slugs.some((s) => !slugsConcluidas.has(s))) + 1) || 4;
   const diasMembro = user?.createdAt
-    ? Math.max(1, Math.floor((Date.now() - user.createdAt) / 86_400_000))
+    ? Math.max(1, Math.floor((Date.now() - new Date(user.createdAt).getTime()) / 86_400_000))
     : 0;
 
   // % de conclusão por fase
