@@ -12,7 +12,7 @@ import type { FerramentasRespostas, RodaVida, VisaoAncora } from "@/lib/database
 
 const C = {
   green:  "#1a5c3a",
-  gold:   "#b5840a",
+  gold:   "#C8A030",
   cream:  "#f5f4f0",
   border: "#dedad4",
   gray:   "#7a8c82",
@@ -50,6 +50,13 @@ const TOOL_ORDER = [
   "desconstrutor-crencas", "crm-relacionamentos", "diario-bordo", "prevencao-recaida",
 ];
 
+const FASES = [
+  { num: "01", nome: "Autoconhecimento", slugs: ["raio-x","bussola-valores","swot-pessoal","feedback-360"] },
+  { num: "02", nome: "Visão e Metas",    slugs: ["okrs-pessoais","design-vida","dre-pessoal","rotina-ideal"] },
+  { num: "03", nome: "Hábitos",          slugs: ["auditoria-tempo","arquiteto-rotinas","sprint-aprendizado","energia-vitalidade"] },
+  { num: "04", nome: "Crescimento",      slugs: ["desconstrutor-crencas","crm-relacionamentos","diario-bordo","prevencao-recaida"] },
+];
+
 type RodaKey = keyof Omit<RodaVida, "id" | "user_id" | "created_at">;
 
 const RODA_AREAS: { key: RodaKey; label: string; emoji: string; cor: string }[] = [
@@ -64,6 +71,29 @@ const RODA_AREAS: { key: RodaKey; label: string; emoji: string; cor: string }[] 
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function calcStreak(arr: FerramentasRespostas[]): number {
+  if (!arr.length) return 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const activeDays = new Set(
+    arr.map((r) => {
+      const d = new Date(r.updated_at);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    })
+  );
+  let streak = 0;
+  for (let i = 0; ; i++) {
+    const day = today.getTime() - i * 86_400_000;
+    if (activeDays.has(day)) {
+      streak++;
+    } else if (i > 0) {
+      break;
+    }
+  }
+  return streak;
+}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR", {
@@ -179,10 +209,29 @@ export default function PerfilPage() {
   const emProgresso = respostas.filter((r) => !r.concluida && r.progresso > 0);
   const pctGeral    = Math.round((concluidas.length / TOTAL_FERRAMENTAS) * 100);
 
+  const slugsConcluidas = new Set(concluidas.map((r) => r.ferramenta_slug));
+
   // Próxima ferramenta recomendada: primeira da ordem canônica ainda não iniciada
   const slugsIniciadas = new Set(respostas.map((r) => r.ferramenta_slug));
   const proximaSlug = TOOL_ORDER.find((s) => !slugsIniciadas.has(s)) ?? TOOL_ORDER[0];
   const proximaTool = TOOL_MAP[proximaSlug];
+
+  // Próximas 3 ferramentas não iniciadas
+  const proximas3 = TOOL_ORDER.filter((s) => !slugsIniciadas.has(s)).slice(0, 3);
+
+  // Stats da linha abaixo do header
+  const diasStreak = calcStreak(respostas);
+  const ferramentasAbertas = respostas.length;
+  const faseAtiva = (FASES.findIndex((f) => f.slugs.some((s) => !slugsConcluidas.has(s))) + 1) || 4;
+  const diasMembro = user?.createdAt
+    ? Math.max(1, Math.floor((Date.now() - user.createdAt) / 86_400_000))
+    : 0;
+
+  // % de conclusão por fase
+  function fasePct(slugs: string[]) {
+    const done = slugs.filter((s) => slugsConcluidas.has(s)).length;
+    return Math.round((done / slugs.length) * 100);
+  }
 
   const primeiroNome = user?.firstName ?? user?.fullName?.split(" ")[0] ?? "Usuário";
   const nomeCompleto = user?.fullName ?? primeiroNome;
@@ -203,7 +252,7 @@ export default function PerfilPage() {
         {/* ══════════════════════════════════════════════════════════════
             1. HEADER — foto, nome, email
         ══════════════════════════════════════════════════════════════ */}
-        <Card style={{ background: `linear-gradient(135deg, ${C.green} 0%, #133028 100%)` }}>
+        <Card style={{ background: "#0E0E0E", border: "1px solid rgba(200,160,48,0.22)" }}>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
 
             {/* Avatar */}
@@ -303,6 +352,65 @@ export default function PerfilPage() {
           </div>
         </Card>
 
+        {/* ── Stats Row ── */}
+        {!loading && (
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "12px 0",
+              background: "#1A1A1A",
+              border: "1px solid rgba(200,160,48,0.14)",
+              borderRadius: 14,
+              padding: "14px 20px",
+              alignItems: "center",
+            }}
+          >
+            {[
+              { icon: "🔥", valor: `${diasStreak}`, label: diasStreak === 1 ? "dia seguido" : "dias seguidos" },
+              { icon: "🛠", valor: `${ferramentasAbertas}`, label: "ferramentas abertas" },
+              { icon: "📍", valor: `Fase ${String(faseAtiva).padStart(2,"0")}`, label: "ativa" },
+              { icon: "🗓", valor: `${diasMembro}`, label: diasMembro === 1 ? "dia como membro" : "dias como membro" },
+            ].map((s, i) => (
+              <div
+                key={i}
+                style={{
+                  flex: "1 0 50%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  minWidth: 0,
+                }}
+              >
+                <span style={{ fontSize: 16, flexShrink: 0 }}>{s.icon}</span>
+                <span
+                  style={{
+                    fontFamily: "'DM Mono', monospace",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: C.gold,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {s.valor}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: 12,
+                    color: "rgba(245,244,240,0.45)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {s.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* ══════════════════════════════════════════════════════════════
             2. PROGRESSO GERAL
         ══════════════════════════════════════════════════════════════ */}
@@ -376,10 +484,96 @@ export default function PerfilPage() {
               ))}
             </div>
           </div>
+
+          {/* Barras de progresso por fase */}
+          <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10 }}>
+            <p
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 10,
+                fontWeight: 600,
+                color: C.gray,
+                textTransform: "uppercase",
+                letterSpacing: "0.10em",
+                marginBottom: 4,
+              }}
+            >
+              Progresso por Fase
+            </p>
+            {FASES.map((fase) => {
+              const pct = loading ? 0 : fasePct(fase.slugs);
+              return (
+                <div key={fase.num} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: C.gold,
+                      flexShrink: 0,
+                      minWidth: 24,
+                    }}
+                  >
+                    F{fase.num}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-body)",
+                      fontSize: 12,
+                      color: C.ink,
+                      flexShrink: 0,
+                      minWidth: 130,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {fase.nome}
+                  </span>
+                  <div
+                    style={{
+                      flex: 1,
+                      height: 6,
+                      background: "rgba(26,92,58,0.08)",
+                      borderRadius: 99,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {loading ? (
+                      <div style={{ height: "100%", width: "30%", background: "rgba(26,92,58,0.08)", borderRadius: 99 }} />
+                    ) : (
+                      <div
+                        style={{
+                          height: "100%",
+                          width: `${pct}%`,
+                          background: pct === 100 ? "#27AE60" : C.gold,
+                          borderRadius: 99,
+                          transition: "width 0.6s ease",
+                        }}
+                      />
+                    )}
+                  </div>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: pct === 100 ? "#27AE60" : C.gold,
+                      flexShrink: 0,
+                      minWidth: 32,
+                      textAlign: "right",
+                    }}
+                  >
+                    {loading ? "—" : `${pct}%`}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </Card>
 
         {/* ══════════════════════════════════════════════════════════════
-            3. FERRAMENTAS CONCLUÍDAS
+            3. PRÓXIMAS AÇÕES
         ══════════════════════════════════════════════════════════════ */}
         <Card>
           <div className="flex items-center justify-between gap-4 mb-5">
@@ -393,7 +587,7 @@ export default function PerfilPage() {
                 margin: 0,
               }}
             >
-              Ferramentas Concluídas
+              Próximas Ações
             </h2>
             <Link
               href="/ferramentas"
@@ -411,179 +605,121 @@ export default function PerfilPage() {
           </div>
 
           {loading ? (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <Skeleton w={32} h={32} r={8} />
+                  <Skeleton w={36} h={36} r={10} />
                   <div className="flex flex-col gap-1.5 flex-1">
-                    <Skeleton w="60%" h={12} />
-                    <Skeleton w="35%" h={10} />
+                    <Skeleton w="55%" h={13} />
+                    <Skeleton w="80%" h={10} />
                   </div>
-                  <Skeleton w={80} h={10} />
+                  <Skeleton w={96} h={32} r={8} />
                 </div>
               ))}
             </div>
-          ) : concluidas.length === 0 ? (
-            <div
-              className="flex flex-col items-center gap-3 py-8"
-              style={{ textAlign: "center" }}
-            >
-              <span style={{ fontSize: 36 }}>🛠</span>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: C.gray, maxWidth: 280 }}>
-                Você ainda não concluiu nenhuma ferramenta. Comece pela{" "}
-                <Link href="/ferramentas/raio-x" style={{ color: C.green, fontWeight: 600 }}>
-                  Raio-X 360°
-                </Link>
-                .
+          ) : proximas3.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-8" style={{ textAlign: "center" }}>
+              <span style={{ fontSize: 36 }}>🏆</span>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: C.gray, maxWidth: 260 }}>
+                Parabéns! Você concluiu todas as 16 ferramentas.
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-1">
-              {concluidas.map((r) => {
-                const info = TOOL_MAP[r.ferramenta_slug];
+            <div className="flex flex-col gap-3">
+              {proximas3.map((slug, i) => {
+                const info = TOOL_MAP[slug];
                 if (!info) return null;
+                const emAndamento = slugsIniciadas.has(slug);
                 return (
-                  <Link
-                    key={r.id}
-                    href={`/ferramentas/${r.ferramenta_slug}`}
-                    style={{ textDecoration: "none" }}
+                  <div
+                    key={slug}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "12px 14px",
+                      borderRadius: 12,
+                      border: i === 0
+                        ? `1px solid rgba(200,160,48,0.30)`
+                        : `1px solid ${C.border}`,
+                      background: i === 0 ? "rgba(200,160,48,0.04)" : "#fff",
+                    }}
                   >
                     <div
-                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-150"
-                      style={{ cursor: "pointer" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(26,92,58,0.04)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                      style={{
+                        width: 38, height: 38, borderRadius: 10,
+                        background: i === 0 ? "rgba(200,160,48,0.12)" : "rgba(26,92,58,0.06)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 18, flexShrink: 0,
+                      }}
                     >
-                      {/* Emoji badge */}
-                      <div
-                        className="flex items-center justify-center rounded-lg flex-shrink-0"
-                        style={{ width: 34, height: 34, background: "rgba(26,92,58,0.06)", fontSize: 16 }}
-                      >
-                        {info.emoji}
-                      </div>
+                      {info.emoji}
+                    </div>
 
-                      {/* Nome + código */}
-                      <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                        <span
-                          style={{
-                            fontFamily: "var(--font-body)",
-                            fontSize: 14,
-                            fontWeight: 600,
-                            color: C.ink,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {info.nome}
-                        </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span
                           style={{
                             fontFamily: "var(--font-mono)",
-                            fontSize: 10,
-                            color: C.gold,
-                            fontWeight: 600,
-                            letterSpacing: "0.06em",
+                            fontSize: 10, fontWeight: 700,
+                            color: C.gold, letterSpacing: "0.06em",
                           }}
                         >
                           {info.codigo}
                         </span>
-                      </div>
-
-                      {/* Badge concluído + data */}
-                      <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                        <span
-                          style={{
-                            fontFamily: "var(--font-body)",
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: "#1a7a40",
-                            background: "rgba(39,174,96,0.10)",
-                            padding: "2px 8px",
-                            borderRadius: 99,
-                          }}
-                        >
-                          ✓ Concluído
-                        </span>
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C.gray }}>
-                          {formatDate(r.updated_at)}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-
-              {/* Em progresso — listagem secundária */}
-              {emProgresso.length > 0 && (
-                <>
-                  <div
-                    style={{
-                      margin: "12px 0 8px",
-                      fontFamily: "var(--font-body)",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: C.gray,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.08em",
-                      paddingLeft: 4,
-                    }}
-                  >
-                    Em progresso
-                  </div>
-                  {emProgresso.map((r) => {
-                    const info = TOOL_MAP[r.ferramenta_slug];
-                    if (!info) return null;
-                    return (
-                      <Link key={r.id} href={`/ferramentas/${r.ferramenta_slug}`} style={{ textDecoration: "none" }}>
-                        <div
-                          className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-150"
-                          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(26,92,58,0.04)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                        >
-                          <div
-                            className="flex items-center justify-center rounded-lg flex-shrink-0"
-                            style={{ width: 34, height: 34, background: "rgba(181,132,10,0.08)", fontSize: 16 }}
-                          >
-                            {info.emoji}
-                          </div>
-                          <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                            <span style={{ fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 600, color: C.ink }}>
-                              {info.nome}
-                            </span>
-                            {/* Barra de progresso */}
-                            <div
-                              className="rounded-full overflow-hidden"
-                              style={{ height: 3, background: "rgba(26,92,58,0.08)", width: 120 }}
-                            >
-                              <div
-                                style={{
-                                  height: "100%",
-                                  width: `${r.progresso}%`,
-                                  background: C.gold,
-                                  borderRadius: 99,
-                                  transition: "width 0.5s ease",
-                                }}
-                              />
-                            </div>
-                          </div>
+                        {emAndamento && (
                           <span
                             style={{
-                              fontFamily: "var(--font-mono)",
-                              fontSize: 11,
-                              fontWeight: 700,
+                              fontFamily: "var(--font-body)",
+                              fontSize: 10, fontWeight: 600,
                               color: C.gold,
-                              flexShrink: 0,
+                              background: `rgba(200,160,48,0.12)`,
+                              padding: "1px 6px", borderRadius: 99,
                             }}
                           >
-                            {r.progresso}%
+                            Em progresso
                           </span>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </>
-              )}
+                        )}
+                      </div>
+                      <p
+                        style={{
+                          fontFamily: "var(--font-body)",
+                          fontSize: 13, fontWeight: 600, color: C.ink,
+                          margin: "2px 0 1px",
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}
+                      >
+                        {info.nome}
+                      </p>
+                      <p
+                        style={{
+                          fontFamily: "var(--font-body)",
+                          fontSize: 11, color: C.gray, margin: 0,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}
+                      >
+                        {info.descricao}
+                      </p>
+                    </div>
+
+                    <Link
+                      href={`/ferramentas/${slug}`}
+                      style={{
+                        flexShrink: 0,
+                        fontFamily: "var(--font-body)",
+                        fontSize: 12, fontWeight: 700,
+                        color: "#0E0E0E",
+                        background: C.gold,
+                        padding: "8px 14px", borderRadius: 8,
+                        textDecoration: "none", whiteSpace: "nowrap",
+                        boxShadow: i === 0 ? `0 2px 10px rgba(200,160,48,0.30)` : "none",
+                      }}
+                    >
+                      Começar agora
+                    </Link>
+                  </div>
+                );
+              })}
             </div>
           )}
         </Card>
@@ -594,8 +730,8 @@ export default function PerfilPage() {
         {!loading && proximaTool && concluidas.length < TOTAL_FERRAMENTAS && (
           <Card
             style={{
-              background: `linear-gradient(135deg, ${C.green} 0%, #1e4d31 100%)`,
-              border: "none",
+              background: "#0E0E0E",
+              border: "1px solid rgba(200,160,48,0.3)",
             }}
           >
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -661,8 +797,8 @@ export default function PerfilPage() {
                   fontFamily: "var(--font-body)",
                   fontSize: 14,
                   fontWeight: 700,
-                  color: C.green,
-                  background: `linear-gradient(135deg, ${C.gold}, #e8b84b)`,
+                  color: "#0E0E0E",
+                  background: C.gold,
                   padding: "12px 22px",
                   borderRadius: 12,
                   textDecoration: "none",
