@@ -121,8 +121,8 @@ export default function LifeWheel() {
       {
         label: 'Minha Vida',
         data: areas.map((a) => a.valor),
-        backgroundColor: 'rgba(30,57,42,0.18)',
-        borderColor: '#1E392A',
+        backgroundColor: 'rgba(200,160,48,0.12)',
+        borderColor: '#C8A030',
         borderWidth: 2,
         pointBackgroundColor: areas.map((a) => a.cor),
         pointBorderColor: '#fff',
@@ -142,7 +142,7 @@ export default function LifeWheel() {
         callbacks: {
           label: (ctx: { raw: unknown }) => ` ${ctx.raw}/10`,
         },
-        backgroundColor: '#1E392A',
+        backgroundColor: '#0E0E0E',
         titleColor: '#F4F1DE',
         bodyColor: '#E0A55F',
         padding: 10,
@@ -160,13 +160,13 @@ export default function LifeWheel() {
           backdropColor: 'transparent',
         },
         grid: {
-          color: 'rgba(30,57,42,0.1)',
+          color: 'rgba(0,0,0,0.08)',
         },
         angleLines: {
-          color: 'rgba(30,57,42,0.12)',
+          color: 'rgba(0,0,0,0.08)',
         },
         pointLabels: {
-          color: '#1E392A',
+          color: '#4A4540',
           font: { size: 11, weight: 'bold' as const, family: 'DM Sans' },
           padding: 8,
         },
@@ -211,7 +211,7 @@ export default function LifeWheel() {
 
       <div className="flex flex-col lg:flex-row">
         {/* Gráfico radar — padding extra para os pointLabels não serem cortados */}
-        <div className="flex items-center justify-center flex-1" style={{ minWidth: 0, padding: '32px 24px 24px' }}>
+        <div className="flex items-center justify-center flex-1" style={{ minWidth: 0, padding: '40px 32px 32px' }}>
           <div style={{ width: '100%', maxWidth: 360, overflow: 'visible' }}>
             <Radar data={chartData} options={chartOptions} />
           </div>
@@ -292,7 +292,7 @@ export default function LifeWheel() {
                     left: 0,
                     width: `${(area.valor / 10) * 100}%`,
                     height: 4,
-                    background: editing === i ? area.cor : '#1E392A',
+                    background: editing === i ? area.cor : '#C8A030',
                   }}
                 />
                 <input
