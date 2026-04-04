@@ -315,7 +315,7 @@ function BottomBar() {
 
 export default function DashboardPage() {
   const { user, isLoaded } = useUser();
-  const { client } = useSupabaseClient();
+  const { getClient } = useSupabaseClient();
 
   const [manchete,   setManchete]   = useState<string | null>(null);
   const [declaracao, setDeclaracao] = useState<string | null>(null);
@@ -328,12 +328,13 @@ export default function DashboardPage() {
       return;
     }
     (async () => {
+      const client = await getClient();
       const data = await buscarVisaoAncora(user.id, client);
       setManchete(data?.manchete   ?? null);
       setDeclaracao(data?.declaracao ?? null);
       setHeroLoading(false);
     })();
-  }, [isLoaded, user?.id, client]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isLoaded, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <DashboardLayout>

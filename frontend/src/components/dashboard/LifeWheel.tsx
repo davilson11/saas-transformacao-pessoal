@@ -67,12 +67,13 @@ export default function LifeWheel() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
 
   const { user } = useUser();
-  const { client } = useSupabaseClient();
+  const { getClient } = useSupabaseClient();
 
   // ── Carregar dados salvos ao montar ──
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
+      const client = await getClient();
       const data = await buscarRodaVida(user.id, client);
       if (!data) return;
       setAreas((prev) =>
@@ -82,7 +83,7 @@ export default function LifeWheel() {
         })
       );
     })();
-  }, [user?.id, client]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const media = (areas.reduce((s, a) => s + a.valor, 0) / areas.length).toFixed(1);
 
@@ -107,6 +108,7 @@ export default function LifeWheel() {
       familia:         areas.find((a) => a.label === 'Família')?.valor         ?? 5,
       espiritualidade: areas.find((a) => a.label === 'Espiritualidade')?.valor ?? 5,
     };
+    const client = await getClient();
     const result = await salvarRodaVida(user.id, scores, client);
     setSaveStatus(result ? 'saved' : 'error');
     if (result) setTimeout(() => setSaveStatus('idle'), 3000);

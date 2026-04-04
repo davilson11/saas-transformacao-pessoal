@@ -64,7 +64,7 @@ export default function FerramentaLayout({
   respostas,
 }: FerramentaLayoutProps) {
   const { user } = useUser();
-  const { client } = useSupabaseClient();
+  const { getClient } = useSupabaseClient();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [concluido, setConcluido] = useState(false);
   const pathname = usePathname();
@@ -86,6 +86,7 @@ export default function FerramentaLayout({
     if (!user?.id) return;
     setSaveStatus("saving");
     try {
+      const client = await getClient();
       const ok = await salvarRespostaFerramenta(
         user.id,
         codigo,

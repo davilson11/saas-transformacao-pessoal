@@ -181,7 +181,7 @@ function ProgressRing({
 
 export default function PerfilPage() {
   const { user, isLoaded } = useUser();
-  const { client } = useSupabaseClient();
+  const { getClient } = useSupabaseClient();
 
   const [respostas,  setRespostas]  = useState<FerramentasRespostas[]>([]);
   const [visao,      setVisao]      = useState<VisaoAncora | null>(null);
@@ -192,6 +192,7 @@ export default function PerfilPage() {
     if (!isLoaded) return;
     if (!user?.id) { setLoading(false); return; }
     (async () => {
+      const client = await getClient();
       const [r, v, w] = await Promise.all([
         buscarTodasRespostas(user.id, client),
         buscarVisaoAncora(user.id, client),
@@ -202,7 +203,7 @@ export default function PerfilPage() {
       setRoda(w);
       setLoading(false);
     })();
-  }, [isLoaded, user?.id, client]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isLoaded, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const concluidas  = respostas.filter((r) => r.concluida);
   const emProgresso = respostas.filter((r) => !r.concluida && r.progresso > 0);
