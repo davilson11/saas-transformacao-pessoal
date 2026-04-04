@@ -555,14 +555,14 @@ export default function DesignVidaPage() {
   });
   const [visao, setVisao] = useState<VisaoAreas>(AREAS_VISAO_INICIAL);
   const [porque, setPorque] = useState<PorqueProundo>({
-
-  const { dados: dadosSalvos } = useCarregarRespostas("design-vida");
-  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).dia) setDia((dadosSalvos as any).dia); if ((dadosSalvos as any).visao) setVisao((dadosSalvos as any).visao); if ((dadosSalvos as any).porque) setPorque((dadosSalvos as any).porque); }, [dadosSalvos]);
     porqueImporta: "",
     quemBeneficia: "",
     seBuscar: "",
     declaracao: "",
   });
+
+  const { dados: dadosSalvos } = useCarregarRespostas("design-vida");
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).dia) setDia((dadosSalvos as any).dia); if ((dadosSalvos as any).visao) setVisao((dadosSalvos as any).visao); if ((dadosSalvos as any).porque) setPorque((dadosSalvos as any).porque); }, [dadosSalvos]);
 
   const updateDia = (campo: keyof DiaPerfeito, valor: string) =>
     setDia((prev) => ({ ...prev, [campo]: valor }));

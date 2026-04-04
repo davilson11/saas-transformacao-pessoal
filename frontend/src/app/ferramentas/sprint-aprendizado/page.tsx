@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
+import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -128,11 +129,11 @@ export default function SprintAprendizadoPage() {
   ]);
 
   const [dias, setDias] = useState<DiaSprint[]>(
+    Array.from({ length: 30 }, () => ({ ...DIA_DEFAULT }))
+  );
 
   const { dados: dadosSalvos } = useCarregarRespostas("sprint-aprendizado");
   useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).config) setConfig((dadosSalvos as any).config); if ((dadosSalvos as any).recursos) setRecursos((dadosSalvos as any).recursos); if ((dadosSalvos as any).projetos) setProjetos((dadosSalvos as any).projetos); if ((dadosSalvos as any).dias) setDias((dadosSalvos as any).dias); }, [dadosSalvos]);
-    Array.from({ length: 30 }, () => ({ ...DIA_DEFAULT }))
-  );
 
   const [diaSelecionado, setDiaSelecionado] = useState<number | null>(null);
 

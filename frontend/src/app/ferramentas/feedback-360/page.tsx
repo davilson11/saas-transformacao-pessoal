@@ -527,13 +527,13 @@ export default function Feedback360Page() {
   const [fontes, setFontes] = useState<Record<string, Fonte>>(FONTES_INICIAIS);
   const [aspectos, setAspectos] = useState<Aspecto[]>(ASPECTOS_INICIAIS);
   const [insights, setInsights] = useState<Insights>({
-
-  const { dados: dadosSalvos } = useCarregarRespostas("feedback-360");
-  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).fontes) setFontes((dadosSalvos as any).fontes); if ((dadosSalvos as any).aspectos) setAspectos((dadosSalvos as any).aspectos); if ((dadosSalvos as any).insights) setInsights((dadosSalvos as any).insights); }, [dadosSalvos]);
     maiorPontoCego: "",
     trabalharEm30Dias: "",
     fecharLoop: "",
   });
+
+  const { dados: dadosSalvos } = useCarregarRespostas("feedback-360");
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).fontes) setFontes((dadosSalvos as any).fontes); if ((dadosSalvos as any).aspectos) setAspectos((dadosSalvos as any).aspectos); if ((dadosSalvos as any).insights) setInsights((dadosSalvos as any).insights); }, [dadosSalvos]);
 
   const updateFonte = (id: string, dados: Partial<Fonte>) =>
     setFontes((prev) => ({ ...prev, [id]: { ...prev[id], ...dados } }));

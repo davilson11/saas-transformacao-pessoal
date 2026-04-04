@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
+import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -422,7 +423,7 @@ export default function AuditoriaTempoPage() {
   const [reflexao, setReflexao] = useState<Reflexao>({ surpresa: '', prioridade: '', compromisso: '' });
 
   const { dados: dadosSalvos } = useCarregarRespostas("auditoria-tempo");
-  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).inventario) setInventario((dadosSalvos as any).inventario); if ((dadosSalvos as any).ade) setAde((dadosSalvos as any).ade); if ((dadosSalvos as any).reflexao) setReflexao((dadosSalvos as any).reflexao); }, [dadosSalvos]);
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).inventario) setInventario((dadosSalvos as any).inventario); if ((dadosSalvos as any).ade) setADE((dadosSalvos as any).ade); if ((dadosSalvos as any).reflexao) setReflexao((dadosSalvos as any).reflexao); }, [dadosSalvos]);
 
   // ── Computed ─────────────────────────────────────────────────────────────────
 

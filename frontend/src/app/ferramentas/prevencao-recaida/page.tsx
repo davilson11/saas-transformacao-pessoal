@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
+import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -365,11 +366,11 @@ export default function PrevencaoRecaidaPage() {
   const [protocolo, setProtocolo] = useState<Protocolo>({ ...PROTOCOLO_DEFAULT });
 
   const [milestones, setMilestones] = useState<Record<string, Milestone>>(
+    Object.fromEntries(MILESTONES_CONFIG.map(m => [m.key, { ...MILESTONE_DEFAULT }]))
+  );
 
   const { dados: dadosSalvos } = useCarregarRespostas("prevencao-recaida");
   useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).cenarios) setCenarios((dadosSalvos as any).cenarios); if ((dadosSalvos as any).protocolo) setProtocolo((dadosSalvos as any).protocolo); if ((dadosSalvos as any).milestones) setMilestones((dadosSalvos as any).milestones); }, [dadosSalvos]);
-    Object.fromEntries(MILESTONES_CONFIG.map(m => [m.key, { ...MILESTONE_DEFAULT }]))
-  );
 
   // ─── Helpers de estado ────────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -11,6 +11,7 @@ import {
 } from 'chart.js';
 import { Radar } from 'react-chartjs-2';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
+import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
 

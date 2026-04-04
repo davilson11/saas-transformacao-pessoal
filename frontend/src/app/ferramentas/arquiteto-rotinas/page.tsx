@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
+import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -460,11 +461,11 @@ export default function ArquitetoRotinasPage() {
   });
 
   const [rastreador, setRastreador] = useState<DiaRastreador[]>(
+    DIAS_SEMANA.map(() => ({ matinal: false, produtivo: false, noturno: false }))
+  );
 
   const { dados: dadosSalvos } = useCarregarRespostas("arquiteto-rotinas");
   useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).matinal) setMatinal((dadosSalvos as any).matinal); if ((dadosSalvos as any).blocos) setBlocos((dadosSalvos as any).blocos); if ((dadosSalvos as any).noturno) setNoturno((dadosSalvos as any).noturno); if ((dadosSalvos as any).rastreador) setRastreador((dadosSalvos as any).rastreador); }, [dadosSalvos]);
-    DIAS_SEMANA.map(() => ({ matinal: false, produtivo: false, noturno: false }))
-  );
 
   // ─── Métricas ──────────────────────────────────────────────────────────────
 

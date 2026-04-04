@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
+import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -405,9 +406,6 @@ export default function RotinaIdealPage() {
   });
 
   const [noturno, setNoturno] = useState<RitualNoturno>({
-
-  const { dados: dadosSalvos } = useCarregarRespostas("rotina-ideal");
-  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).matinal) setMatinal((dadosSalvos as any).matinal); if ((dadosSalvos as any).blocos) setBlocos((dadosSalvos as any).blocos); if ((dadosSalvos as any).noturno) setNoturno((dadosSalvos as any).noturno); }, [dadosSalvos]);
     diario:      { horario: '' },
     desconexao:  { horario: '' },
     higiene:     { horario: '' },
@@ -415,6 +413,9 @@ export default function RotinaIdealPage() {
     gratidao:    { horario: '' },
     dormir:      { horario: '' },
   });
+
+  const { dados: dadosSalvos } = useCarregarRespostas("rotina-ideal");
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).matinal) setMatinal((dadosSalvos as any).matinal); if ((dadosSalvos as any).blocos) setBlocos((dadosSalvos as any).blocos); if ((dadosSalvos as any).noturno) setNoturno((dadosSalvos as any).noturno); }, [dadosSalvos]);
 
   // ── Helpers de update ────────────────────────────────────────────────────────
 
