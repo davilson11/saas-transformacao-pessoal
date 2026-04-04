@@ -193,13 +193,12 @@ export default function VisaoAncoraPage() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
 
   const { user } = useUser();
-  const { getClient } = useSupabaseClient();
+  const { client } = useSupabaseClient();
 
   // ── Carregar dados salvos ao montar ──────────────────────────────────────
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
-      const client = await getClient();
       const data = await buscarVisaoAncora(user.id, client);
       if (!data) return;
       const refs = Array.isArray(data.referencias)
@@ -224,13 +223,12 @@ export default function VisaoAncoraPage() {
         declaracao:    data.declaracao,
       });
     })();
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id, client]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Gerar e salvar ────────────────────────────────────────────────────────
   async function handleGerar() {
     setSaveStatus('saving');
     if (user?.id) {
-      const client = await getClient();
       await salvarVisaoAncora(
         user.id,
         {

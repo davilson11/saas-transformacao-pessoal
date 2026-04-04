@@ -1,27 +1,28 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { createClient } from '@supabase/supabase-js';
+import { supabase, createAuthClient } from './supabase';
 
+/**
+ * Hook que retorna um SupabaseClient autenticado com o JWT do Clerk.
+ * Usa useMemo para criar uma única instância por token (evita "Multiple GoTrueClient instances").
+ * Retorna o client anônimo enquanto o token ainda não foi obtido.
+ */
 export function useSupabaseClient() {
   const { getToken } = useAuth();
+  const [token, setToken] = useState<string | null>(null);
 
-  const getClient = useCallback(async () => {
-    const token = await getToken({ template: 'supabase' });
-
-    return createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      }
-    );
+  useEffect(() => {
+    getToken({ template: 'supabase' })
+      .then((t) => { if (t) setToken(t); })
+      .catch(() => {});
   }, [getToken]);
 
-  return { getClient };
+  const client = useMemo(
+    () => (token ? createAuthClient(token) : supabase),
+    [token]
+  );
+
+  return { client };
 }

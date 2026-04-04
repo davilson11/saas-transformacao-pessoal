@@ -5,15 +5,14 @@ import { useSupabaseClient } from "./useSupabaseClient";
 import { buscarRespostaFerramenta } from "./queries";
 export function useCarregarRespostas<T = Record<string, unknown>>(slug: string) {
   const { user } = useUser();
-  const { getClient } = useSupabaseClient();
+  const { client } = useSupabaseClient();
   const [dados, setDados] = useState<T | null>(null);
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
-      const client = await getClient();
       const r = await buscarRespostaFerramenta(user.id, slug, client);
       if (r?.respostas) setDados(r.respostas as T);
     })();
-  }, [user?.id, slug]);
+  }, [user?.id, slug, client]);
   return { dados };
 }

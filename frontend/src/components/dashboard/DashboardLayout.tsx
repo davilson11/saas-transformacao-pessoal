@@ -408,19 +408,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isLoaded } = useAuth();
   const { user }     = useUser();
   const pathname     = usePathname();
-  const { getClient } = useSupabaseClient();
+  const { client } = useSupabaseClient();
 
   const [pendingCount, setPendingCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
-      const client = await getClient();
       const respostas = await buscarTodasRespostas(user.id, client);
       const concluidas = respostas.filter((r) => r.concluida).length;
       setPendingCount(16 - concluidas);
     })();
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id, client]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isLoaded) return <DashboardSkeleton />;
 
