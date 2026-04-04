@@ -16,9 +16,14 @@ export function useSupabaseClient() {
   const getClient = useCallback(async () => {
     try {
       const token = await getToken({ template: 'supabase' });
-      if (!token) return supabase;
+      if (!token) {
+        console.warn('[useSupabaseClient] ⚠️ JWT token NULL — usando client anônimo. Verifique se o JWT Template "supabase" está configurado no Clerk Dashboard.');
+        return supabase;
+      }
+      console.log('[useSupabaseClient] ✅ JWT token obtido com sucesso. RLS autenticado.');
       return createAuthClient(token);
-    } catch {
+    } catch (err) {
+      console.error('[useSupabaseClient] ❌ Erro ao obter token:', err);
       return supabase;
     }
   }, [getToken]);
