@@ -80,6 +80,15 @@ function IconConfiguracoes() {
   );
 }
 
+function IconMomento() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M9 2v2M9 14v2M2 9h2M14 9h2M4.22 4.22l1.42 1.42M12.36 12.36l1.42 1.42M4.22 13.78l1.42-1.42M12.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+    </svg>
+  );
+}
+
 function IconSearch() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -93,6 +102,7 @@ function IconSearch() {
 
 const PRIMARY_NAV = [
   { label: 'Dashboard',   href: '/dashboard',   icon: <IconDashboard />,   exact: true },
+  { label: 'Momento',     href: '/momento',     icon: <IconMomento />,     exact: true },
   { label: 'Ferramentas', href: '/ferramentas', icon: <IconFerramentas />, exact: false },
   { label: 'Progresso',   href: '/perfil',      icon: <IconProgresso />,   exact: true },
 ];

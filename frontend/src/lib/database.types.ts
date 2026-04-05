@@ -65,6 +65,30 @@ export type RodaVida = {
   created_at:      string;
 };
 
+export type MomentoKairos = {
+  id:            string;
+  data:          string;
+  fase:          number;
+  voz_texto:     string;
+  versiculo:     string;
+  versiculo_ref: string;
+  missao:        string;
+  created_at:    string;
+};
+
+export type DiarioKairos = {
+  id:              string;
+  user_id:         string;
+  data:            string;
+  qualidade_sono:  number | null;
+  emocao:          string | null;
+  preocupacao:     string | null;
+  gratidao:        string | null;
+  missao_cumprida: boolean;
+  created_at:      string;
+  updated_at:      string;
+};
+
 // ─── Schema completo para createClient<Database> ─────────────────────────────
 // Segue o formato exato gerado por `supabase gen types typescript`:
 // Insert — campos com defaults ou nullable são opcionais
@@ -167,6 +191,33 @@ export type Database = {
           espiritualidade?: number;
           familia?:         number;
           crescimento?:     number;
+        };
+        Relationships: [];
+      };
+      diario_kairos: {
+        Row: DiarioKairos;
+        Insert: {
+          id?:              string;
+          user_id:          string;
+          data:             string;
+          qualidade_sono?:  number | null;
+          emocao?:          string | null;
+          preocupacao?:     string | null;
+          gratidao?:        string | null;
+          missao_cumprida?: boolean;
+          created_at?:      string;
+          updated_at?:      string;
+        };
+        Update: {
+          id?:              string;
+          user_id?:         string;
+          data?:            string;
+          qualidade_sono?:  number | null;
+          emocao?:          string | null;
+          preocupacao?:     string | null;
+          gratidao?:        string | null;
+          missao_cumprida?: boolean;
+          updated_at?:      string;
         };
         Relationships: [];
       };
