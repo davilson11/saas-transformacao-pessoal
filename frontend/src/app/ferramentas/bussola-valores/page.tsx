@@ -265,6 +265,12 @@ export default function BussolaValoresPage() {
               <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', lineHeight: 1.5 }}>{codigo.naoTolero.slice(0, 80)}{codigo.naoTolero.length > 80 ? '…' : ''}</p>
             </div>
           )}
+          {codigo.sobPressao && (
+            <div className="rounded-xl p-3" style={{ background: 'rgba(41,128,185,0.05)', border: '1px solid rgba(41,128,185,0.15)' }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: '#2980B9', marginBottom: 3 }}>🧠 Sob pressão</p>
+              <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', lineHeight: 1.5 }}>{codigo.sobPressao.slice(0, 80)}{codigo.sobPressao.length > 80 ? '…' : ''}</p>
+            </div>
+          )}
           {codigo.compromisso && (
             <div className="rounded-xl p-3" style={{ background: 'rgba(30,57,42,0.05)', border: '1px solid rgba(30,57,42,0.12)' }}>
               <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 3 }}>✨ Compromisso</p>
