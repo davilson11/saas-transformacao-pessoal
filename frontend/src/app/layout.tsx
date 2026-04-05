@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
+import SwRegister from "@/components/SwRegister";
 
 export const metadata: Metadata = {
   title: "Kairos — Seu Momento de Virada",
@@ -26,6 +27,12 @@ export default function RootLayout({
     >
       <html lang="pt-BR">
         <head>
+          <meta name="theme-color" content="#C8A030" />
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+          <meta name="apple-mobile-web-app-title" content="Kairos" />
+          <link rel="manifest" href="/manifest.json" />
+          <link rel="apple-touch-icon" href="/icon-192.png" />
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           <link
@@ -34,6 +41,7 @@ export default function RootLayout({
           />
         </head>
         <body className="min-h-screen antialiased overflow-x-hidden">
+          <SwRegister />
           {children}
         </body>
       </html>
