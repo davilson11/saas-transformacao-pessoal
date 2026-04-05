@@ -192,12 +192,16 @@ export default function PerfilPage() {
     if (!isLoaded) return;
     if (!user?.id) { setLoading(false); return; }
     (async () => {
+      console.log('[Perfil] user.id =', user.id);
       const client = await getClient();
       const [r, v, w] = await Promise.all([
         buscarTodasRespostas(user.id, client),
         buscarVisaoAncora(user.id, client),
         buscarRodaVida(user.id, client),
       ]);
+      console.log('[Perfil] buscarTodasRespostas →', r);
+      console.log('[Perfil] buscarVisaoAncora →', v);
+      console.log('[Perfil] buscarRodaVida →', w);
       setRespostas(r);
       setVisao(v);
       setRoda(w);
