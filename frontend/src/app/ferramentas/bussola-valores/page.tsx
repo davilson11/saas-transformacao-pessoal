@@ -197,7 +197,7 @@ export default function BussolaValoresPage() {
     passo === 0 ? true :
     passo === 1 ? selecionados.length === MAX :
     passo === 2 ? ranking.every((v) => v.porque.trim().length > 0) :
-    false;
+    codigo.naoTolero.trim().length > 0 && codigo.sobPressao.trim().length > 0 && codigo.compromisso.trim().length > 0;
 
   const getValor = (id: string) => VALORES.find((v) => v.id === id)!;
   const getCat = (cat: string) => CATEGORIAS.find((c) => c.id === cat)!;
