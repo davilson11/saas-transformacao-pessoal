@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
@@ -67,10 +67,65 @@ export default function FerramentaLayout({
   const { getClient } = useSupabaseClient();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [concluido, setConcluido] = useState(false);
+  const [autoSaveIndicator, setAutoSaveIndicator] = useState(false);
   const pathname = usePathname();
 
   const resolvedSlug =
     slug ?? pathname.split("/").filter(Boolean).pop() ?? codigo.toLowerCase();
+
+  // Refs para capturar os valores mais recentes dentro do intervalo
+  const respostasRef = useRef(respostas);
+  const progressoRef = useRef(progresso);
+  const resolvedSlugRef = useRef(resolvedSlug);
+  const autoSaveIndicatorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => { respostasRef.current = respostas; }, [respostas]);
+  useEffect(() => { progressoRef.current = progresso; }, [progresso]);
+  useEffect(() => { resolvedSlugRef.current = resolvedSlug; }, [resolvedSlug]);
+
+  // Auto-save a cada 30 segundos
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const intervalId = setInterval(async () => {
+      const currentRespostas = respostasRef.current;
+      const hasContent = currentRespostas != null &&
+        Object.values(currentRespostas).some((v) => {
+          if (v === null || v === undefined) return false;
+          if (typeof v === "string") return v.trim().length > 0;
+          if (Array.isArray(v)) return v.length > 0;
+          if (typeof v === "object") return Object.keys(v as object).length > 0;
+          return Boolean(v);
+        });
+
+      if (!hasContent) return;
+
+      try {
+        const client = await getClient();
+        const ok = await salvarRespostaFerramenta(
+          user.id,
+          codigo,
+          resolvedSlugRef.current,
+          (currentRespostas as Json) ?? {},
+          progressoRef.current,
+          false,
+          client,
+        );
+        if (ok) {
+          setAutoSaveIndicator(true);
+          if (autoSaveIndicatorTimeoutRef.current) clearTimeout(autoSaveIndicatorTimeoutRef.current);
+          autoSaveIndicatorTimeoutRef.current = setTimeout(() => setAutoSaveIndicator(false), 2000);
+        }
+      } catch {
+        // auto-save silencioso — não interrompe o usuário
+      }
+    }, 30000);
+
+    return () => {
+      clearInterval(intervalId);
+      if (autoSaveIndicatorTimeoutRef.current) clearTimeout(autoSaveIndicatorTimeoutRef.current);
+    };
+  }, [user?.id, codigo, getClient]);
 
   const isUltimaEtapa = etapaAtual === etapas.length - 1;
 
@@ -493,6 +548,21 @@ export default function FerramentaLayout({
           -ms-overflow-style: none;
         }
         .fl-steps-strip::-webkit-scrollbar { display: none; }
+
+        /* AUTO-SAVE INDICATOR */
+        .fl-autosave {
+          font-size: 11px;
+          color: #4dbb7a;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          white-space: nowrap;
+          flex-shrink: 0;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+          pointer-events: none;
+        }
+        .fl-autosave.visible { opacity: 1; }
       `}</style>
 
       <div className="fl-root">
@@ -516,6 +586,11 @@ export default function FerramentaLayout({
               {totalItens} {labelItens}
             </span>
           )}
+
+          {/* Indicador de auto-save */}
+          <span className={`fl-autosave${autoSaveIndicator ? " visible" : ""}`}>
+            ✓ Salvo automaticamente
+          </span>
 
           {/* Barra de progresso */}
           <div className="fl-progress-wrap">
