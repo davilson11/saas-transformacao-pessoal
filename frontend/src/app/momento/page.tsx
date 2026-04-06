@@ -8,6 +8,10 @@ import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
 
 const EMOCOES = ['animado', 'focado', 'grato', 'cansado', 'ansioso', 'tranquilo'];
 
+const EMOCAO_VALOR: Record<string, number> = {
+  animado: 5, grato: 5, focado: 4, tranquilo: 3, cansado: 2, ansioso: 1,
+};
+
 function calcularStreak(hist: Partial<DiarioKairos>[]): number {
   if (!hist.length) return 0;
   const datas = hist.map(h => h.data).sort((a, b) => b!.localeCompare(a!));
@@ -17,13 +21,85 @@ function calcularStreak(hist: Partial<DiarioKairos>[]): number {
     const esperado = new Date(hoje);
     esperado.setDate(hoje.getDate() - i);
     const esperadoStr = esperado.toISOString().split('T')[0];
-    if (datas[i] === esperadoStr) {
-      streak++;
-    } else {
-      break;
-    }
+    if (datas[i] === esperadoStr) streak++;
+    else break;
   }
   return streak;
+}
+
+function GraficoHumor({ historico }: { historico: Partial<DiarioKairos>[] }) {
+  const W = 580, H = 140, PAD = 32;
+  const dias = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const dataStr = d.toISOString().split('T')[0];
+    const reg = historico.find(h => h.data === dataStr);
+    return {
+      label: d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''),
+      sono: reg?.qualidade_sono ?? null,
+      emocao: reg?.emocao ? (EMOCAO_VALOR[reg.emocao] ?? null) : null,
+    };
+  });
+
+  const xStep = (W - PAD * 2) / 6;
+  const yScale = (v: number) => H - PAD - ((v - 1) / 4) * (H - PAD * 2);
+
+  const pontosSono = dias.map((d, i) => d.sono !== null ? { x: PAD + i * xStep, y: yScale(d.sono!) } : null);
+  const pontosEmocao = dias.map((d, i) => d.emocao !== null ? { x: PAD + i * xStep, y: yScale(d.emocao!) } : null);
+
+  const linhaPath = (pts: (({ x: number; y: number }) | null)[]) => {
+    const validos = pts.map((p, i) => ({ p, i })).filter(x => x.p !== null);
+    if (validos.length < 2) return '';
+    return validos.map((x, i) => `${i === 0 ? 'M' : 'L'} ${x.p!.x} ${x.p!.y}`).join(' ');
+  };
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '20px 24px' }}>
+      <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 4 }}>Meu humor esta semana</p>
+      <div style={{ display: 'flex', gap: 16, marginBottom: 14 }}>
+        <span style={{ fontSize: 11, color: '#C8A030', fontWeight: 600 }}>— Sono</span>
+        <span style={{ fontSize: 11, color: '#1E392A', fontWeight: 600 }}>— Emoção</span>
+      </div>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
+        {/* Grid lines */}
+        {[1,2,3,4,5].map(v => (
+          <line key={v} x1={PAD} y1={yScale(v)} x2={W - PAD} y2={yScale(v)}
+            stroke="rgba(30,57,42,0.06)" strokeWidth="1" />
+        ))}
+        {/* Linha sono */}
+        <path d={linhaPath(pontosSono)} fill="none" stroke="#C8A030" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Linha emoção */}
+        <path d={linhaPath(pontosEmocao)} fill="none" stroke="#1E392A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="4 3" />
+        {/* Pontos sono */}
+        {pontosSono.map((p, i) => p && (
+          <circle key={i} cx={p.x} cy={p.y} r={4} fill="#C8A030" stroke="#fff" strokeWidth="2" />
+        ))}
+        {/* Pontos emoção */}
+        {pontosEmocao.map((p, i) => p && (
+          <circle key={i} cx={p.x} cy={p.y} r={4} fill="#1E392A" stroke="#fff" strokeWidth="2" />
+        ))}
+        {/* Labels dias */}
+        {dias.map((d, i) => (
+          <text key={i} x={PAD + i * xStep} y={H - 4} textAnchor="middle"
+            fontSize="10" fill="rgba(30,57,42,0.4)" style={{ textTransform: 'capitalize' }}>
+            {d.label}
+          </text>
+        ))}
+        {/* Labels Y */}
+        {[1,3,5].map(v => (
+          <text key={v} x={PAD - 6} y={yScale(v) + 4} textAnchor="end"
+            fontSize="10" fill="rgba(30,57,42,0.3)">
+            {v}
+          </text>
+        ))}
+      </svg>
+      {dias.every(d => d.sono === null && d.emocao === null) && (
+        <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', textAlign: 'center', marginTop: 8 }}>
+          Registre seu diário para ver o gráfico 📊
+        </p>
+      )}
+    </div>
+  );
 }
 
 export default function MomentoPage() {
@@ -46,26 +122,18 @@ export default function MomentoPage() {
       const client = await getClient();
 
       const { data: momentoData } = await client
-        .from('momento_kairos')
-        .select('*')
-        .eq('data', hoje)
-        .single();
+        .from('momento_kairos').select('*').eq('data', hoje).single();
       if (momentoData) setMomento(momentoData);
 
       const { data: diarioData } = await client
-        .from('diario_kairos')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('data', hoje)
-        .single();
+        .from('diario_kairos').select('*')
+        .eq('user_id', user.id).eq('data', hoje).single();
       if (diarioData) setDiario(diarioData);
 
       const { data: hist } = await client
-        .from('diario_kairos')
-        .select('*')
+        .from('diario_kairos').select('*')
         .eq('user_id', user.id)
-        .order('data', { ascending: false })
-        .limit(30);
+        .order('data', { ascending: false }).limit(30);
       if (hist) {
         setHistorico(hist);
         setStreak(calcularStreak(hist));
@@ -80,8 +148,7 @@ export default function MomentoPage() {
     setSalvando(true);
     const client = await getClient();
     await client.from('diario_kairos').upsert({
-      user_id: user.id,
-      data: hoje,
+      user_id: user.id, data: hoje,
       qualidade_sono: diario.qualidade_sono ?? null,
       emocao: diario.emocao ?? null,
       preocupacao: diario.preocupacao ?? null,
@@ -109,12 +176,8 @@ export default function MomentoPage() {
     <DashboardLayout>
       <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center', padding: '60px 24px' }}>
         <p style={{ fontSize: 32, marginBottom: 16 }}>☀️</p>
-        <p style={{ fontSize: 18, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 8 }}>
-          Momento ainda não disponível
-        </p>
-        <p style={{ fontSize: 14, color: 'var(--color-brand-gray)' }}>
-          O conteúdo de hoje ainda está sendo preparado. Volte mais tarde.
-        </p>
+        <p style={{ fontSize: 18, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 8 }}>Momento ainda não disponível</p>
+        <p style={{ fontSize: 14, color: 'var(--color-brand-gray)' }}>O conteúdo de hoje ainda está sendo preparado. Volte mais tarde.</p>
       </div>
     </DashboardLayout>
   );
@@ -161,9 +224,7 @@ export default function MomentoPage() {
 
         {/* Voz do dia */}
         <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '20px 24px', borderLeft: '3px solid #C8A030' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-brand-gray)', marginBottom: 12 }}>
-            A voz do dia
-          </p>
+          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-brand-gray)', marginBottom: 12 }}>A voz do dia</p>
           <p style={{ fontSize: 15, color: 'var(--color-brand-dark-green)', lineHeight: 1.8, fontFamily: 'var(--font-heading)', fontStyle: 'italic', margin: 0 }}>
             &ldquo;{momento.voz_texto}&rdquo;
           </p>
@@ -183,14 +244,10 @@ export default function MomentoPage() {
 
         {/* Missão */}
         <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '16px 20px' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C8A030', marginBottom: 8 }}>
-            Sua missão de hoje
-          </p>
+          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C8A030', marginBottom: 8 }}>Sua missão de hoje</p>
           <p style={{ fontSize: 15, color: 'var(--color-brand-dark-green)', lineHeight: 1.7, margin: '0 0 12px' }}>{momento.missao}</p>
-          <button
-            onClick={() => setDiario(d => ({ ...d, missao_cumprida: !d.missao_cumprida }))}
-            style={{ width: '100%', padding: '9px', borderRadius: 8, fontSize: 13, cursor: 'pointer', background: diario.missao_cumprida ? '#C8A030' : 'transparent', color: diario.missao_cumprida ? '#0E0E0E' : 'var(--color-brand-dark-green)', border: `1px solid ${diario.missao_cumprida ? '#C8A030' : 'var(--color-brand-border)'}`, fontWeight: diario.missao_cumprida ? 600 : 400, transition: 'all 0.2s' }}
-          >
+          <button onClick={() => setDiario(d => ({ ...d, missao_cumprida: !d.missao_cumprida }))}
+            style={{ width: '100%', padding: '9px', borderRadius: 8, fontSize: 13, cursor: 'pointer', background: diario.missao_cumprida ? '#C8A030' : 'transparent', color: diario.missao_cumprida ? '#0E0E0E' : 'var(--color-brand-dark-green)', border: `1px solid ${diario.missao_cumprida ? '#C8A030' : 'var(--color-brand-border)'}`, fontWeight: diario.missao_cumprida ? 600 : 400, transition: 'all 0.2s' }}>
             {diario.missao_cumprida ? '✓ Missão cumprida!' : 'Marcar como cumprida'}
           </button>
         </div>
@@ -243,14 +300,13 @@ export default function MomentoPage() {
           </button>
         </div>
 
+        {/* Gráfico de humor */}
+        <GraficoHumor historico={historico} />
+
         {/* Histórico 30 dias */}
         <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '20px 24px' }}>
-          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 4 }}>
-            Meu histórico
-          </p>
-          <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginBottom: 16 }}>
-            Últimos 30 dias — clique num dia para ver o registro
-          </p>
+          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 4 }}>Meu histórico</p>
+          <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginBottom: 16 }}>Últimos 30 dias — clique num dia para ver o registro</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {Array.from({ length: 30 }).map((_, i) => {
               const d = new Date();
@@ -261,7 +317,7 @@ export default function MomentoPage() {
               return (
                 <button key={dataStr} onClick={() => registro ? setDiaSelecionado(diaSelecionado?.data === dataStr ? null : registro) : null}
                   title={dataStr}
-                  style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', cursor: registro ? 'pointer' : 'default', background: isHoje ? '#C8A030' : registro ? '#1E392A' : 'rgba(30,57,42,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: isHoje ? '0 0 10px rgba(200,160,48,0.4)' : 'none', transition: 'transform 0.15s' }}>
+                  style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', cursor: registro ? 'pointer' : 'default', background: isHoje ? '#C8A030' : registro ? '#1E392A' : 'rgba(30,57,42,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: isHoje ? '0 0 10px rgba(200,160,48,0.4)' : 'none' }}>
                   {isHoje ? <span style={{ fontSize: 14 }}>🔥</span> :
                    registro ? <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#C8A030" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                    : null}
