@@ -7,6 +7,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import LifeWheel from "@/components/dashboard/LifeWheel";
 import NextActions from "@/components/dashboard/NextActions";
 import PhaseProgress from "@/components/dashboard/PhaseProgress";
+import MomentoKairosCard from "@/components/dashboard/MomentoKairosCard";
 import { buscarVisaoAncora } from "@/lib/queries";
 import { useSupabaseClient } from "@/lib/useSupabaseClient";
 
@@ -351,6 +352,9 @@ export default function DashboardPage() {
           <LifeWheel />
           <NextActions />
         </div>
+
+        {/* Momento Kairos */}
+        <MomentoKairosCard />
 
         {/* 3. Progresso por Fase — grid 2×2 */}
         <PhaseProgress />
