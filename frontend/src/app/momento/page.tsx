@@ -8,38 +8,41 @@ import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
 
 const EMOCOES = ['animado', 'focado', 'grato', 'cansado', 'ansioso', 'tranquilo'];
 
-const MOMENTO_EXEMPLO: MomentoKairos = {
-  id: '1',
-  data: new Date().toISOString().split('T')[0],
-  fase: 1,
-  voz_texto: 'Eu não te coloquei nessa jornada para que você apenas sobreviva a ela — te coloquei para que você a domine. O autoconhecimento que estás buscando não é um luxo, é uma arma. Quem conhece a si mesmo não pode ser facilmente derrubado. Levanta. Olha fundo. O que você vai encontrar dentro de você vai surpreender até a você mesmo.',
-  versiculo: 'Pois tu mesmo criaste as minhas entranhas; tu me teceste no ventre de minha mãe. Graças te dou pelo fato de eu ser uma criação tão admirável.',
-  versiculo_ref: 'Salmos 139:13-14 — TPT',
-  missao: 'Pegue um papel e escreva 3 coisas que você descobriu sobre si mesmo desde que começou o Kairos. Não pense muito — escreva o que vier primeiro.',
-  created_at: new Date().toISOString(),
-};
-
 export default function MomentoPage() {
   const { user } = useUser();
   const { getClient } = useSupabaseClient();
 
-  const [momento] = useState<MomentoKairos>(MOMENTO_EXEMPLO);
+  const [momento, setMomento] = useState<MomentoKairos | null>(null);
   const [diario, setDiario] = useState<Partial<DiarioKairos>>({});
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
+  const [carregando, setCarregando] = useState(true);
   const hoje = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
       const client = await getClient();
-      const { data } = await client
+
+      // Busca o momento do dia no banco
+      const { data: momentoData } = await client
+        .from('momento_kairos')
+        .select('*')
+        .eq('data', hoje)
+        .single();
+
+      if (momentoData) setMomento(momentoData);
+
+      // Busca o diário do usuário para hoje
+      const { data: diarioData } = await client
         .from('diario_kairos')
         .select('*')
         .eq('user_id', user.id)
         .eq('data', hoje)
         .single();
-      if (data) setDiario(data);
+
+      if (diarioData) setDiario(diarioData);
+      setCarregando(false);
     })();
   }, [user?.id]);
 
@@ -64,6 +67,28 @@ export default function MomentoPage() {
 
   const nomeUsuario = user?.firstName ?? 'Davilson';
   const dataLabel = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  if (carregando) return (
+    <DashboardLayout>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+        <p style={{ color: 'var(--color-brand-gray)', fontSize: 14 }}>Carregando seu Momento...</p>
+      </div>
+    </DashboardLayout>
+  );
+
+  if (!momento) return (
+    <DashboardLayout>
+      <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center', padding: '60px 24px' }}>
+        <p style={{ fontSize: 32, marginBottom: 16 }}>☀️</p>
+        <p style={{ fontSize: 18, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 8 }}>
+          Momento ainda não disponível
+        </p>
+        <p style={{ fontSize: 14, color: 'var(--color-brand-gray)' }}>
+          O conteúdo de hoje ainda está sendo preparado. Volte mais tarde.
+        </p>
+      </div>
+    </DashboardLayout>
+  );
 
   return (
     <DashboardLayout>
@@ -110,21 +135,18 @@ export default function MomentoPage() {
             Sua missão de hoje
           </p>
           <p style={{ fontSize: 15, color: 'var(--color-brand-dark-green)', lineHeight: 1.7, margin: '0 0 12px' }}>{momento.missao}</p>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={() => setDiario(d => ({ ...d, missao_cumprida: true }))}
-              style={{ flex: 1, padding: '9px', borderRadius: 8, fontSize: 13, cursor: 'pointer', background: diario.missao_cumprida ? '#C8A030' : 'transparent', color: diario.missao_cumprida ? '#0E0E0E' : 'var(--color-brand-dark-green)', border: `1px solid ${diario.missao_cumprida ? '#C8A030' : 'var(--color-brand-border)'}`, fontWeight: diario.missao_cumprida ? 600 : 400 }}
-            >
-              {diario.missao_cumprida ? '✓ Missão cumprida!' : 'Marcar como cumprida'}
-            </button>
-          </div>
+          <button
+            onClick={() => setDiario(d => ({ ...d, missao_cumprida: !d.missao_cumprida }))}
+            style={{ width: '100%', padding: '9px', borderRadius: 8, fontSize: 13, cursor: 'pointer', background: diario.missao_cumprida ? '#C8A030' : 'transparent', color: diario.missao_cumprida ? '#0E0E0E' : 'var(--color-brand-dark-green)', border: `1px solid ${diario.missao_cumprida ? '#C8A030' : 'var(--color-brand-border)'}`, fontWeight: diario.missao_cumprida ? 600 : 400, transition: 'all 0.2s' }}
+          >
+            {diario.missao_cumprida ? '✓ Missão cumprida!' : 'Marcar como cumprida'}
+          </button>
         </div>
 
         {/* Diário */}
         <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '20px 24px' }}>
           <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 16 }}>Meu diário de hoje</p>
 
-          {/* Sono */}
           <div style={{ marginBottom: 16 }}>
             <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginBottom: 8, fontWeight: 500 }}>Como dormi?</p>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -137,7 +159,6 @@ export default function MomentoPage() {
             </div>
           </div>
 
-          {/* Emoção */}
           <div style={{ marginBottom: 16 }}>
             <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginBottom: 8, fontWeight: 500 }}>Como estou agora?</p>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -150,7 +171,6 @@ export default function MomentoPage() {
             </div>
           </div>
 
-          {/* Preocupação */}
           <div style={{ marginBottom: 14 }}>
             <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginBottom: 6, fontWeight: 500 }}>O que está pesando na sua mente hoje?</p>
             <textarea rows={3} value={diario.preocupacao ?? ''} onChange={e => setDiario(d => ({ ...d, preocupacao: e.target.value }))}
@@ -158,7 +178,6 @@ export default function MomentoPage() {
               style={{ width: '100%', fontSize: 14, resize: 'none', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--color-brand-border)', fontFamily: 'var(--font-body)', color: 'var(--color-brand-dark-green)', background: 'rgba(30,57,42,0.02)', outline: 'none', boxSizing: 'border-box' }} />
           </div>
 
-          {/* Gratidão */}
           <div style={{ marginBottom: 20 }}>
             <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginBottom: 6, fontWeight: 500 }}>Pelo que sou grato hoje?</p>
             <textarea rows={3} value={diario.gratidao ?? ''} onChange={e => setDiario(d => ({ ...d, gratidao: e.target.value }))}
@@ -166,7 +185,6 @@ export default function MomentoPage() {
               style={{ width: '100%', fontSize: 14, resize: 'none', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--color-brand-border)', fontFamily: 'var(--font-body)', color: 'var(--color-brand-dark-green)', background: 'rgba(30,57,42,0.02)', outline: 'none', boxSizing: 'border-box' }} />
           </div>
 
-          {/* Botão salvar */}
           <button onClick={salvarDiario} disabled={salvando}
             style={{ width: '100%', padding: 13, background: salvo ? '#27AE60' : '#0E0E0E', color: '#F5F0E8', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: salvando ? 'wait' : 'pointer', transition: 'background 0.2s', letterSpacing: '0.04em' }}>
             {salvando ? 'Salvando...' : salvo ? '✓ Diário registrado!' : 'Registrar meu dia'}
