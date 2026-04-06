@@ -87,6 +87,10 @@ export type DiarioKairos = {
   missao_cumprida: boolean;
   created_at:      string;
   updated_at:      string;
+  conquista: string | null;
+  aprendizado: string | null;
+  energia_fim: number | null;
+  nota_dia: number | null;
 };
 
 // ─── Schema completo para createClient<Database> ─────────────────────────────
