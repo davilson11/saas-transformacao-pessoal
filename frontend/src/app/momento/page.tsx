@@ -214,9 +214,12 @@ export default function MomentoPage() {
     if (!user?.id) return;
     (async () => {
       const client = await getClient();
-      const { data: momentoData } = await client.from('momento_kairos').select('*').eq('data', hoje).single();
+      const { data: momentoData } = await client
+      .from('momento_kairos').select('*').eq('data', hoje).maybeSingle();
       if (momentoData) setMomento(momentoData);
-      const { data: diarioData } = await client.from('diario_kairos').select('*').eq('user_id', user.id).eq('data', hoje).single();
+      const { data: diarioData } = await client
+      .from('diario_kairos').select('*')
+      .eq('user_id', user.id).eq('data', hoje).maybeSingle();
       if (diarioData) setDiario(diarioData);
       const { data: hist } = await client.from('diario_kairos').select('*').eq('user_id', user.id).order('data', { ascending: false }).limit(30);
       if (hist) { setHistorico(hist); setStreak(calcularStreak(hist)); }
