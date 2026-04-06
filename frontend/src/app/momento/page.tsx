@@ -43,10 +43,8 @@ function GraficoHumor({ historico }: { historico: Partial<DiarioKairos>[] }) {
 
   const xStep = (W - PAD * 2) / 6;
   const yScale = (v: number) => H - PAD - ((v - 1) / 4) * (H - PAD * 2);
-
   const pontosSono = dias.map((d, i) => d.sono !== null ? { x: PAD + i * xStep, y: yScale(d.sono!) } : null);
   const pontosEmocao = dias.map((d, i) => d.emocao !== null ? { x: PAD + i * xStep, y: yScale(d.emocao!) } : null);
-
   const linhaPath = (pts: (({ x: number; y: number }) | null)[]) => {
     const validos = pts.map((p, i) => ({ p, i })).filter(x => x.p !== null);
     if (validos.length < 2) return '';
@@ -61,42 +59,22 @@ function GraficoHumor({ historico }: { historico: Partial<DiarioKairos>[] }) {
         <span style={{ fontSize: 11, color: '#1E392A', fontWeight: 600 }}>— Emoção</span>
       </div>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
-        {/* Grid lines */}
         {[1,2,3,4,5].map(v => (
-          <line key={v} x1={PAD} y1={yScale(v)} x2={W - PAD} y2={yScale(v)}
-            stroke="rgba(30,57,42,0.06)" strokeWidth="1" />
+          <line key={v} x1={PAD} y1={yScale(v)} x2={W - PAD} y2={yScale(v)} stroke="rgba(30,57,42,0.06)" strokeWidth="1" />
         ))}
-        {/* Linha sono */}
         <path d={linhaPath(pontosSono)} fill="none" stroke="#C8A030" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        {/* Linha emoção */}
         <path d={linhaPath(pontosEmocao)} fill="none" stroke="#1E392A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="4 3" />
-        {/* Pontos sono */}
-        {pontosSono.map((p, i) => p && (
-          <circle key={i} cx={p.x} cy={p.y} r={4} fill="#C8A030" stroke="#fff" strokeWidth="2" />
-        ))}
-        {/* Pontos emoção */}
-        {pontosEmocao.map((p, i) => p && (
-          <circle key={i} cx={p.x} cy={p.y} r={4} fill="#1E392A" stroke="#fff" strokeWidth="2" />
-        ))}
-        {/* Labels dias */}
+        {pontosSono.map((p, i) => p && <circle key={i} cx={p.x} cy={p.y} r={4} fill="#C8A030" stroke="#fff" strokeWidth="2" />)}
+        {pontosEmocao.map((p, i) => p && <circle key={i} cx={p.x} cy={p.y} r={4} fill="#1E392A" stroke="#fff" strokeWidth="2" />)}
         {dias.map((d, i) => (
-          <text key={i} x={PAD + i * xStep} y={H - 4} textAnchor="middle"
-            fontSize="10" fill="rgba(30,57,42,0.4)" style={{ textTransform: 'capitalize' }}>
-            {d.label}
-          </text>
+          <text key={i} x={PAD + i * xStep} y={H - 4} textAnchor="middle" fontSize="10" fill="rgba(30,57,42,0.4)">{d.label}</text>
         ))}
-        {/* Labels Y */}
         {[1,3,5].map(v => (
-          <text key={v} x={PAD - 6} y={yScale(v) + 4} textAnchor="end"
-            fontSize="10" fill="rgba(30,57,42,0.3)">
-            {v}
-          </text>
+          <text key={v} x={PAD - 6} y={yScale(v) + 4} textAnchor="end" fontSize="10" fill="rgba(30,57,42,0.3)">{v}</text>
         ))}
       </svg>
       {dias.every(d => d.sono === null && d.emocao === null) && (
-        <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', textAlign: 'center', marginTop: 8 }}>
-          Registre seu diário para ver o gráfico 📊
-        </p>
+        <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', textAlign: 'center', marginTop: 8 }}>Registre seu diário para ver o gráfico 📊</p>
       )}
     </div>
   );
@@ -110,6 +88,8 @@ export default function MomentoPage() {
   const [diario, setDiario] = useState<Partial<DiarioKairos>>({});
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
+  const [salvandoNoite, setSalvandoNoite] = useState(false);
+  const [salvoNoite, setSalvoNoite] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [historico, setHistorico] = useState<Partial<DiarioKairos>[]>([]);
   const [diaSelecionado, setDiaSelecionado] = useState<Partial<DiarioKairos> | null>(null);
@@ -159,6 +139,23 @@ export default function MomentoPage() {
     setSalvando(false);
     setSalvo(true);
     setTimeout(() => setSalvo(false), 3000);
+  }
+
+  async function salvarReflexaoNoite() {
+    if (!user?.id) return;
+    setSalvandoNoite(true);
+    const client = await getClient();
+    await client.from('diario_kairos').upsert({
+      user_id: user.id, data: hoje,
+      conquista: diario.conquista ?? null,
+      aprendizado: diario.aprendizado ?? null,
+      energia_fim: diario.energia_fim ?? null,
+      nota_dia: diario.nota_dia ?? null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,data' });
+    setSalvandoNoite(false);
+    setSalvoNoite(true);
+    setTimeout(() => setSalvoNoite(false), 3000);
   }
 
   const nomeUsuario = user?.firstName ?? 'Davilson';
@@ -252,9 +249,12 @@ export default function MomentoPage() {
           </button>
         </div>
 
-        {/* Diário */}
+        {/* Diário manhã */}
         <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '20px 24px' }}>
-          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 16 }}>Meu diário de hoje</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <span style={{ fontSize: 16 }}>☀️</span>
+            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-brand-dark-green)', margin: 0 }}>Registro da manhã</p>
+          </div>
 
           <div style={{ marginBottom: 16 }}>
             <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginBottom: 8, fontWeight: 500 }}>Como dormi?</p>
@@ -296,7 +296,58 @@ export default function MomentoPage() {
 
           <button onClick={salvarDiario} disabled={salvando}
             style={{ width: '100%', padding: 13, background: salvo ? '#27AE60' : '#0E0E0E', color: '#F5F0E8', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: salvando ? 'wait' : 'pointer', transition: 'background 0.2s', letterSpacing: '0.04em' }}>
-            {salvando ? 'Salvando...' : salvo ? '✓ Diário registrado!' : 'Registrar meu dia'}
+            {salvando ? 'Salvando...' : salvo ? '✓ Manhã registrada!' : 'Registrar manhã'}
+          </button>
+        </div>
+
+        {/* Reflexão da noite */}
+        <div style={{ background: 'linear-gradient(135deg, #0a0a1a, #0e1a2d)', border: '1px solid rgba(100,120,200,0.2)', borderRadius: 12, padding: '20px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <span style={{ fontSize: 16 }}>🌙</span>
+            <p style={{ fontSize: 15, fontWeight: 600, color: '#F5F0E8', margin: 0 }}>Reflexão da noite</p>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <p style={{ fontSize: 12, color: 'rgba(245,240,232,0.5)', marginBottom: 6, fontWeight: 500 }}>O que conquistei hoje?</p>
+            <textarea rows={3} value={diario.conquista ?? ''} onChange={e => setDiario(d => ({ ...d, conquista: e.target.value }))}
+              placeholder="Uma vitória, por menor que seja..."
+              style={{ width: '100%', fontSize: 14, resize: 'none', borderRadius: 8, padding: '10px 12px', border: '1px solid rgba(245,240,232,0.1)', fontFamily: 'var(--font-body)', color: '#F5F0E8', background: 'rgba(255,255,255,0.05)', outline: 'none', boxSizing: 'border-box' }} />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: 'rgba(245,240,232,0.5)', marginBottom: 6, fontWeight: 500 }}>O que aprendi hoje?</p>
+            <textarea rows={3} value={diario.aprendizado ?? ''} onChange={e => setDiario(d => ({ ...d, aprendizado: e.target.value }))}
+              placeholder="Uma lição, insight ou descoberta..."
+              style={{ width: '100%', fontSize: 14, resize: 'none', borderRadius: 8, padding: '10px 12px', border: '1px solid rgba(245,240,232,0.1)', fontFamily: 'var(--font-body)', color: '#F5F0E8', background: 'rgba(255,255,255,0.05)', outline: 'none', boxSizing: 'border-box' }} />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: 'rgba(245,240,232,0.5)', marginBottom: 8, fontWeight: 500 }}>Energia no fim do dia</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[1,2,3,4,5].map(n => (
+                <button key={n} onClick={() => setDiario(d => ({ ...d, energia_fim: n }))}
+                  style={{ width: 36, height: 36, borderRadius: '50%', border: `1px solid ${diario.energia_fim === n ? '#C8A030' : 'rgba(245,240,232,0.15)'}`, background: diario.energia_fim === n ? '#C8A030' : 'transparent', color: diario.energia_fim === n ? '#0E0E0E' : 'rgba(245,240,232,0.5)', fontSize: 13, fontWeight: diario.energia_fim === n ? 600 : 400, cursor: 'pointer' }}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ fontSize: 12, color: 'rgba(245,240,232,0.5)', marginBottom: 8, fontWeight: 500 }}>Nota do dia</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[1,2,3,4,5].map(n => (
+                <button key={n} onClick={() => setDiario(d => ({ ...d, nota_dia: n }))}
+                  style={{ width: 36, height: 36, borderRadius: '50%', border: `1px solid ${diario.nota_dia === n ? '#C8A030' : 'rgba(245,240,232,0.15)'}`, background: diario.nota_dia === n ? '#C8A030' : 'transparent', color: diario.nota_dia === n ? '#0E0E0E' : 'rgba(245,240,232,0.5)', fontSize: 13, fontWeight: diario.nota_dia === n ? 600 : 400, cursor: 'pointer' }}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button onClick={salvarReflexaoNoite} disabled={salvandoNoite}
+            style={{ width: '100%', padding: 13, background: salvoNoite ? '#27AE60' : 'rgba(200,160,48,0.9)', color: '#0E0E0E', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: salvandoNoite ? 'wait' : 'pointer', transition: 'background 0.2s', letterSpacing: '0.04em' }}>
+            {salvandoNoite ? 'Salvando...' : salvoNoite ? '✓ Noite registrada!' : 'Registrar reflexão da noite'}
           </button>
         </div>
 
@@ -336,6 +387,10 @@ export default function MomentoPage() {
                 {diaSelecionado.emocao && <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', margin: 0 }}>❤️ Emoção: <strong>{diaSelecionado.emocao}</strong></p>}
                 {diaSelecionado.preocupacao && <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', margin: 0 }}>💭 Pesando: <em>"{diaSelecionado.preocupacao}"</em></p>}
                 {diaSelecionado.gratidao && <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', margin: 0 }}>🙏 Gratidão: <em>"{diaSelecionado.gratidao}"</em></p>}
+                {diaSelecionado.conquista && <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', margin: 0 }}>✅ Conquista: <em>"{diaSelecionado.conquista}"</em></p>}
+                {diaSelecionado.aprendizado && <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', margin: 0 }}>📖 Aprendizado: <em>"{diaSelecionado.aprendizado}"</em></p>}
+                {diaSelecionado.energia_fim && <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', margin: 0 }}>🔋 Energia fim: <strong>{diaSelecionado.energia_fim}/5</strong></p>}
+                {diaSelecionado.nota_dia && <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', margin: 0 }}>⭐ Nota do dia: <strong>{diaSelecionado.nota_dia}/5</strong></p>}
                 {diaSelecionado.missao_cumprida && <p style={{ fontSize: 13, color: '#27AE60', fontWeight: 600, margin: 0 }}>✓ Missão cumprida neste dia!</p>}
               </div>
             </div>
