@@ -8,6 +8,24 @@ import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
 
 const EMOCOES = ['animado', 'focado', 'grato', 'cansado', 'ansioso', 'tranquilo'];
 
+function calcularStreak(hist: Partial<DiarioKairos>[]): number {
+  if (!hist.length) return 0;
+  const datas = hist.map(h => h.data).sort((a, b) => b!.localeCompare(a!));
+  let streak = 0;
+  const hoje = new Date();
+  for (let i = 0; i < datas.length; i++) {
+    const esperado = new Date(hoje);
+    esperado.setDate(hoje.getDate() - i);
+    const esperadoStr = esperado.toISOString().split('T')[0];
+    if (datas[i] === esperadoStr) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
 export default function MomentoPage() {
   const { user } = useUser();
   const { getClient } = useSupabaseClient();
@@ -19,6 +37,7 @@ export default function MomentoPage() {
   const [carregando, setCarregando] = useState(true);
   const [historico, setHistorico] = useState<Partial<DiarioKairos>[]>([]);
   const [diaSelecionado, setDiaSelecionado] = useState<Partial<DiarioKairos> | null>(null);
+  const [streak, setStreak] = useState(0);
   const hoje = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
@@ -47,7 +66,10 @@ export default function MomentoPage() {
         .eq('user_id', user.id)
         .order('data', { ascending: false })
         .limit(30);
-      if (hist) setHistorico(hist);
+      if (hist) {
+        setHistorico(hist);
+        setStreak(calcularStreak(hist));
+      }
 
       setCarregando(false);
     })();
@@ -112,6 +134,29 @@ export default function MomentoPage() {
           <p style={{ fontSize: 22, fontFamily: 'var(--font-heading)', color: '#F5F0E8', fontWeight: 400, margin: 0 }}>
             Bom dia, {nomeUsuario}.
           </p>
+        </div>
+
+        {/* Streak */}
+        <div style={{ background: streak >= 7 ? 'linear-gradient(135deg, #1a0a00, #2d1600)' : '#fff', border: `1px solid ${streak >= 7 ? 'rgba(200,160,48,0.4)' : 'var(--color-brand-border)'}`, borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ width: 52, height: 52, borderRadius: '50%', background: streak > 0 ? 'rgba(200,160,48,0.15)' : 'rgba(30,57,42,0.06)', border: `2px solid ${streak > 0 ? '#C8A030' : 'var(--color-brand-border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: 22 }}>{streak >= 14 ? '⚡' : streak >= 7 ? '🔥' : streak >= 3 ? '✨' : '💤'}</span>
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 22, fontWeight: 700, color: streak > 0 ? '#C8A030' : 'var(--color-brand-gray)', margin: 0, lineHeight: 1 }}>
+              {streak} {streak === 1 ? 'dia' : 'dias'}
+            </p>
+            <p style={{ fontSize: 12, color: streak >= 7 ? 'rgba(200,160,48,0.7)' : 'var(--color-brand-gray)', margin: '4px 0 0', fontWeight: 500 }}>
+              {streak === 0 && 'Comece hoje sua sequência!'}
+              {streak === 1 && 'Primeiro dia — continue amanhã!'}
+              {streak >= 2 && streak < 7 && `${streak} dias seguidos — não pare agora!`}
+              {streak >= 7 && streak < 14 && '🔥 Uma semana de consistência!'}
+              {streak >= 14 && '⚡ Você é imparável!'}
+            </p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ fontSize: 10, color: 'var(--color-brand-gray)', margin: 0, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Sequência</p>
+            <p style={{ fontSize: 10, color: 'var(--color-brand-gray)', margin: '2px 0 0' }}>consecutiva</p>
+          </div>
         </div>
 
         {/* Voz do dia */}
