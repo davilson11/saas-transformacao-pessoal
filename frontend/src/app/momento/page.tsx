@@ -17,6 +17,8 @@ export default function MomentoPage() {
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
   const [carregando, setCarregando] = useState(true);
+  const [historico, setHistorico] = useState<Partial<DiarioKairos>[]>([]);
+  const [diaSelecionado, setDiaSelecionado] = useState<Partial<DiarioKairos> | null>(null);
   const hoje = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
@@ -24,24 +26,29 @@ export default function MomentoPage() {
     (async () => {
       const client = await getClient();
 
-      // Busca o momento do dia no banco
       const { data: momentoData } = await client
         .from('momento_kairos')
         .select('*')
         .eq('data', hoje)
         .single();
-
       if (momentoData) setMomento(momentoData);
 
-      // Busca o diário do usuário para hoje
       const { data: diarioData } = await client
         .from('diario_kairos')
         .select('*')
         .eq('user_id', user.id)
         .eq('data', hoje)
         .single();
-
       if (diarioData) setDiario(diarioData);
+
+      const { data: hist } = await client
+        .from('diario_kairos')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('data', { ascending: false })
+        .limit(30);
+      if (hist) setHistorico(hist);
+
       setCarregando(false);
     })();
   }, [user?.id]);
@@ -189,6 +196,49 @@ export default function MomentoPage() {
             style={{ width: '100%', padding: 13, background: salvo ? '#27AE60' : '#0E0E0E', color: '#F5F0E8', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: salvando ? 'wait' : 'pointer', transition: 'background 0.2s', letterSpacing: '0.04em' }}>
             {salvando ? 'Salvando...' : salvo ? '✓ Diário registrado!' : 'Registrar meu dia'}
           </button>
+        </div>
+
+        {/* Histórico 30 dias */}
+        <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '20px 24px' }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 4 }}>
+            Meu histórico
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginBottom: 16 }}>
+            Últimos 30 dias — clique num dia para ver o registro
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {Array.from({ length: 30 }).map((_, i) => {
+              const d = new Date();
+              d.setDate(d.getDate() - (29 - i));
+              const dataStr = d.toISOString().split('T')[0];
+              const registro = historico.find(h => h.data === dataStr);
+              const isHoje = dataStr === hoje;
+              return (
+                <button key={dataStr} onClick={() => registro ? setDiaSelecionado(diaSelecionado?.data === dataStr ? null : registro) : null}
+                  title={dataStr}
+                  style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', cursor: registro ? 'pointer' : 'default', background: isHoje ? '#C8A030' : registro ? '#1E392A' : 'rgba(30,57,42,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: isHoje ? '0 0 10px rgba(200,160,48,0.4)' : 'none', transition: 'transform 0.15s' }}>
+                  {isHoje ? <span style={{ fontSize: 14 }}>🔥</span> :
+                   registro ? <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#C8A030" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                   : null}
+                </button>
+              );
+            })}
+          </div>
+
+          {diaSelecionado && (
+            <div style={{ marginTop: 20, padding: '16px', background: 'rgba(30,57,42,0.04)', borderRadius: 10, border: '1px solid var(--color-brand-border)' }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: '#C8A030', marginBottom: 12, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                {new Date(diaSelecionado.data + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {diaSelecionado.qualidade_sono && <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', margin: 0 }}>😴 Sono: <strong>{diaSelecionado.qualidade_sono}/5</strong></p>}
+                {diaSelecionado.emocao && <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', margin: 0 }}>❤️ Emoção: <strong>{diaSelecionado.emocao}</strong></p>}
+                {diaSelecionado.preocupacao && <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', margin: 0 }}>💭 Pesando: <em>"{diaSelecionado.preocupacao}"</em></p>}
+                {diaSelecionado.gratidao && <p style={{ fontSize: 13, color: 'var(--color-brand-dark-green)', margin: 0 }}>🙏 Gratidão: <em>"{diaSelecionado.gratidao}"</em></p>}
+                {diaSelecionado.missao_cumprida && <p style={{ fontSize: 13, color: '#27AE60', fontWeight: 600, margin: 0 }}>✓ Missão cumprida neste dia!</p>}
+              </div>
+            </div>
+          )}
         </div>
 
       </div>
