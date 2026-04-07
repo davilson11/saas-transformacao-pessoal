@@ -107,20 +107,11 @@ function CardCompartilhar({ diario, streak, momento }: {
           {mostrar ? 'Fechar' : '👁 Visualizar'}
         </button>
       </div>
-
       {mostrar && (
         <>
-          {/* Card visual para exportar */}
-          <div ref={cardRef} style={{
-            width: 400, background: 'linear-gradient(145deg, #0E0E0E 0%, #1a1a0a 100%)',
-            borderRadius: 20, padding: '32px 28px', margin: '0 auto 16px',
-            fontFamily: 'Georgia, serif', position: 'relative', overflow: 'hidden'
-          }}>
-            {/* Background decoration */}
+          <div ref={cardRef} style={{ width: 400, background: 'linear-gradient(145deg, #0E0E0E 0%, #1a1a0a 100%)', borderRadius: 20, padding: '32px 28px', margin: '0 auto 16px', fontFamily: 'Georgia, serif', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(200,160,48,0.06)', pointerEvents: 'none' }} />
             <div style={{ position: 'absolute', bottom: -60, left: -30, width: 200, height: 200, borderRadius: '50%', background: 'rgba(200,160,48,0.04)', pointerEvents: 'none' }} />
-
-            {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
               <div>
                 <p style={{ fontSize: 10, letterSpacing: '0.2em', color: '#C8A030', fontWeight: 600, margin: 0, textTransform: 'uppercase', fontFamily: 'Arial, sans-serif' }}>Momento Kairos</p>
@@ -133,15 +124,11 @@ function CardCompartilhar({ diario, streak, momento }: {
                 </div>
               )}
             </div>
-
-            {/* Frase do dia */}
             <div style={{ borderLeft: '2px solid rgba(200,160,48,0.4)', paddingLeft: 16, marginBottom: 24 }}>
               <p style={{ fontSize: 13, color: 'rgba(245,240,232,0.7)', lineHeight: 1.7, margin: 0, fontStyle: 'italic' }}>
                 "{momento.voz_texto?.slice(0, 120)}{(momento.voz_texto?.length ?? 0) > 120 ? '...' : ''}"
               </p>
             </div>
-
-            {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
               {diario.qualidade_sono && (
                 <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 12px' }}>
@@ -168,22 +155,17 @@ function CardCompartilhar({ diario, streak, momento }: {
                 </div>
               )}
             </div>
-
-            {/* Gratidão */}
             {diario.gratidao && (
               <div style={{ background: 'rgba(200,160,48,0.06)', borderRadius: 10, padding: '12px 14px', marginBottom: 20 }}>
                 <p style={{ fontSize: 10, color: '#C8A030', margin: '0 0 6px', fontFamily: 'Arial, sans-serif', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>🙏 Grato por</p>
                 <p style={{ fontSize: 13, color: 'rgba(245,240,232,0.8)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }}>"{diario.gratidao.slice(0, 80)}{diario.gratidao.length > 80 ? '...' : ''}"</p>
               </div>
             )}
-
-            {/* Footer */}
             <div style={{ borderTop: '1px solid rgba(245,240,232,0.06)', paddingTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <p style={{ fontSize: 10, color: 'rgba(245,240,232,0.25)', margin: 0, fontFamily: 'Arial, sans-serif' }}>meukairos.com.br</p>
               <p style={{ fontSize: 10, color: 'rgba(245,240,232,0.25)', margin: 0, fontFamily: 'Arial, sans-serif' }}>A Virada · Kairos</p>
             </div>
           </div>
-
           <button onClick={baixarCard} disabled={gerando}
             style={{ width: '100%', padding: 13, background: gerando ? 'rgba(200,160,48,0.5)' : '#C8A030', color: '#0E0E0E', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: gerando ? 'wait' : 'pointer', transition: 'background 0.2s', letterSpacing: '0.04em' }}>
             {gerando ? 'Gerando imagem...' : '⬇ Baixar card para Instagram'}
@@ -208,18 +190,16 @@ export default function MomentoPage() {
   const [historico, setHistorico] = useState<Partial<DiarioKairos>[]>([]);
   const [diaSelecionado, setDiaSelecionado] = useState<Partial<DiarioKairos> | null>(null);
   const [streak, setStreak] = useState(0);
+  const [notifAtiva, setNotifAtiva] = useState(false);
   const hoje = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
       const client = await getClient();
-      const { data: momentoData } = await client
-      .from('momento_kairos').select('*').eq('data', hoje).maybeSingle();
+      const { data: momentoData } = await client.from('momento_kairos').select('*').eq('data', hoje).maybeSingle();
       if (momentoData) setMomento(momentoData);
-      const { data: diarioData } = await client
-      .from('diario_kairos').select('*')
-      .eq('user_id', user.id).eq('data', hoje).maybeSingle();
+      const { data: diarioData } = await client.from('diario_kairos').select('*').eq('user_id', user.id).eq('data', hoje).maybeSingle();
       if (diarioData) setDiario(diarioData);
       const { data: hist } = await client.from('diario_kairos').select('*').eq('user_id', user.id).order('data', { ascending: false }).limit(30);
       if (hist) { setHistorico(hist); setStreak(calcularStreak(hist)); }
@@ -258,6 +238,24 @@ export default function MomentoPage() {
     }, { onConflict: 'user_id,data' });
     setSalvandoNoite(false); setSalvoNoite(true);
     setTimeout(() => setSalvoNoite(false), 3000);
+  }
+
+  async function ativarNotificacoes() {
+    if (!user?.id) return;
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return alert('Permissão negada. Ative nas configurações do navegador.');
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    });
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, subscription: sub }),
+    });
+    setNotifAtiva(true);
   }
 
   const nomeUsuario = user?.firstName ?? 'Davilson';
@@ -314,6 +312,20 @@ export default function MomentoPage() {
             <p style={{ fontSize: 10, color: 'var(--color-brand-gray)', margin: '2px 0 0' }}>consecutiva</p>
           </div>
         </div>
+
+        {/* Notificações */}
+        {typeof window !== 'undefined' && 'Notification' in window && (
+          <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-brand-dark-green)', margin: 0 }}>🔔 Lembrete diário</p>
+              <p style={{ fontSize: 11, color: 'var(--color-brand-gray)', margin: '2px 0 0' }}>Receba um aviso todo dia às 7h</p>
+            </div>
+            <button onClick={ativarNotificacoes} disabled={notifAtiva}
+              style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: notifAtiva ? 'default' : 'pointer', background: notifAtiva ? '#27AE60' : '#0E0E0E', color: '#F5F0E8', border: 'none' }}>
+              {notifAtiva ? '✓ Ativado' : 'Ativar'}
+            </button>
+          </div>
+        )}
 
         {/* Voz do dia */}
         <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '20px 24px', borderLeft: '3px solid #C8A030' }}>
