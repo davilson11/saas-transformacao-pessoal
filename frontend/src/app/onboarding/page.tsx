@@ -33,7 +33,7 @@ const FASES = [
 export default function OnboardingPage() {
   const router = useRouter()
   const { user } = useUser()
-  const supabase = useSupabaseClient()
+  const { getClient } = useSupabaseClient()
   const [step, setStep] = useState<Step>(1)
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState<FormData>({ nome: '', area_foco: '', fase: 0, meta_12_meses: '' })
@@ -45,7 +45,8 @@ export default function OnboardingPage() {
     if (!user) return
     setLoading(true)
     try {
-      const { error } = await supabase
+      const client = await getClient()
+      const { error } = await client
         .from('perfil')
         .upsert({
           user_id: user.id,
