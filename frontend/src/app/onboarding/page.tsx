@@ -44,7 +44,7 @@ export default function OnboardingPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { error } = await supabase.from('perfis').upsert({
+      const { error } = await supabase.from('perfil').upsert({
         id: user.id,
         nome: form.nome,
         area_foco: form.area_foco,
