@@ -104,7 +104,7 @@ const PRIMARY_NAV = [
   { label: 'Dashboard',   href: '/dashboard',   icon: <IconDashboard />,   exact: true },
   { label: 'Momento',     href: '/momento',     icon: <IconMomento />,     exact: true },
   { label: 'Ferramentas', href: '/ferramentas', icon: <IconFerramentas />, exact: false },
-  { label: 'Progresso',   href: '/perfil',      icon: <IconProgresso />,   exact: true },
+  { label: 'Progresso',   href: '/progresso',   icon: <IconProgresso />,   exact: true },
 ];
 
 const SECONDARY_NAV = [
@@ -421,6 +421,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { getClient } = useSupabaseClient();
 
   const [pendingCount, setPendingCount] = useState<number | null>(null);
+  const [streakDiario, setStreakDiario] = useState(0);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -429,6 +430,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       const respostas = await buscarTodasRespostas(user.id, client);
       const concluidas = respostas.filter((r) => r.concluida).length;
       setPendingCount(16 - concluidas);
+      const { data: hist } = await client
+  .from('diario_kairos')
+  .select('data')
+  .eq('user_id', user.id)
+  .order('data', { ascending: false })
+  .limit(30);
+
+if (hist) {
+  const datas = hist.map((h: { data: string }) => h.data).sort((a: string, b: string) => b.localeCompare(a));
+  let s = 0;
+  const hoje = new Date();
+  for (let i = 0; i < datas.length; i++) {
+    const esp = new Date(hoje);
+    esp.setDate(hoje.getDate() - i);
+    if (datas[i] === esp.toISOString().split('T')[0]) s++;
+    else break;
+  }
+  setStreakDiario(s);
+}
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -706,7 +726,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 whiteSpace: 'nowrap',
               }}
             >
-              🔥 13 dias
+              {streakDiario > 0 ? `🔥 ${streakDiario} dias` : '💤 0 dias'}
             </span>
             <UserButton
               appearance={{
