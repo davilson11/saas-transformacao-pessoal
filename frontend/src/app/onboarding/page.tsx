@@ -79,8 +79,8 @@ export default function OnboardingPage() {
     <div style={{ minHeight: '100dvh', background: 'var(--color-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
 
       <div style={{ marginBottom: 32, textAlign: 'center' }}>
-        <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-brand-dark-green)', letterSpacing: '-0.5px' }}>A Virada</div>
-        <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 4 }}>Configurando sua jornada</p>
+        <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-brand-dark-green)', letterSpacing: '-0.5px' }}>Kairos</div>
+        <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 4 }}>Configure sua jornada</p>
       </div>
 
       <div style={{ width: '100%', maxWidth: 480, background: 'var(--color-surface)', borderRadius: 16, border: '1px solid var(--color-border)', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
