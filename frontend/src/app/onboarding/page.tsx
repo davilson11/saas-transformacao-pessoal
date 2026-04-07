@@ -75,50 +75,123 @@ export default function OnboardingPage() {
 
   const progress = (step / 4) * 100
 
-  return (
-    <div style={{ minHeight: '100dvh', background: 'var(--color-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '12px 16px',
+    borderRadius: 'var(--radius-md)',
+    border: '1.5px solid var(--color-border)',
+    background: 'var(--color-surface)',
+    fontSize: 'var(--text-base)',
+    color: 'var(--color-ink)',
+    outline: 'none',
+    fontFamily: 'var(--font-body)',
+    transition: 'border-color 220ms',
+  }
 
+  return (
+    <div style={{
+      minHeight: '100dvh',
+      background: 'var(--color-surface)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px 16px',
+      fontFamily: 'var(--font-body)',
+    }}>
+
+      {/* Logo */}
       <div style={{ marginBottom: 32, textAlign: 'center' }}>
-        <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-brand-dark-green)', letterSpacing: '-0.5px' }}>Kairos</div>
-        <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 4 }}>Configure sua jornada</p>
+        <div style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-2xl)', color: 'var(--color-primary)', letterSpacing: '-0.02em' }}>
+          Kairos
+        </div>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-ink-muted)', marginTop: 4 }}>
+          Configure sua jornada
+        </p>
       </div>
 
-      <div style={{ width: '100%', maxWidth: 480, background: 'var(--color-surface)', borderRadius: 16, border: '1px solid var(--color-border)', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+      {/* Card principal */}
+      <div style={{
+        width: '100%',
+        maxWidth: 520,
+        background: 'var(--color-surface-raised)',
+        borderRadius: 'var(--radius-xl)',
+        border: '1px solid var(--color-border)',
+        overflow: 'hidden',
+        boxShadow: 'var(--shadow-modal)',
+      }}>
 
-        <div style={{ height: 4, background: 'var(--color-border)' }}>
-          <div style={{ height: '100%', width: `${progress}%`, background: 'var(--color-brand-dark-green)', transition: 'width 0.4s ease' }} />
+        {/* Barra de progresso */}
+        <div style={{ height: 3, background: 'var(--color-border)' }}>
+          <div style={{ height: '100%', width: `${progress}%`, background: 'var(--color-primary)', transition: 'width 0.4s var(--ease-out)' }} />
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-around', padding: '16px 24px 0' }}>
+        {/* Steps indicadores */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, padding: '20px 24px 0' }}>
           {[1, 2, 3, 4].map((s) => (
-            <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: s === step ? 'var(--color-brand-dark-green)' : s < step ? 'var(--color-text-muted)' : 'var(--color-text-faint)', fontWeight: s === step ? 600 : 400 }}>
-              <div style={{ width: 24, height: 24, borderRadius: '50%', background: s < step ? 'var(--color-brand-dark-green)' : s === step ? 'var(--color-brand-light-green)' : 'var(--color-surface-offset)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: s < step ? '#fff' : s === step ? 'var(--color-brand-dark-green)' : 'var(--color-text-faint)', fontWeight: 700 }}>
+            <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{
+                width: 28, height: 28,
+                borderRadius: '50%',
+                background: s < step ? 'var(--color-primary)' : s === step ? 'var(--color-primary-muted)' : 'var(--color-surface-overlay)',
+                border: `2px solid ${s <= step ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 12, fontWeight: 700,
+                color: s < step ? '#fff' : s === step ? 'var(--color-primary)' : 'var(--color-ink-muted)',
+                transition: 'all 0.3s var(--ease-out)',
+              }}>
                 {s < step ? '✓' : s}
               </div>
+              {s < 4 && <div style={{ width: 24, height: 2, background: s < step ? 'var(--color-primary)' : 'var(--color-border)', borderRadius: 2, transition: 'background 0.3s' }} />}
             </div>
           ))}
         </div>
 
-        <div style={{ padding: '24px 24px 28px' }}>
+        {/* Conteúdo do step */}
+        <div style={{ padding: '28px 32px 32px' }}>
 
           {step === 1 && (
             <div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-brand-dark-green)', marginBottom: 8 }}>👋 Olá! Como posso te chamar?</h2>
-              <p style={{ fontSize: 14, color: 'var(--color-text-muted)', marginBottom: 24, lineHeight: 1.5 }}>Sua jornada de transformação começa agora. Vamos personalizar tudo para você.</p>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--color-text)', marginBottom: 8 }}>Seu nome</label>
-              <input type="text" placeholder="Ex: João, Maria, Davi..." value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} autoFocus style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: '1.5px solid var(--color-border)', background: 'var(--color-surface-2)', fontSize: 15, color: 'var(--color-text)', outline: 'none', fontFamily: 'inherit' }} />
+              <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-xl)', color: 'var(--color-ink)', marginBottom: 8, fontWeight: 400 }}>
+                👋 Olá! Como posso te chamar?
+              </h2>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-ink-muted)', marginBottom: 24, lineHeight: 1.6 }}>
+                Sua jornada de transformação começa agora. Vamos personalizar tudo para você.
+              </p>
+              <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-ink-secondary)', marginBottom: 8 }}>Seu nome</label>
+              <input
+                type="text"
+                placeholder="Ex: João, Maria, Davi..."
+                value={form.nome}
+                onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                autoFocus
+                style={inputStyle}
+              />
             </div>
           )}
 
           {step === 2 && (
             <div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-brand-dark-green)', marginBottom: 8 }}>🎯 Qual área você quer transformar?</h2>
-              <p style={{ fontSize: 14, color: 'var(--color-text-muted)', marginBottom: 20, lineHeight: 1.5 }}>Escolha o foco principal da sua jornada agora. Você pode mudar depois.</p>
+              <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-xl)', color: 'var(--color-ink)', marginBottom: 8, fontWeight: 400 }}>
+                🎯 Qual área você quer transformar?
+              </h2>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-ink-muted)', marginBottom: 20, lineHeight: 1.6 }}>
+                Escolha o foco principal da sua jornada agora.
+              </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {AREAS.map((area) => (
-                  <button key={area.value} onClick={() => setForm({ ...form, area_foco: area.value })} style={{ padding: '12px 10px', borderRadius: 10, border: `1.5px solid ${form.area_foco === area.value ? 'var(--color-brand-dark-green)' : 'var(--color-border)'}`, background: form.area_foco === area.value ? 'var(--color-brand-light-green)' : 'var(--color-surface-2)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}>
-                    <div style={{ fontSize: 20, marginBottom: 4 }}>{area.emoji}</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: form.area_foco === area.value ? 'var(--color-brand-dark-green)' : 'var(--color-text)', lineHeight: 1.3 }}>{area.label}</div>
+                  <button key={area.value} onClick={() => setForm({ ...form, area_foco: area.value })} style={{
+                    padding: '14px 12px',
+                    borderRadius: 'var(--radius-md)',
+                    border: `1.5px solid ${form.area_foco === area.value ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                    background: form.area_foco === area.value ? 'var(--color-primary-muted)' : 'var(--color-surface)',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.2s var(--ease-out)',
+                    boxShadow: form.area_foco === area.value ? 'var(--shadow-xs)' : 'none',
+                  }}>
+                    <div style={{ fontSize: 20, marginBottom: 6 }}>{area.emoji}</div>
+                    <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: form.area_foco === area.value ? 'var(--color-primary)' : 'var(--color-ink)', lineHeight: 1.3 }}>{area.label}</div>
                   </button>
                 ))}
               </div>
@@ -127,15 +200,30 @@ export default function OnboardingPage() {
 
           {step === 3 && (
             <div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-brand-dark-green)', marginBottom: 8 }}>📍 Em que fase você está?</h2>
-              <p style={{ fontSize: 14, color: 'var(--color-text-muted)', marginBottom: 20, lineHeight: 1.5 }}>Isso define as missões que você vai receber cada dia. Seja honesto!</p>
+              <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-xl)', color: 'var(--color-ink)', marginBottom: 8, fontWeight: 400 }}>
+                📍 Em que fase você está?
+              </h2>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-ink-muted)', marginBottom: 20, lineHeight: 1.6 }}>
+                Isso define as missões que você recebe cada dia.
+              </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {FASES.map((fase) => (
-                  <button key={fase.value} onClick={() => setForm({ ...form, fase: fase.value })} style={{ padding: '14px 16px', borderRadius: 10, border: `1.5px solid ${form.fase === fase.value ? 'var(--color-brand-dark-green)' : 'var(--color-border)'}`, background: form.fase === fase.value ? 'var(--color-brand-light-green)' : 'var(--color-surface-2)', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: 12, transition: 'all 0.2s' }}>
-                    <span style={{ fontSize: 22, flexShrink: 0 }}>{fase.emoji}</span>
+                  <button key={fase.value} onClick={() => setForm({ ...form, fase: fase.value })} style={{
+                    padding: '14px 16px',
+                    borderRadius: 'var(--radius-md)',
+                    border: `1.5px solid ${form.fase === fase.value ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                    background: form.fase === fase.value ? 'var(--color-primary-muted)' : 'var(--color-surface)',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 12,
+                    transition: 'all 0.2s var(--ease-out)',
+                  }}>
+                    <span style={{ fontSize: 22, flexShrink: 0, marginTop: 1 }}>{fase.emoji}</span>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: form.fase === fase.value ? 'var(--color-brand-dark-green)' : 'var(--color-text)', marginBottom: 2 }}>{fase.label}</div>
-                      <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.4 }}>{fase.desc}</div>
+                      <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: form.fase === fase.value ? 'var(--color-primary)' : 'var(--color-ink)', marginBottom: 3 }}>{fase.label}</div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-ink-muted)', lineHeight: 1.5 }}>{fase.desc}</div>
                     </div>
                   </button>
                 ))}
@@ -145,26 +233,70 @@ export default function OnboardingPage() {
 
           {step === 4 && (
             <div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-brand-dark-green)', marginBottom: 8 }}>🌟 Qual é a sua grande meta?</h2>
-              <p style={{ fontSize: 14, color: 'var(--color-text-muted)', marginBottom: 24, lineHeight: 1.5 }}>O que você quer ter transformado daqui a 12 meses? Escreva com coragem.</p>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--color-text)', marginBottom: 8 }}>Minha grande meta em 12 meses</label>
-              <textarea placeholder="Ex: Quero largar o emprego CLT e viver do meu negócio digital, gerando R$10k/mês com liberdade de tempo..." value={form.meta_12_meses} onChange={(e) => setForm({ ...form, meta_12_meses: e.target.value })} rows={5} autoFocus style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: '1.5px solid var(--color-border)', background: 'var(--color-surface-2)', fontSize: 14, color: 'var(--color-text)', outline: 'none', resize: 'none', lineHeight: 1.6, fontFamily: 'inherit' }} />
-              <p style={{ fontSize: 11, color: 'var(--color-text-faint)', marginTop: 6 }}>
+              <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-xl)', color: 'var(--color-ink)', marginBottom: 8, fontWeight: 400 }}>
+                🌟 Qual é a sua grande meta?
+              </h2>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-ink-muted)', marginBottom: 24, lineHeight: 1.6 }}>
+                O que você quer ter transformado daqui a 12 meses? Escreva com coragem.
+              </p>
+              <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-ink-secondary)', marginBottom: 8 }}>Minha grande meta em 12 meses</label>
+              <textarea
+                placeholder="Ex: Quero largar o emprego CLT e viver do meu negócio digital, gerando R$10k/mês com liberdade de tempo..."
+                value={form.meta_12_meses}
+                onChange={(e) => setForm({ ...form, meta_12_meses: e.target.value })}
+                rows={5}
+                autoFocus
+                style={{ ...inputStyle, resize: 'none', lineHeight: 1.6 }}
+              />
+              <p style={{ fontSize: 'var(--text-xs)', color: form.meta_12_meses.length >= 10 ? 'var(--color-success)' : 'var(--color-ink-muted)', marginTop: 6 }}>
                 {form.meta_12_meses.length < 10 ? `Mínimo ${10 - form.meta_12_meses.length} caracteres ainda` : '✓ Ótimo!'}
               </p>
             </div>
           )}
 
+          {/* Navegação */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 28, gap: 12 }}>
             {step > 1 ? (
-              <button onClick={handleBack} style={{ padding: '11px 20px', borderRadius: 10, border: '1.5px solid var(--color-border)', background: 'transparent', fontSize: 14, color: 'var(--color-text-muted)', cursor: 'pointer', fontWeight: 500 }}>← Voltar</button>
+              <button onClick={handleBack} style={{
+                padding: '11px 20px',
+                borderRadius: 'var(--radius-md)',
+                border: '1.5px solid var(--color-border)',
+                background: 'transparent',
+                fontSize: 'var(--text-sm)',
+                color: 'var(--color-ink-muted)',
+                cursor: 'pointer',
+                fontWeight: 500,
+                fontFamily: 'var(--font-body)',
+                transition: 'all 0.2s',
+              }}>← Voltar</button>
             ) : <div />}
+
             {step < 4 ? (
-              <button onClick={handleNext} disabled={!canAdvance()} style={{ padding: '11px 28px', borderRadius: 10, border: 'none', background: canAdvance() ? 'var(--color-brand-dark-green)' : 'var(--color-border)', color: canAdvance() ? '#fff' : 'var(--color-text-faint)', fontSize: 14, fontWeight: 600, cursor: canAdvance() ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}>
+              <button onClick={handleNext} disabled={!canAdvance()} className={canAdvance() ? 'btn-primary' : ''} style={!canAdvance() ? {
+                padding: '11px 28px',
+                borderRadius: 'var(--radius-md)',
+                border: 'none',
+                background: 'var(--color-border)',
+                color: 'var(--color-ink-muted)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 600,
+                cursor: 'not-allowed',
+                fontFamily: 'var(--font-body)',
+              } : { padding: '11px 28px' }}>
                 Continuar →
               </button>
             ) : (
-              <button onClick={handleFinish} disabled={!canAdvance() || loading} style={{ padding: '11px 28px', borderRadius: 10, border: 'none', background: canAdvance() && !loading ? 'var(--color-brand-dark-green)' : 'var(--color-border)', color: canAdvance() && !loading ? '#fff' : 'var(--color-text-faint)', fontSize: 14, fontWeight: 600, cursor: canAdvance() && !loading ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}>
+              <button onClick={handleFinish} disabled={!canAdvance() || loading} className={canAdvance() && !loading ? 'btn-primary' : ''} style={!canAdvance() || loading ? {
+                padding: '11px 28px',
+                borderRadius: 'var(--radius-md)',
+                border: 'none',
+                background: 'var(--color-border)',
+                color: 'var(--color-ink-muted)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 600,
+                cursor: 'not-allowed',
+                fontFamily: 'var(--font-body)',
+              } : { padding: '11px 28px' }}>
                 {loading ? 'Salvando...' : '🚀 Começar minha jornada'}
               </button>
             )}
@@ -172,7 +304,7 @@ export default function OnboardingPage() {
         </div>
       </div>
 
-      <p style={{ marginTop: 20, fontSize: 12, color: 'var(--color-text-faint)', textAlign: 'center' }}>
+      <p style={{ marginTop: 20, fontSize: 'var(--text-xs)', color: 'var(--color-ink-muted)', textAlign: 'center' }}>
         Você pode alterar essas informações depois em Configurações
       </p>
     </div>
