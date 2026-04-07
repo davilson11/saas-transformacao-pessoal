@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@clerk/nextjs'
+import { useSupabaseClient } from '@/lib/useSupabaseClient'
 
 type Step = 1 | 2 | 3 | 4
 
@@ -31,7 +32,8 @@ const FASES = [
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const supabase = createClient()
+  const { user } = useUser()
+  const supabase = useSupabaseClient()
   const [step, setStep] = useState<Step>(1)
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState<FormData>({ nome: '', area_foco: '', fase: 0, meta_12_meses: '' })
@@ -40,18 +42,19 @@ export default function OnboardingPage() {
   const handleBack = () => { if (step > 1) setStep((prev) => (prev - 1) as Step) }
 
   const handleFinish = async () => {
+    if (!user) return
     setLoading(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { error } = await supabase.from('perfil').upsert({
-        id: user.id,
-        nome: form.nome,
-        area_foco: form.area_foco,
-        fase: form.fase,
-        meta_12_meses: form.meta_12_meses,
-        onboarding_completo: true,
-      })
+      const { error } = await supabase
+        .from('perfil')
+        .upsert({
+          user_id: user.id,
+          nome: form.nome,
+          area_foco: form.area_foco,
+          fase: form.fase,
+          meta_12_meses: form.meta_12_meses,
+          onboarding_completo: true,
+        })
       if (error) throw error
       router.push('/momento')
     } catch (err) {
@@ -102,14 +105,7 @@ export default function OnboardingPage() {
               <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-brand-dark-green)', marginBottom: 8 }}>👋 Olá! Como posso te chamar?</h2>
               <p style={{ fontSize: 14, color: 'var(--color-text-muted)', marginBottom: 24, lineHeight: 1.5 }}>Sua jornada de transformação começa agora. Vamos personalizar tudo para você.</p>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--color-text)', marginBottom: 8 }}>Seu nome</label>
-              <input
-                type="text"
-                placeholder="Ex: João, Maria, Davi..."
-                value={form.nome}
-                onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                autoFocus
-                style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: '1.5px solid var(--color-border)', background: 'var(--color-surface-2)', fontSize: 15, color: 'var(--color-text)', outline: 'none', fontFamily: 'inherit' }}
-              />
+              <input type="text" placeholder="Ex: João, Maria, Davi..." value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} autoFocus style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: '1.5px solid var(--color-border)', background: 'var(--color-surface-2)', fontSize: 15, color: 'var(--color-text)', outline: 'none', fontFamily: 'inherit' }} />
             </div>
           )}
 
@@ -151,14 +147,7 @@ export default function OnboardingPage() {
               <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-brand-dark-green)', marginBottom: 8 }}>🌟 Qual é a sua grande meta?</h2>
               <p style={{ fontSize: 14, color: 'var(--color-text-muted)', marginBottom: 24, lineHeight: 1.5 }}>O que você quer ter transformado daqui a 12 meses? Escreva com coragem.</p>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--color-text)', marginBottom: 8 }}>Minha grande meta em 12 meses</label>
-              <textarea
-                placeholder="Ex: Quero largar o emprego CLT e viver do meu negócio digital, gerando R$10k/mês com liberdade de tempo..."
-                value={form.meta_12_meses}
-                onChange={(e) => setForm({ ...form, meta_12_meses: e.target.value })}
-                rows={5}
-                autoFocus
-                style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: '1.5px solid var(--color-border)', background: 'var(--color-surface-2)', fontSize: 14, color: 'var(--color-text)', outline: 'none', resize: 'none', lineHeight: 1.6, fontFamily: 'inherit' }}
-              />
+              <textarea placeholder="Ex: Quero largar o emprego CLT e viver do meu negócio digital, gerando R$10k/mês com liberdade de tempo..." value={form.meta_12_meses} onChange={(e) => setForm({ ...form, meta_12_meses: e.target.value })} rows={5} autoFocus style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: '1.5px solid var(--color-border)', background: 'var(--color-surface-2)', fontSize: 14, color: 'var(--color-text)', outline: 'none', resize: 'none', lineHeight: 1.6, fontFamily: 'inherit' }} />
               <p style={{ fontSize: 11, color: 'var(--color-text-faint)', marginTop: 6 }}>
                 {form.meta_12_meses.length < 10 ? `Mínimo ${10 - form.meta_12_meses.length} caracteres ainda` : '✓ Ótimo!'}
               </p>
@@ -169,7 +158,6 @@ export default function OnboardingPage() {
             {step > 1 ? (
               <button onClick={handleBack} style={{ padding: '11px 20px', borderRadius: 10, border: '1.5px solid var(--color-border)', background: 'transparent', fontSize: 14, color: 'var(--color-text-muted)', cursor: 'pointer', fontWeight: 500 }}>← Voltar</button>
             ) : <div />}
-
             {step < 4 ? (
               <button onClick={handleNext} disabled={!canAdvance()} style={{ padding: '11px 28px', borderRadius: 10, border: 'none', background: canAdvance() ? 'var(--color-brand-dark-green)' : 'var(--color-border)', color: canAdvance() ? '#fff' : 'var(--color-text-faint)', fontSize: 14, fontWeight: 600, cursor: canAdvance() ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}>
                 Continuar →
