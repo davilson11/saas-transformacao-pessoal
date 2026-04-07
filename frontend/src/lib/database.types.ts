@@ -73,6 +73,12 @@ export type MomentoKairos = {
   versiculo:     string;
   versiculo_ref: string;
   missao:        string;
+  missao_fase1:  string | null;
+  missao_fase2:  string | null;
+  missao_fase3:  string | null;
+  missao_fase4:  string | null;
+  trilha:        string | null;
+  tom:           string | null;
   created_at:    string;
 };
 

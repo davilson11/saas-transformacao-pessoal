@@ -191,6 +191,7 @@ export default function MomentoPage() {
   const [diaSelecionado, setDiaSelecionado] = useState<Partial<DiarioKairos> | null>(null);
   const [streak, setStreak] = useState(0);
   const [notifAtiva, setNotifAtiva] = useState(false);
+  const [faseUsuario, setFaseUsuario] = useState(1);
   const hoje = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
@@ -205,7 +206,24 @@ export default function MomentoPage() {
       if (hist) { setHistorico(hist); setStreak(calcularStreak(hist)); }
       setCarregando(false);
     })();
-  }, [user?.id]);
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!user?.id) return;
+    (async () => {
+      const client = await getClient();
+      const { data } = await client
+        .from('ferramentas_respostas')
+        .select('ferramenta_codigo, concluida')
+        .eq('user_id', user.id);
+      if (!data) return;
+      const concluidas = data.filter(f => f.concluida).length;
+      if (concluidas >= 12) setFaseUsuario(4);
+      else if (concluidas >= 8) setFaseUsuario(3);
+      else if (concluidas >= 4) setFaseUsuario(2);
+      else setFaseUsuario(1);
+    })();
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function salvarDiario() {
     if (!user?.id) return;
@@ -261,6 +279,10 @@ export default function MomentoPage() {
   const nomeUsuario = user?.firstName ?? 'Davilson';
   const dataLabel = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
 
+  const missaoDoDia = momento
+    ? (momento[`missao_fase${faseUsuario}` as keyof MomentoKairos] as string ?? momento.missao)
+    : null;
+
   if (carregando) return (
     <DashboardLayout>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
@@ -286,7 +308,7 @@ export default function MomentoPage() {
         {/* Header */}
         <div style={{ background: '#0E0E0E', borderRadius: 12, padding: '20px 24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-            <span style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#C8A030', fontWeight: 500 }}>Momento Kairos · Fase 0{momento.fase}</span>
+            <span style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#C8A030', fontWeight: 500 }}>Momento Kairos · Fase 0{faseUsuario}</span>
             <span style={{ fontSize: 11, color: 'rgba(245,240,232,0.4)', textTransform: 'capitalize' }}>{dataLabel}</span>
           </div>
           <p style={{ fontSize: 22, fontFamily: 'var(--font-heading)', color: '#F5F0E8', fontWeight: 400, margin: 0 }}>Bom dia, {nomeUsuario}.</p>
@@ -345,10 +367,10 @@ export default function MomentoPage() {
           </div>
         </div>
 
-        {/* Missão */}
+        {/* Missão — dinâmica por fase */}
         <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '16px 20px' }}>
           <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C8A030', marginBottom: 8 }}>Sua missão de hoje</p>
-          <p style={{ fontSize: 15, color: 'var(--color-brand-dark-green)', lineHeight: 1.7, margin: '0 0 12px' }}>{momento.missao}</p>
+          <p style={{ fontSize: 15, color: 'var(--color-brand-dark-green)', lineHeight: 1.7, margin: '0 0 12px' }}>{missaoDoDia}</p>
           <button onClick={() => setDiario(d => ({ ...d, missao_cumprida: !d.missao_cumprida }))}
             style={{ width: '100%', padding: '9px', borderRadius: 8, fontSize: 13, cursor: 'pointer', background: diario.missao_cumprida ? '#C8A030' : 'transparent', color: diario.missao_cumprida ? '#0E0E0E' : 'var(--color-brand-dark-green)', border: `1px solid ${diario.missao_cumprida ? '#C8A030' : 'var(--color-brand-border)'}`, fontWeight: diario.missao_cumprida ? 600 : 400, transition: 'all 0.2s' }}>
             {diario.missao_cumprida ? '✓ Missão cumprida!' : 'Marcar como cumprida'}
