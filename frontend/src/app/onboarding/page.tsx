@@ -47,7 +47,7 @@ export default function OnboardingPage() {
     try {
       const client = await getClient()
       const { error } = await client
-        .from('perfil')
+        .from('perfil' as any)
         .upsert({
           user_id: user.id,
           nome: form.nome,
