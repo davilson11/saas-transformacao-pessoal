@@ -1,5 +1,6 @@
 import { Navbar } from '@/components/landing/Navbar'
 import { Hero } from '@/components/landing/Hero'
+import { ProdutoShowcase } from '@/components/landing/ProdutoShowcase'
 import { ProdutoEmAcao } from '@/components/landing/ProdutoEmAcao'
 import { Problema } from '@/components/landing/Problema'
 import { Metodologia } from '@/components/landing/Metodologia'
@@ -18,6 +19,7 @@ export default function Home() {
       <Navbar />
       <main>
         <Hero />
+        <ProdutoShowcase />
         <ProdutoEmAcao />
         <div className="divider" />
         <Problema />
