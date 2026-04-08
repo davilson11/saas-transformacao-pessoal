@@ -192,7 +192,12 @@ export default function MomentoPage() {
   const [streak, setStreak] = useState(0);
   const [notifAtiva, setNotifAtiva] = useState(false);
   const [faseUsuario, setFaseUsuario] = useState(1);
-  const hoje = new Date().toISOString().split('T')[0];
+  const hoje = new Date().toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).split('/').reverse().join('-');
 
   useEffect(() => {
     if (!user?.id) return;
