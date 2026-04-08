@@ -224,7 +224,7 @@ function ScreenFerramenta() {
 export function ProdutoShowcase() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard')
 
-  const screens: Record<Tab, JSX.Element> = {
+  const screens: Record<Tab, React.ReactElement> = {
     dashboard: <ScreenDashboard />,
     momento: <ScreenMomento />,
     ancora: <ScreenAncora />,
