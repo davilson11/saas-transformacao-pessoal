@@ -9,6 +9,7 @@ import MissaoDia from "@/components/dashboard/MissaoDia"
 import NextActions from "@/components/dashboard/NextActions";
 import PhaseProgress from "@/components/dashboard/PhaseProgress";
 import MomentoKairosCard from "@/components/dashboard/MomentoKairosCard";
+import Onboarding from "@/components/dashboard/Onboarding";
 import { buscarVisaoAncora } from "@/lib/queries";
 import { useSupabaseClient } from "@/lib/useSupabaseClient";
 import { calcularStreakDias } from "@/lib/badges";
@@ -631,8 +632,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-
-
+      <Onboarding />
 
       <div className="flex flex-col gap-6">
         {/* 0. Missão do Dia personalizada */}
