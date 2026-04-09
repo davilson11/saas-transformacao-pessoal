@@ -9,7 +9,7 @@ import ScoreDiario from "@/components/dashboard/ScoreDiario"
 import NextActions from "@/components/dashboard/NextActions";
 import PhaseProgress from "@/components/dashboard/PhaseProgress";
 import MomentoKairosCard from "@/components/dashboard/MomentoKairosCard";
-import MissaoDia from "@/components/dashboard/MissaoDia";
+import ScoreDiario from "@/components/dashboard/ScoreDiario"
 import { buscarVisaoAncora } from "@/lib/queries";
 import { useSupabaseClient } from "@/lib/useSupabaseClient";
 
