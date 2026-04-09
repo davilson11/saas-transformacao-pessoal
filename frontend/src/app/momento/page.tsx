@@ -1,5 +1,5 @@
-/* @ts-ignore */
 'use client';
+
 
 import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -7,11 +7,14 @@ import { useSupabaseClient } from '@/lib/useSupabaseClient';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
 
+
 const EMOCOES = ['animado', 'focado', 'grato', 'cansado', 'ansioso', 'tranquilo'];
+
 
 const EMOCAO_VALOR: Record<string, number> = {
   animado: 5, grato: 5, focado: 4, tranquilo: 3, cansado: 2, ansioso: 1,
 };
+
 
 function calcularStreak(hist: Partial<DiarioKairos>[]): number {
   if (!hist.length) return 0;
@@ -27,6 +30,7 @@ function calcularStreak(hist: Partial<DiarioKairos>[]): number {
   }
   return streak;
 }
+
 
 function GraficoHumor({ historico }: { historico: Partial<DiarioKairos>[] }) {
   const W = 580, H = 140, PAD = 32;
@@ -73,6 +77,7 @@ function GraficoHumor({ historico }: { historico: Partial<DiarioKairos>[] }) {
   );
 }
 
+
 function CardCompartilhar({ diario, streak, momento }: {
   diario: Partial<DiarioKairos>;
   streak: number;
@@ -81,6 +86,7 @@ function CardCompartilhar({ diario, streak, momento }: {
   const cardRef = useRef<HTMLDivElement>(null);
   const [gerando, setGerando] = useState(false);
   const [mostrar, setMostrar] = useState(false);
+
 
   async function baixarCard() {
     if (!cardRef.current) return;
@@ -94,7 +100,9 @@ function CardCompartilhar({ diario, streak, momento }: {
     setGerando(false);
   }
 
+
   const dataLabel = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+
 
   return (
     <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '20px 24px' }}>
@@ -177,9 +185,11 @@ function CardCompartilhar({ diario, streak, momento }: {
   );
 }
 
+
 export default function MomentoPage() {
   const { user } = useUser();
   const { getClient } = useSupabaseClient();
+
 
   const [momento, setMomento] = useState<MomentoKairos | null>(null);
   const [diario, setDiario] = useState<Partial<DiarioKairos>>({});
@@ -200,6 +210,7 @@ export default function MomentoPage() {
     day: '2-digit',
   }).split('/').reverse().join('-');
 
+
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
@@ -213,6 +224,7 @@ export default function MomentoPage() {
       setCarregando(false);
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   useEffect(() => {
     if (!user?.id) return;
@@ -231,6 +243,7 @@ export default function MomentoPage() {
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+
   async function salvarDiario() {
     if (!user?.id) return;
     setSalvando(true);
@@ -247,16 +260,30 @@ export default function MomentoPage() {
     setTimeout(() => setSalvo(false), 3000);
   }
 
-  async function salvarReflexaoNoite() {
+
+    async function salvarReflexaoNoite() {
     if (!user?.id) return;
     setSalvandoNoite(true);
     const client = await getClient();
-    await client.from('diario_kairos').upsert({
-      user_id: user.id, data: hoje, qualidade_sono: qualidadeSono ?? null, emocao: emocao ?? null, preocupacao: preocupacao ?? null, gratidao: gratidao ?? null, missao_cumprida: false
-    }, { onConflict: 'user_id,data' });
-    setSalvandoNoite(false); setSalvoNoite(true);
+    
+    // Usamos 'as any' para evitar o erro de tipagem chato do TS
+    const dadosParaSalvar: any = {
+      user_id: user.id,
+      data: hoje,
+      conquista: diario.conquista ?? null,
+      aprendizado: diario.aprendizado ?? null,
+      energia_fim: diario.energia_fim ?? null,
+      nota_dia: diario.nota_dia ?? null,
+    };
+
+    await client.from('diario_kairos').upsert(dadosParaSalvar, { onConflict: 'user_id,data' });
+    
+    setSalvandoNoite(false); 
+    setSalvoNoite(true);
     setTimeout(() => setSalvoNoite(false), 3000);
   }
+
+
 
   async function ativarNotificacoes() {
     if (!user?.id) return;
@@ -276,12 +303,15 @@ export default function MomentoPage() {
     setNotifAtiva(true);
   }
 
+
   const nomeUsuario = user?.firstName ?? 'Davilson';
   const dataLabel = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+
 
   const missaoDoDia = momento
     ? (momento[`missao_fase${faseUsuario}` as keyof MomentoKairos] as string ?? momento.missao)
     : null;
+
 
   if (carregando) return (
     <DashboardLayout>
@@ -290,6 +320,7 @@ export default function MomentoPage() {
       </div>
     </DashboardLayout>
   );
+
 
   if (!momento) return (
     <DashboardLayout>
@@ -301,9 +332,11 @@ export default function MomentoPage() {
     </DashboardLayout>
   );
 
+
   return (
     <DashboardLayout>
       <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
 
         {/* Header */}
         <div style={{ background: '#0E0E0E', borderRadius: 12, padding: '20px 24px' }}>
@@ -313,6 +346,7 @@ export default function MomentoPage() {
           </div>
           <p style={{ fontSize: 22, fontFamily: 'var(--font-heading)', color: '#F5F0E8', fontWeight: 400, margin: 0 }}>Bom dia, {nomeUsuario}.</p>
         </div>
+
 
         {/* Streak */}
         <div style={{ background: streak >= 7 ? 'linear-gradient(135deg, #1a0a00, #2d1600)' : '#fff', border: `1px solid ${streak >= 7 ? 'rgba(200,160,48,0.4)' : 'var(--color-brand-border)'}`, borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -335,6 +369,7 @@ export default function MomentoPage() {
           </div>
         </div>
 
+
         {/* Notificações */}
         {typeof window !== 'undefined' && 'Notification' in window && (
           <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -349,11 +384,13 @@ export default function MomentoPage() {
           </div>
         )}
 
+
         {/* Voz do dia */}
         <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '20px 24px', borderLeft: '3px solid #C8A030' }}>
           <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-brand-gray)', marginBottom: 12 }}>A voz do dia</p>
           <p style={{ fontSize: 15, color: 'var(--color-brand-dark-green)', lineHeight: 1.8, fontFamily: 'var(--font-heading)', fontStyle: 'italic', margin: 0 }}>&ldquo;{momento.voz_texto}&rdquo;</p>
         </div>
+
 
         {/* Versículo */}
         <div style={{ background: 'rgba(200,160,48,0.05)', border: '1px solid rgba(200,160,48,0.2)', borderRadius: 12, padding: '16px 20px', display: 'flex', gap: 14 }}>
@@ -367,6 +404,7 @@ export default function MomentoPage() {
           </div>
         </div>
 
+
         {/* Missão — dinâmica por fase */}
         <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '16px 20px' }}>
           <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C8A030', marginBottom: 8 }}>Sua missão de hoje</p>
@@ -376,6 +414,7 @@ export default function MomentoPage() {
             {diario.missao_cumprida ? '✓ Missão cumprida!' : 'Marcar como cumprida'}
           </button>
         </div>
+
 
         {/* Diário manhã */}
         <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '20px 24px' }}>
@@ -417,6 +456,7 @@ export default function MomentoPage() {
           </button>
         </div>
 
+
         {/* Reflexão da noite */}
         <div style={{ background: 'linear-gradient(135deg, #0a0a1a, #0e1a2d)', border: '1px solid rgba(100,120,200,0.2)', borderRadius: 12, padding: '20px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
@@ -457,11 +497,14 @@ export default function MomentoPage() {
           </button>
         </div>
 
+
         {/* Card compartilhar */}
         <CardCompartilhar diario={diario} streak={streak} momento={momento} />
 
+
         {/* Gráfico de humor */}
         <GraficoHumor historico={historico} />
+
 
         {/* Histórico 30 dias */}
         <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '20px 24px' }}>
@@ -501,6 +544,7 @@ export default function MomentoPage() {
             </div>
           )}
         </div>
+
 
       </div>
     </DashboardLayout>
