@@ -242,7 +242,6 @@ export default function MomentoPage() {
       preocupacao: diario.preocupacao ?? null,
       gratidao: diario.gratidao ?? null,
       missao_cumprida: diario.missao_cumprida ?? false,
-      updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,data' });
     setSalvando(false); setSalvo(true);
     setTimeout(() => setSalvo(false), 3000);
@@ -254,7 +253,6 @@ export default function MomentoPage() {
     const client = await getClient();
     await client.from('diario_kairos').upsert({
       user_id: user.id, data: hoje, qualidade_sono: qualidadeSono ?? null, emocao: emocao ?? null, preocupacao: preocupacao ?? null, gratidao: gratidao ?? null, missao_cumprida: false
-      updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,data' });
     setSalvandoNoite(false); setSalvoNoite(true);
     setTimeout(() => setSalvoNoite(false), 3000);
