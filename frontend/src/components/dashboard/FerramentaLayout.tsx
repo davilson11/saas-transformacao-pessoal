@@ -36,6 +36,23 @@ type FerramentaLayoutProps = {
   respostas?: Record<string, unknown>;
 };
 
+// ─── Mensagens motivacionais por ferramenta ───────────────────────────────────
+
+const MENSAGENS_MOTIVACIONAIS: Record<string, string> = {
+  F01: "Seu Raio-X está completo. Você se conhece melhor que 97% das pessoas.",
+  F02: "Você acabou de mapear seus valores. Isso é raro e poderoso.",
+  F03: "Sua análise SWOT está pronta. Você tem clareza que poucos têm.",
+  F04: "Seu feedback 360° revela o que poucos querem ver.",
+  F05: "Seus OKRs estão definidos. Agora é execução.",
+};
+
+const MENSAGEM_GENERICA =
+  "Progresso salvo. Cada passo conta — você está construindo algo real.";
+
+function getMensagem(codigo: string): string {
+  return MENSAGENS_MOTIVACIONAIS[codigo.toUpperCase()] ?? MENSAGEM_GENERICA;
+}
+
 // ─── Tokens ───────────────────────────────────────────────────────────────────
 
 const G        = "#0E0E0E";
@@ -68,6 +85,9 @@ export default function FerramentaLayout({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [concluido, setConcluido] = useState(false);
   const [autoSaveIndicator, setAutoSaveIndicator] = useState(false);
+  const [toastVisivel, setToastVisivel] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
 
   const resolvedSlug =
@@ -137,6 +157,13 @@ export default function FerramentaLayout({
       ? `Salvar ${nome.split(" ")[0]} ✓`
       : "Continuar →");
 
+  function mostrarToast(msg: string) {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToastMsg(msg);
+    setToastVisivel(true);
+    toastTimeoutRef.current = setTimeout(() => setToastVisivel(false), 3000);
+  }
+
   async function handleSalvarProgresso() {
     if (!user?.id) return;
     setSaveStatus("saving");
@@ -152,6 +179,7 @@ export default function FerramentaLayout({
         client,
       );
       setSaveStatus(ok ? "saved" : "error");
+      if (ok) mostrarToast(getMensagem(codigo));
     } catch {
       setSaveStatus("error");
     }
@@ -549,6 +577,42 @@ export default function FerramentaLayout({
         }
         .fl-steps-strip::-webkit-scrollbar { display: none; }
 
+        /* TOAST MOTIVACIONAL */
+        .fl-toast {
+          position: fixed;
+          top: 16px;
+          left: 50%;
+          transform: translateX(-50%) translateY(-12px);
+          z-index: 200;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 20px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #C8A030 0%, #a07820 100%);
+          color: #0E0E0E;
+          font-size: 13px;
+          font-weight: 600;
+          line-height: 1.4;
+          max-width: min(480px, calc(100vw - 32px));
+          box-shadow: 0 8px 32px rgba(200,160,48,0.45), 0 2px 8px rgba(0,0,0,0.30);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.25s ease, transform 0.25s ease;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .fl-toast.visible {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+          pointer-events: auto;
+        }
+        .fl-toast-icon {
+          font-size: 16px;
+          flex-shrink: 0;
+        }
+
         /* AUTO-SAVE INDICATOR */
         .fl-autosave {
           font-size: 11px;
@@ -564,6 +628,16 @@ export default function FerramentaLayout({
         }
         .fl-autosave.visible { opacity: 1; }
       `}</style>
+
+      {/* ── Toast motivacional ── */}
+      <div
+        role="status"
+        aria-live="polite"
+        className={`fl-toast${toastVisivel ? " visible" : ""}`}
+      >
+        <span className="fl-toast-icon">✨</span>
+        <span>{toastMsg}</span>
+      </div>
 
       <div className="fl-root">
 
