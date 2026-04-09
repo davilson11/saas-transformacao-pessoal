@@ -7,6 +7,8 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { buscarTodasRespostas, buscarVisaoAncora, buscarRodaVida } from "@/lib/queries";
 import { useSupabaseClient } from "@/lib/useSupabaseClient";
 import type { FerramentasRespostas, RodaVida, VisaoAncora } from "@/lib/database.types";
+import { calcularBadges, calcularStreakDias } from "@/lib/badges";
+import type { BadgeStatus } from "@/lib/badges";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -177,30 +179,406 @@ function ProgressRing({
   );
 }
 
+// ─── BadgesCard ───────────────────────────────────────────────────────────────
+
+type BadgesCardProps = {
+  loading:         boolean;
+  slugsConcluidas: Set<string>;
+  totalConcluidas: number;
+  streakDias:      number;
+  temVisao:        boolean;
+  temRoda:         boolean;
+  diarioCount:     number;
+};
+
+function BadgesCard({
+  loading,
+  slugsConcluidas,
+  totalConcluidas,
+  streakDias,
+  temVisao,
+  temRoda,
+  diarioCount,
+}: BadgesCardProps) {
+  const badges: BadgeStatus[] = loading
+    ? []
+    : calcularBadges({
+        slugsConcluidas,
+        totalConcluidas,
+        streakDias,
+        temVisao,
+        temRoda,
+        diarioCount,
+      });
+
+  const conquistados = badges.filter((b) => b.conquistado);
+  const bloqueados   = badges.filter((b) => !b.conquistado);
+
+  return (
+    <Card>
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div>
+          <h2
+            style={{
+              fontFamily: "var(--font-heading)",
+              fontStyle: "italic",
+              fontSize: 20,
+              fontWeight: 400,
+              color: C.green,
+              margin: "0 0 4px",
+            }}
+          >
+            Conquistas
+          </h2>
+          {!loading && (
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: C.gray, margin: 0 }}>
+              {conquistados.length} de {badges.length} badges desbloqueados
+            </p>
+          )}
+        </div>
+
+        {/* Mini barra de progresso */}
+        {!loading && badges.length > 0 && (
+          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 13,
+                fontWeight: 700,
+                color: C.gold,
+              }}
+            >
+              {Math.round((conquistados.length / badges.length) * 100)}%
+            </span>
+            <div
+              style={{
+                width: 80,
+                height: 5,
+                borderRadius: 99,
+                background: "rgba(26,92,58,0.10)",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  height: "100%",
+                  width: `${Math.round((conquistados.length / badges.length) * 100)}%`,
+                  background: C.gold,
+                  borderRadius: 99,
+                  transition: "width 0.6s ease",
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Skeleton */}
+      {loading && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+            gap: 12,
+          }}
+        >
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                height: 100,
+                borderRadius: 12,
+                background: "rgba(26,92,58,0.06)",
+                animation: "perfil-pulse 1.5s ease-in-out infinite",
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Badges conquistados */}
+      {!loading && conquistados.length > 0 && (
+        <div style={{ marginBottom: bloqueados.length > 0 ? 20 : 0 }}>
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              fontWeight: 600,
+              color: C.gold,
+              textTransform: "uppercase",
+              letterSpacing: "0.10em",
+              marginBottom: 12,
+            }}
+          >
+            ✦ Conquistados ({conquistados.length})
+          </p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+              gap: 12,
+            }}
+          >
+            {conquistados.map((badge) => (
+              <div
+                key={badge.id}
+                title={badge.descricao}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "16px 12px 14px",
+                  borderRadius: 14,
+                  border: `1.5px solid rgba(200,160,48,0.40)`,
+                  background: "linear-gradient(135deg, rgba(200,160,48,0.10) 0%, rgba(200,160,48,0.04) 100%)",
+                  textAlign: "center",
+                  cursor: "default",
+                  transition: "transform 0.15s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+              >
+                {/* Ícone */}
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "50%",
+                    background: C.gold,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 22,
+                    boxShadow: "0 4px 12px rgba(200,160,48,0.35)",
+                  }}
+                >
+                  {badge.emoji}
+                </div>
+
+                {/* Nome */}
+                <p
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: C.ink,
+                    margin: 0,
+                    lineHeight: 1.25,
+                  }}
+                >
+                  {badge.nome}
+                </p>
+
+                {/* Descrição */}
+                <p
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: 11,
+                    color: C.gray,
+                    margin: 0,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {badge.descricao}
+                </p>
+
+                {/* Selo */}
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 9,
+                    fontWeight: 700,
+                    color: C.gold,
+                    background: "rgba(200,160,48,0.12)",
+                    padding: "2px 8px",
+                    borderRadius: 99,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Conquistado
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Divisor */}
+      {!loading && conquistados.length > 0 && bloqueados.length > 0 && (
+        <div
+          style={{
+            height: 1,
+            background: C.border,
+            margin: "4px 0 20px",
+          }}
+        />
+      )}
+
+      {/* Badges bloqueados */}
+      {!loading && bloqueados.length > 0 && (
+        <div>
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              fontWeight: 600,
+              color: C.gray,
+              textTransform: "uppercase",
+              letterSpacing: "0.10em",
+              marginBottom: 12,
+            }}
+          >
+            🔒 Bloqueados ({bloqueados.length})
+          </p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+              gap: 12,
+            }}
+          >
+            {bloqueados.map((badge) => (
+              <div
+                key={badge.id}
+                title={`Para conquistar: ${badge.dica}`}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "16px 12px 14px",
+                  borderRadius: 14,
+                  border: `1.5px dashed ${C.border}`,
+                  background: "rgba(26,92,58,0.02)",
+                  textAlign: "center",
+                  cursor: "default",
+                  opacity: 0.7,
+                }}
+              >
+                {/* Ícone com cadeado sobreposto */}
+                <div style={{ position: "relative" }}>
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: "50%",
+                      background: "rgba(26,92,58,0.08)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 22,
+                      filter: "grayscale(1)",
+                    }}
+                  >
+                    {badge.emoji}
+                  </div>
+                  {/* Cadeado */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: -2,
+                      right: -4,
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
+                      background: "#fff",
+                      border: `1.5px solid ${C.border}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 9,
+                    }}
+                  >
+                    🔒
+                  </div>
+                </div>
+
+                {/* Nome */}
+                <p
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: C.gray,
+                    margin: 0,
+                    lineHeight: 1.25,
+                  }}
+                >
+                  {badge.nome}
+                </p>
+
+                {/* Dica */}
+                <p
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: 11,
+                    color: "rgba(122,140,130,0.75)",
+                    margin: 0,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {badge.dica}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Estado: tudo conquistado */}
+      {!loading && bloqueados.length === 0 && conquistados.length > 0 && (
+        <div
+          className="flex flex-col items-center gap-3 py-4"
+          style={{ textAlign: "center" }}
+        >
+          <span style={{ fontSize: 36 }}>🏆</span>
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: C.gray }}>
+            Parabéns! Você conquistou todos os badges. Você é um Mestre Kairos!
+          </p>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 // ─── Página ───────────────────────────────────────────────────────────────────
 
 export default function PerfilPage() {
   const { user, isLoaded } = useUser();
   const { getClient } = useSupabaseClient();
 
-  const [respostas,  setRespostas]  = useState<FerramentasRespostas[]>([]);
-  const [visao,      setVisao]      = useState<VisaoAncora | null>(null);
-  const [roda,       setRoda]       = useState<RodaVida | null>(null);
-  const [loading,    setLoading]    = useState(true);
+  const [respostas,    setRespostas]    = useState<FerramentasRespostas[]>([]);
+  const [visao,        setVisao]        = useState<VisaoAncora | null>(null);
+  const [roda,         setRoda]         = useState<RodaVida | null>(null);
+  const [diarioCount,  setDiarioCount]  = useState(0);
+  const [streakDiario, setStreakDiario] = useState(0);
+  const [loading,      setLoading]      = useState(true);
 
   useEffect(() => {
     if (!isLoaded) return;
     if (!user?.id) { setLoading(false); return; }
     (async () => {
       const client = await getClient();
-      const [r, v, w] = await Promise.all([
+      const [r, v, w, diario] = await Promise.all([
         buscarTodasRespostas(user.id, client),
         buscarVisaoAncora(user.id, client),
         buscarRodaVida(user.id, client),
+        client
+          .from('diario_kairos')
+          .select('data')
+          .eq('user_id', user.id)
+          .order('data', { ascending: false })
+          .limit(60),
       ]);
       setRespostas(r);
       setVisao(v);
       setRoda(w);
+      const datas = (diario.data ?? []).map((d) => d.data as string);
+      setDiarioCount(datas.length);
+      setStreakDiario(calcularStreakDias(datas));
       setLoading(false);
     })();
   }, [isLoaded, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -811,6 +1189,19 @@ export default function PerfilPage() {
             </div>
           </Card>
         )}
+
+        {/* ══════════════════════════════════════════════════════════════
+            BADGES
+        ══════════════════════════════════════════════════════════════ */}
+        <BadgesCard
+          loading={loading}
+          slugsConcluidas={slugsConcluidas}
+          totalConcluidas={concluidas.length}
+          streakDias={streakDiario}
+          temVisao={!!visao?.manchete}
+          temRoda={!!roda}
+          diarioCount={diarioCount}
+        />
 
         {/* ══════════════════════════════════════════════════════════════
             5 + 6. Grid: Visão Âncora + Roda da Vida
