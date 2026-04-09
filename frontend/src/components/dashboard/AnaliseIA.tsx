@@ -9,30 +9,28 @@ import type { DiarioKairos } from '@/lib/database.types';
 
 const STOP_WORDS = new Set([
   'de', 'da', 'do', 'das', 'dos', 'a', 'o', 'as', 'os', 'e', 'em',
-  'no', 'na', 'nos', 'nas', 'um', 'uma', 'uns', 'umas', 'é', 'que',
-  'para', 'com', 'por', 'se', 'me', 'mais', 'mas', 'não', 'foi',
-  'ser', 'ter', 'bem', 'ao', 'ou', 'já', 'eu', 'meu', 'minha',
+  'no', 'na', 'nos', 'nas', 'um', 'uma', 'uns', 'umas', 'e', 'que',
+  'para', 'com', 'por', 'se', 'me', 'mais', 'mas', 'nao', 'foi',
+  'ser', 'ter', 'bem', 'ao', 'ou', 'ja', 'eu', 'meu', 'minha',
   'meus', 'minhas', 'seu', 'sua', 'seus', 'suas', 'este', 'esta',
   'esse', 'essa', 'isso', 'aqui', 'ali', 'hoje', 'dia', 'vez',
   'todo', 'toda', 'muito', 'pouco', 'sempre', 'nunca', 'quando',
-  'como', 'onde', 'porque', 'pois', 'então', 'assim', 'também',
+  'como', 'onde', 'porque', 'pois', 'entao', 'assim', 'tambem',
   'ainda', 'fui', 'fazer', 'feito', 'tive', 'tudo', 'nada', 'cada',
-  'entre', 'sobre', 'até', 'depois', 'antes', 'num', 'numa', 'são',
-  'minha', 'minhas', 'meus', 'tenho', 'tem', 'temos', 'estou',
-  'está', 'estão', 'estava', 'foram', 'são', 'será', 'pode', 'pelo',
-  'pela', 'pelos', 'pelas', 'mais', 'menos', 'sem', 'nos', 'nas',
+  'entre', 'sobre', 'ate', 'depois', 'antes', 'num', 'numa', 'sao',
+  'tenho', 'tem', 'temos', 'estou', 'esta', 'estao', 'estava',
+  'foram', 'sera', 'pode', 'pelo', 'pela', 'pelos', 'pelas',
+  'menos', 'sem', 'so', 'ja', 'bem', 'nao', 'isso', 'esta',
 ]);
-
-// ─── Mapeamento de emoções ────────────────────────────────────────────────────
 
 const EMOCOES_POSITIVAS = new Set([
   'feliz', 'grato', 'grata', 'animado', 'animada', 'confiante',
   'sereno', 'serena', 'motivado', 'motivada', 'tranquilo', 'tranquila',
   'alegre', 'satisfeito', 'satisfeita', 'realizado', 'realizada',
-  'esperançoso', 'esperançosa', 'energizado', 'energizada',
+  'esperancoso', 'esperancosa', 'energizado', 'energizada',
   'entusiasmado', 'entusiasmada', 'orgulhoso', 'orgulhosa',
   'conectado', 'conectada', 'calmo', 'calma', 'positivo', 'positiva',
-  'otimista', 'focado', 'focada', 'forte', 'bem', 'ótimo', 'ótima',
+  'otimista', 'focado', 'focada', 'forte', 'bem', 'otimo', 'otima',
   'excelente', 'maravilhoso', 'maravilhosa', 'radiante',
 ]);
 
@@ -51,36 +49,64 @@ type Palavra = { texto: string; count: number };
 
 type SentimentoLabel = 'Positivo' | 'Neutro' | 'Negativo';
 
-type Analise = {
+/** Nível de insight conforme acúmulo de registros */
+type Nivel = 'insuficiente' | 'semana' | 'padrao' | 'evolucao';
+
+type AnaliseCompleta = {
+  nivel:           Nivel;
+  totalRegistros:  number;
+  // ≥7 — semana
   topPalavras:     Palavra[];
   sentimentoLabel: SentimentoLabel;
-  sentimentoPct:   number;   // 0–100, maior = mais positivo
+  sentimentoPct:   number;
   mediaNota:       number | null;
-  totalRegistros:  number;
   dica:            string;
+  // ≥30 — padrão semanal
+  melhorDia:       string | null;
+  melhorDiaNota:   number | null;
+  // ≥90 — evolução
+  evolucaoPct:     number | null;
+  // frase de insight hero (30+ ou 90+)
+  fraseInsight:    string | null;
 };
 
-// ─── Lógica de análise ────────────────────────────────────────────────────────
+// ─── Constantes ───────────────────────────────────────────────────────────────
+
+const DIAS_SEMANA = [
+  'Domingo', 'Segunda-feira', 'Terça-feira',
+  'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado',
+];
+
+const COR_VERDE  = '#1a5c3a';
+const COR_GOLD   = '#b5840a';
+const COR_BORDER = 'rgba(26,92,58,0.10)';
+
+const SENTIMENTO_CONFIG: Record<SentimentoLabel, { cor: string; emoji: string }> = {
+  Positivo: { cor: '#16a34a', emoji: '😊' },
+  Neutro:   { cor: '#d97706', emoji: '😐' },
+  Negativo: { cor: '#dc2626', emoji: '😔' },
+};
+
+// ─── Helpers de análise ───────────────────────────────────────────────────────
+
+function norm(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
 
 function extrairPalavras(registros: DiarioKairos[]): Palavra[] {
   const freq = new Map<string, number>();
-
   for (const r of registros) {
     const texto = [r.preocupacao, r.gratidao, r.conquista, r.aprendizado]
       .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
-      .join(' ')
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, ''); // remove acentos para matching de stopwords
+      .join(' ');
 
-    for (const word of texto.split(/[\s,.'!?;:()\[\]\-–—/\\]+/)) {
+    for (const word of norm(texto).split(/[\s,.'!?;:()\[\]\-–—/\\]+/)) {
       const w = word.trim();
       if (w.length > 3 && !STOP_WORDS.has(w) && /^[a-z]+$/.test(w)) {
         freq.set(w, (freq.get(w) ?? 0) + 1);
       }
     }
   }
-
   return [...freq.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6)
@@ -92,7 +118,6 @@ function calcularSentimento(registros: DiarioKairos[]): {
   pct: number;
   mediaNota: number | null;
 } {
-  // Média do nota_dia (peso maior)
   const notas = registros
     .map((r) => r.nota_dia)
     .filter((n): n is number => n !== null && n > 0);
@@ -100,27 +125,20 @@ function calcularSentimento(registros: DiarioKairos[]): {
     ? notas.reduce((a, b) => a + b, 0) / notas.length
     : null;
 
-  // Contagem de emoções por sentimento
-  let positivos = 0;
-  let negativos = 0;
+  let positivos = 0, negativos = 0;
   for (const r of registros) {
     if (!r.emocao) continue;
-    const emocao = r.emocao
-      .toLowerCase()
-      .trim()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
-    if (EMOCOES_POSITIVAS.has(emocao)) positivos++;
-    else if (EMOCOES_NEGATIVAS.has(emocao)) negativos++;
+    const e = norm(r.emocao.trim());
+    if (EMOCOES_POSITIVAS.has(e))      positivos++;
+    else if (EMOCOES_NEGATIVAS.has(e)) negativos++;
   }
 
-  // Combinar nota_dia (60%) + emoções (40%)
   let pct: number;
   if (mediaNota !== null && notas.length >= 2) {
-    const notaPct = (mediaNota / 10) * 100;
-    const total = positivos + negativos;
-    const emocaoPct = total > 0 ? (positivos / total) * 100 : 50;
-    pct = Math.round(notaPct * 0.6 + emocaoPct * 0.4);
+    const notaPct  = (mediaNota / 10) * 100;
+    const total    = positivos + negativos;
+    const emocPct  = total > 0 ? (positivos / total) * 100 : 50;
+    pct = Math.round(notaPct * 0.6 + emocPct * 0.4);
   } else if (mediaNota !== null) {
     pct = Math.round((mediaNota / 10) * 100);
   } else {
@@ -142,127 +160,294 @@ function gerarDica(
 ): string {
   const negativas = registros.filter((r) => {
     if (!r.emocao) return false;
-    const e = r.emocao.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return EMOCOES_NEGATIVAS.has(e);
+    return EMOCOES_NEGATIVAS.has(norm(r.emocao.trim()));
   }).length;
 
-  if (mediaNota !== null && mediaNota <= 4) {
-    return 'Seus registros indicam uma semana pesada. A ferramenta F12 — Energia e Vitalidade pode te ajudar a diagnosticar e recuperar seu nível de energia.';
-  }
-  if (mediaNota !== null && mediaNota >= 8.5) {
-    return 'Semana excelente! Documente o que funcionou e use isso como base para atualizar seus OKRs e metas do próximo ciclo.';
-  }
-  if (negativas >= 4) {
-    return 'Várias emoções difíceis esta semana. O Desconstrutor de Crenças (F13) pode ajudar a identificar e transformar padrões que estão pesando.';
-  }
-  if (sentimento === 'Positivo') {
-    return 'Sua energia emocional está elevada. Ótimo momento para avançar nas ferramentas mais desafiadoras da sua jornada.';
-  }
+  if (mediaNota !== null && mediaNota <= 4)
+    return 'Seus registros mostram uma fase pesada. A ferramenta F12 — Energia e Vitalidade pode te ajudar a recuperar sua base.';
+  if (mediaNota !== null && mediaNota >= 8.5)
+    return 'Semana excelente! Documente o que funcionou e use como base para atualizar seus OKRs.';
+  if (negativas >= 4)
+    return 'Várias emoções difíceis esta semana. O Desconstrutor de Crenças (F13) pode ajudar a transformar esses padrões.';
+  if (sentimento === 'Positivo')
+    return 'Sua energia emocional está elevada. Ótimo momento para avançar nas ferramentas mais desafiadoras.';
   const topWord = topPalavras[0]?.texto;
-  if (topWord) {
-    return `O tema "${topWord}" aparece com frequência nos seus registros. Vale aprofundar essa reflexão na sua próxima Revisão Semanal.`;
-  }
-  return 'Continue registrando diariamente — com mais dados, sua análise ficará cada vez mais precisa e personalizada.';
+  if (topWord)
+    return `O tema "${topWord}" aparece com frequência nos seus registros. Vale aprofundar na próxima Revisão Semanal.`;
+  return 'Continue registrando diariamente — com mais dados, sua análise ficará cada vez mais precisa.';
 }
 
-function analisar(registros: DiarioKairos[]): Analise {
-  const topPalavras = extrairPalavras(registros);
-  const { label, pct, mediaNota } = calcularSentimento(registros);
-  const dica = gerarDica(label, mediaNota, topPalavras, registros);
+/** Retorna o dia da semana com maior nota média (mínimo 2 registros naquele dia). */
+function calcularMelhorDia(
+  registros: DiarioKairos[],
+): { dia: string; media: number } | null {
+  const grupos: Record<number, number[]> = {};
+  for (const r of registros) {
+    if (!r.nota_dia || !(r as DiarioKairos & { data?: string }).data) continue;
+    const dataStr = (r as DiarioKairos & { data?: string }).data;
+    if (!dataStr) continue;
+    const dow = new Date(dataStr + 'T12:00:00').getDay();
+    if (!grupos[dow]) grupos[dow] = [];
+    grupos[dow].push(r.nota_dia);
+  }
+
+  let melhor: { dow: number; media: number } | null = null;
+  for (const [dowStr, notas] of Object.entries(grupos)) {
+    if (notas.length < 2) continue;
+    const media = notas.reduce((a, b) => a + b, 0) / notas.length;
+    if (!melhor || media > melhor.media) {
+      melhor = { dow: Number(dowStr), media };
+    }
+  }
+  return melhor ? { dia: DIAS_SEMANA[melhor.dow], media: melhor.media } : null;
+}
+
+/**
+ * Compara a média da primeira metade dos registros com a segunda metade (mais recente).
+ * Retorna a variação percentual (positivo = cresceu, negativo = caiu).
+ * registros deve estar em ordem DESCENDENTE (mais recente primeiro).
+ */
+function calcularEvolucao(registros: DiarioKairos[]): number | null {
+  const comNota = registros.filter((r) => r.nota_dia !== null && (r.nota_dia ?? 0) > 0);
+  if (comNota.length < 14) return null;
+
+  const metade   = Math.floor(comNota.length / 2);
+  const recentes = comNota.slice(0, metade);   // mais novos
+  const antigos  = comNota.slice(metade);      // mais antigos
+
+  const mediaRecente = recentes.reduce((a, b) => a + (b.nota_dia ?? 0), 0) / recentes.length;
+  const mediaAntiga  = antigos.reduce((a, b) => a + (b.nota_dia ?? 0), 0) / antigos.length;
+  if (mediaAntiga === 0) return null;
+
+  return Math.round(((mediaRecente - mediaAntiga) / mediaAntiga) * 100);
+}
+
+function gerarFraseInsight(
+  nivel: Nivel,
+  melhorDia: string | null,
+  evolucaoPct: number | null,
+  topPalavras: Palavra[],
+  sentimentoLabel: SentimentoLabel,
+): string | null {
+  if (nivel === 'evolucao' && evolucaoPct !== null) {
+    if (evolucaoPct > 0)
+      return `📈 Sua nota média cresceu ${evolucaoPct}% desde que você começou. Progresso real e mensurável.`;
+    if (evolucaoPct < 0)
+      return `📉 Sua nota média caiu ${Math.abs(evolucaoPct)}% em relação ao início — hora de revisar sua rotina.`;
+    return `⚖️ Sua nota média está estável desde o início. Consistência é uma vitória.`;
+  }
+  if ((nivel === 'padrao' || nivel === 'evolucao') && melhorDia) {
+    return `✨ Você tende a se sentir melhor às ${melhorDia}. Use isso a seu favor no planejamento semanal.`;
+  }
+  if (nivel === 'semana') {
+    const topWord = topPalavras[0]?.texto;
+    if (topWord && sentimentoLabel === 'Positivo')
+      return `💚 "${topWord}" é seu tema dominante esta semana — e o padrão emocional é positivo.`;
+    if (topWord)
+      return `🔍 O tema "${topWord}" se destaca nos seus registros desta semana.`;
+  }
+  return null;
+}
+
+// ─── Função principal de análise ──────────────────────────────────────────────
+
+function analisar(registros: DiarioKairos[]): AnaliseCompleta {
+  const total = registros.length;
+
+  const nivel: Nivel =
+    total >= 90 ? 'evolucao'
+    : total >= 30 ? 'padrao'
+    : total >= 7  ? 'semana'
+    : 'insuficiente';
+
+  if (nivel === 'insuficiente') {
+    return {
+      nivel, totalRegistros: total,
+      topPalavras: [], sentimentoLabel: 'Neutro', sentimentoPct: 50,
+      mediaNota: null, dica: '',
+      melhorDia: null, melhorDiaNota: null,
+      evolucaoPct: null, fraseInsight: null,
+    };
+  }
+
+  // Análise da semana (últimos 7)
+  const ultimos7 = registros.slice(0, 7);
+  const topPalavras     = extrairPalavras(ultimos7);
+  const { label, pct, mediaNota } = calcularSentimento(ultimos7);
+  const dica            = gerarDica(label, mediaNota, topPalavras, ultimos7);
+
+  // Padrão semanal (todos os registros)
+  let melhorDia: string | null = null;
+  let melhorDiaNota: number | null = null;
+  if (nivel === 'padrao' || nivel === 'evolucao') {
+    const res = calcularMelhorDia(registros);
+    if (res) { melhorDia = res.dia; melhorDiaNota = res.media; }
+  }
+
+  // Evolução (todos os registros)
+  let evolucaoPct: number | null = null;
+  if (nivel === 'evolucao') {
+    evolucaoPct = calcularEvolucao(registros);
+  }
+
+  const fraseInsight = gerarFraseInsight(nivel, melhorDia, evolucaoPct, topPalavras, label);
 
   return {
-    topPalavras,
-    sentimentoLabel: label,
-    sentimentoPct:   pct,
-    mediaNota,
-    totalRegistros:  registros.length,
-    dica,
+    nivel, totalRegistros: total,
+    topPalavras, sentimentoLabel: label, sentimentoPct: pct,
+    mediaNota, dica,
+    melhorDia, melhorDiaNota,
+    evolucaoPct, fraseInsight,
   };
 }
 
-// ─── Cores do diário (matches diario-bordo/page.tsx) ─────────────────────────
+// ─── Sub-componentes de UI ────────────────────────────────────────────────────
 
-const COR_VERDE  = '#1a5c3a';
-const COR_GOLD   = '#b5840a';
-const COR_BORDER = 'rgba(26,92,58,0.1)';
+function Skeleton() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {[160, 110, 140, 100].map((w) => (
+        <div key={w} style={{
+          height: 10, width: w, borderRadius: 4,
+          background: 'rgba(26,92,58,0.07)',
+          animation: 'analiseIAPulse 1.5s ease-in-out infinite',
+        }} />
+      ))}
+      <style>{`@keyframes analiseIAPulse{0%,100%{opacity:.35}50%{opacity:.85}}`}</style>
+    </div>
+  );
+}
 
-const SENTIMENTO_CONFIG: Record<SentimentoLabel, { cor: string; emoji: string }> = {
-  Positivo: { cor: '#16a34a', emoji: '😊' },
-  Neutro:   { cor: '#d97706', emoji: '😐' },
-  Negativo: { cor: '#dc2626', emoji: '😔' },
-};
+function CardInsuficiente({ total }: { total: number }) {
+  const faltam = 7 - total;
+  const pct    = Math.round((total / 7) * 100);
+  return (
+    <div style={{
+      background: `${COR_GOLD}08`,
+      border: `1px solid ${COR_GOLD}28`,
+      borderRadius: 12, padding: '16px 18px',
+      display: 'flex', flexDirection: 'column', gap: 12,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 20 }}>📊</span>
+        <div>
+          <p style={{
+            fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700,
+            color: COR_GOLD, margin: 0,
+          }}>
+            Análise acumulativa
+          </p>
+          <p style={{
+            fontFamily: 'var(--font-body)', fontSize: 12,
+            color: 'rgba(26,92,58,0.55)', margin: '2px 0 0',
+          }}>
+            {total === 0
+              ? 'Seu primeiro insight aparece após 7 registros.'
+              : `Falta${faltam === 1 ? '' : 'm'} ${faltam} registro${faltam === 1 ? '' : 's'} para o primeiro insight.`}
+          </p>
+        </div>
+      </div>
 
-// ─── Componente ───────────────────────────────────────────────────────────────
+      {/* Barra de progresso */}
+      <div>
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginBottom: 6,
+        }}>
+          <span style={{
+            fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700,
+            color: COR_GOLD,
+          }}>
+            {total} de 7 dias
+          </span>
+          <span style={{
+            fontFamily: 'var(--font-mono)', fontSize: 10,
+            color: 'rgba(26,92,58,0.40)',
+          }}>
+            {pct}%
+          </span>
+        </div>
+        <div style={{
+          height: 8, borderRadius: 99, overflow: 'hidden',
+          background: 'rgba(26,92,58,0.08)',
+        }}>
+          <div style={{
+            height: '100%', width: `${pct}%`, borderRadius: 99,
+            background: `linear-gradient(90deg, ${COR_GOLD}88 0%, ${COR_GOLD} 100%)`,
+            transition: 'width 0.8s ease',
+          }} />
+        </div>
+      </div>
+
+      {/* Contadores de marcos */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        {[
+          { n: 7,  label: '1ª análise' },
+          { n: 30, label: 'Padrão diário' },
+          { n: 90, label: 'Evolução' },
+        ].map(({ n, label }) => (
+          <div key={n} style={{
+            flex: 1, textAlign: 'center',
+            background: total >= n ? `${COR_VERDE}10` : 'rgba(26,92,58,0.04)',
+            border: `1px solid ${total >= n ? COR_VERDE + '25' : COR_BORDER}`,
+            borderRadius: 8, padding: '6px 4px',
+          }}>
+            <p style={{
+              fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700,
+              color: total >= n ? COR_VERDE : 'rgba(26,92,58,0.25)',
+              margin: 0,
+            }}>
+              {n}d
+            </p>
+            <p style={{
+              fontFamily: 'var(--font-body)', fontSize: 9,
+              color: total >= n ? 'rgba(26,92,58,0.55)' : 'rgba(26,92,58,0.22)',
+              margin: '2px 0 0', lineHeight: 1.2,
+            }}>
+              {label}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function AnaliseIA() {
-  const { user } = useUser();
+  const { user }      = useUser();
   const { getClient } = useSupabaseClient();
 
-  const [analise,  setAnalise]  = useState<Analise | null>(null);
+  const [analise,  setAnalise]  = useState<AnaliseCompleta | null>(null);
   const [loading,  setLoading]  = useState(true);
-  const [semDados, setSemDados] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
       setLoading(true);
       const client = await getClient();
+
+      // Busca até 100 registros (suficiente para tier evolução = 90+)
       const { data, error } = await client
         .from('diario_kairos')
-        .select('id, emocao, preocupacao, gratidao, conquista, aprendizado, nota_dia')
+        .select('id, data, emocao, preocupacao, gratidao, conquista, aprendizado, nota_dia')
         .eq('user_id', user.id)
         .order('data', { ascending: false })
-        .limit(7);
+        .limit(100);
 
-      if (error || !data || data.length === 0) {
-        setSemDados(true);
-        setLoading(false);
-        return;
-      }
-
+      if (error || !data) { setLoading(false); return; }
       setAnalise(analisar(data as DiarioKairos[]));
       setLoading(false);
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Skeleton ──
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{
-          height: 12, width: 160, borderRadius: 4,
-          background: 'rgba(26,92,58,0.08)',
-          animation: 'analiseIAPulse 1.5s ease-in-out infinite',
-        }} />
-        {[100, 140, 110].map((w) => (
-          <div key={w} style={{
-            height: 10, width: w, borderRadius: 4,
-            background: 'rgba(26,92,58,0.06)',
-            animation: 'analiseIAPulse 1.5s ease-in-out infinite',
-          }} />
-        ))}
-        <style>{`@keyframes analiseIAPulse{0%,100%{opacity:.4}50%{opacity:.9}}`}</style>
-      </div>
-    );
-  }
+  if (loading) return <Skeleton />;
+  if (!analise) return null;
 
-  // ── Sem dados suficientes ──
-  if (semDados || !analise) {
-    return (
-      <div style={{
-        background: `${COR_GOLD}08`,
-        border: `1px solid ${COR_GOLD}25`,
-        borderRadius: 10, padding: '12px 14px',
-      }}>
-        <p style={{
-          fontFamily: 'var(--font-body)', fontSize: 12,
-          color: 'rgba(26,92,58,0.55)', margin: 0,
-          lineHeight: 1.5,
-        }}>
-          💡 A análise da semana estará disponível após o primeiro registro no Diário de Bordo.
-        </p>
-      </div>
-    );
+  // ── Sem dados suficientes ──────────────────────────────────────────────────
+  if (analise.nivel === 'insuficiente') {
+    return <CardInsuficiente total={analise.totalRegistros} />;
   }
 
   const sentConf = SENTIMENTO_CONFIG[analise.sentimentoLabel];
@@ -270,24 +455,67 @@ export default function AnaliseIA() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Header */}
-      <div>
-        <p style={{
-          fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700,
-          color: COR_VERDE, textTransform: 'uppercase', letterSpacing: '0.06em',
-          marginBottom: 2,
+
+      {/* ── Header ────────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <p style={{
+            fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700,
+            color: COR_VERDE, textTransform: 'uppercase', letterSpacing: '0.06em',
+            margin: 0,
+          }}>
+            🔍 Análise Acumulativa
+          </p>
+          <p style={{
+            fontFamily: 'var(--font-body)', fontSize: 11,
+            color: 'rgba(26,92,58,0.45)', margin: '2px 0 0',
+          }}>
+            {analise.totalRegistros} registros
+          </p>
+        </div>
+
+        {/* Badge do nível */}
+        <span style={{
+          fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
+          color: analise.nivel === 'evolucao' ? '#C8A030'
+               : analise.nivel === 'padrao'   ? COR_VERDE
+               : 'rgba(26,92,58,0.45)',
+          background: analise.nivel === 'evolucao' ? 'rgba(200,160,48,0.12)'
+                    : analise.nivel === 'padrao'   ? `${COR_VERDE}10`
+                    : 'rgba(26,92,58,0.06)',
+          border: `1px solid ${
+            analise.nivel === 'evolucao' ? 'rgba(200,160,48,0.30)'
+          : analise.nivel === 'padrao'   ? `${COR_VERDE}25`
+          : COR_BORDER}`,
+          borderRadius: 99, padding: '3px 8px',
+          textTransform: 'uppercase', letterSpacing: '0.06em',
         }}>
-          🔍 Análise da Semana
-        </p>
-        <p style={{
-          fontFamily: 'var(--font-body)', fontSize: 11,
-          color: 'rgba(26,92,58,0.45)', margin: 0,
-        }}>
-          Baseada nos últimos {analise.totalRegistros} registro{analise.totalRegistros !== 1 ? 's' : ''}
-        </p>
+          {analise.nivel === 'evolucao' ? '🏆 Nível evolução'
+         : analise.nivel === 'padrao'   ? '⭐ Nível padrão'
+         :                                '📅 7 dias'}
+        </span>
       </div>
 
-      {/* Sentimento geral */}
+      {/* ── Frase de insight hero (30+ ou 90+) ──────────────────────────── */}
+      {analise.fraseInsight && (
+        <div style={{
+          background: analise.nivel === 'evolucao'
+            ? 'linear-gradient(135deg, rgba(200,160,48,0.10) 0%, rgba(200,160,48,0.04) 100%)'
+            : `${COR_VERDE}08`,
+          border: `1px solid ${analise.nivel === 'evolucao' ? 'rgba(200,160,48,0.30)' : COR_VERDE + '20'}`,
+          borderRadius: 10, padding: '12px 16px',
+        }}>
+          <p style={{
+            fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600,
+            color: analise.nivel === 'evolucao' ? '#5c4a00' : COR_VERDE,
+            margin: 0, lineHeight: 1.55,
+          }}>
+            {analise.fraseInsight}
+          </p>
+        </div>
+      )}
+
+      {/* ── Sentimento geral (últimos 7) ─────────────────────────────────── */}
       <div style={{
         background: '#fff', border: `1px solid ${COR_BORDER}`,
         borderRadius: 10, padding: '12px 14px',
@@ -295,30 +523,23 @@ export default function AnaliseIA() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <p style={{
-            fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600,
-            color: 'rgba(26,92,58,0.55)', margin: 0,
+            fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600,
+            color: 'rgba(26,92,58,0.50)', margin: 0,
           }}>
-            Sentimento geral
+            Padrão emocional · últimos 7
           </p>
           <span style={{
             fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700,
             color: sentConf.cor,
-            display: 'flex', alignItems: 'center', gap: 4,
           }}>
             {sentConf.emoji} {analise.sentimentoLabel}
           </span>
         </div>
 
-        {/* Barra sentimento */}
-        <div style={{
-          height: 6, borderRadius: 99, overflow: 'hidden',
-          background: 'rgba(26,92,58,0.08)',
-        }}>
+        <div style={{ height: 6, borderRadius: 99, overflow: 'hidden', background: 'rgba(26,92,58,0.08)' }}>
           <div style={{
-            height: '100%',
-            width: `${analise.sentimentoPct}%`,
-            borderRadius: 99,
-            background: `linear-gradient(90deg, #dc2626 0%, #d97706 40%, #16a34a 100%)`,
+            height: '100%', width: `${analise.sentimentoPct}%`, borderRadius: 99,
+            background: 'linear-gradient(90deg, #dc2626 0%, #d97706 40%, #16a34a 100%)',
             transition: 'width 0.8s ease',
           }} />
         </div>
@@ -335,7 +556,7 @@ export default function AnaliseIA() {
         )}
       </div>
 
-      {/* Palavras mais frequentes */}
+      {/* ── Palavra mais frequente + temas ──────────────────────────────── */}
       {analise.topPalavras.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <p style={{
@@ -347,36 +568,24 @@ export default function AnaliseIA() {
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {analise.topPalavras.map(({ texto, count }) => {
-              const peso = count / maxCount; // 0–1
+              const peso = count / maxCount;
               return (
                 <span
                   key={texto}
                   title={`${count}× mencionado`}
                   style={{
                     fontFamily: 'var(--font-body)',
-                    fontSize: peso >= 0.7 ? 13 : 11,
+                    fontSize:   peso >= 0.7 ? 13 : 11,
                     fontWeight: peso >= 0.7 ? 700 : 500,
-                    color: peso >= 0.7 ? COR_VERDE : 'rgba(26,92,58,0.60)',
-                    background: peso >= 0.7
-                      ? `${COR_VERDE}12`
-                      : 'rgba(26,92,58,0.05)',
-                    border: `1px solid ${peso >= 0.7
-                      ? COR_VERDE + '30'
-                      : 'rgba(26,92,58,0.10)'}`,
-                    borderRadius: 99,
-                    padding: peso >= 0.7 ? '3px 10px' : '2px 8px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    cursor: 'default',
+                    color:      peso >= 0.7 ? COR_VERDE : 'rgba(26,92,58,0.55)',
+                    background: peso >= 0.7 ? `${COR_VERDE}12` : 'rgba(26,92,58,0.05)',
+                    border: `1px solid ${peso >= 0.7 ? COR_VERDE + '30' : 'rgba(26,92,58,0.10)'}`,
+                    borderRadius: 99, padding: peso >= 0.7 ? '3px 10px' : '2px 8px',
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
                   }}
                 >
                   {texto}
-                  <span style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 9,
-                    color: 'rgba(26,92,58,0.40)',
-                  }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'rgba(26,92,58,0.35)' }}>
                     {count}×
                   </span>
                 </span>
@@ -386,10 +595,98 @@ export default function AnaliseIA() {
         </div>
       )}
 
-      {/* Dica personalizada */}
+      {/* ── Melhor dia da semana (30+) ───────────────────────────────────── */}
+      {(analise.nivel === 'padrao' || analise.nivel === 'evolucao') && analise.melhorDia && (
+        <div style={{
+          background: `${COR_VERDE}06`,
+          border: `1px solid ${COR_VERDE}20`,
+          borderRadius: 10, padding: '12px 14px',
+          display: 'flex', alignItems: 'center', gap: 12,
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+            background: `${COR_VERDE}12`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 20,
+          }}>
+            📅
+          </div>
+          <div>
+            <p style={{
+              fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
+              color: 'rgba(26,92,58,0.40)', textTransform: 'uppercase',
+              letterSpacing: '0.08em', margin: '0 0 3px',
+            }}>
+              Seu melhor dia · baseado em {analise.totalRegistros} registros
+            </p>
+            <p style={{
+              fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700,
+              color: COR_VERDE, margin: 0,
+            }}>
+              {analise.melhorDia}
+              {analise.melhorDiaNota !== null && (
+                <span style={{
+                  fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 500,
+                  color: 'rgba(26,92,58,0.50)', marginLeft: 8,
+                }}>
+                  (média {analise.melhorDiaNota.toFixed(1)}/10)
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Evolução do score (90+) ───────────────────────────────────────── */}
+      {analise.nivel === 'evolucao' && analise.evolucaoPct !== null && (
+        <div style={{
+          background: analise.evolucaoPct >= 0
+            ? 'rgba(22,163,74,0.07)'
+            : 'rgba(220,38,38,0.06)',
+          border: `1px solid ${analise.evolucaoPct >= 0
+            ? 'rgba(22,163,74,0.22)'
+            : 'rgba(220,38,38,0.20)'}`,
+          borderRadius: 10, padding: '12px 14px',
+          display: 'flex', alignItems: 'center', gap: 12,
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+            background: analise.evolucaoPct >= 0
+              ? 'rgba(22,163,74,0.12)' : 'rgba(220,38,38,0.10)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 20,
+          }}>
+            {analise.evolucaoPct >= 0 ? '📈' : '📉'}
+          </div>
+          <div>
+            <p style={{
+              fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
+              color: 'rgba(26,92,58,0.40)', textTransform: 'uppercase',
+              letterSpacing: '0.08em', margin: '0 0 3px',
+            }}>
+              Evolução do score médio
+            </p>
+            <p style={{
+              fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700,
+              color: analise.evolucaoPct >= 0 ? '#16a34a' : '#dc2626',
+              margin: 0,
+            }}>
+              {analise.evolucaoPct > 0 ? '+' : ''}{analise.evolucaoPct}%
+              <span style={{
+                fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 400,
+                color: 'rgba(26,92,58,0.45)', marginLeft: 8,
+              }}>
+                vs. seus primeiros registros
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Dica personalizada ────────────────────────────────────────────── */}
       <div style={{
         background: `${COR_GOLD}08`,
-        border: `1px solid ${COR_GOLD}30`,
+        border: `1px solid ${COR_GOLD}28`,
         borderRadius: 10, padding: '12px 14px',
         display: 'flex', alignItems: 'flex-start', gap: 8,
       }}>
@@ -400,6 +697,43 @@ export default function AnaliseIA() {
         }}>
           {analise.dica}
         </p>
+      </div>
+
+      {/* ── Marcos de progresso (rodapé) ────────────────────────────────── */}
+      <div style={{
+        display: 'flex', gap: 6,
+        borderTop: `1px solid ${COR_BORDER}`, paddingTop: 10,
+      }}>
+        {[
+          { n: 7,  label: '1ª análise',    nivel: 'semana'    },
+          { n: 30, label: 'Padrão diário', nivel: 'padrao'    },
+          { n: 90, label: 'Evolução',      nivel: 'evolucao'  },
+        ].map(({ n, label, nivel: nv }) => {
+          const ativo     = analise.totalRegistros >= n;
+          const corrente  = analise.nivel === nv;
+          return (
+            <div key={n} style={{
+              flex: 1, textAlign: 'center',
+              background: ativo ? (corrente ? `${COR_VERDE}12` : `${COR_VERDE}06`) : 'transparent',
+              border: `1px solid ${ativo ? COR_VERDE + (corrente ? '30' : '18') : COR_BORDER}`,
+              borderRadius: 8, padding: '5px 4px',
+            }}>
+              <p style={{
+                fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700,
+                color: ativo ? COR_VERDE : 'rgba(26,92,58,0.20)', margin: 0,
+              }}>
+                {ativo ? '✓' : `${n}d`}
+              </p>
+              <p style={{
+                fontFamily: 'var(--font-body)', fontSize: 9,
+                color: ativo ? 'rgba(26,92,58,0.55)' : 'rgba(26,92,58,0.20)',
+                margin: '2px 0 0', lineHeight: 1.2,
+              }}>
+                {label}
+              </p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
