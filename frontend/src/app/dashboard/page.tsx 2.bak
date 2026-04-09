@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import LifeWheel from "@/components/dashboard/LifeWheel";
-import MissaoDia from "@/components/dashboard/MissaoDia"
 import NextActions from "@/components/dashboard/NextActions";
+import ScoreDiario from "@/components/dashboard/ScoreDiario"
 import PhaseProgress from "@/components/dashboard/PhaseProgress";
 import MomentoKairosCard from "@/components/dashboard/MomentoKairosCard";
 import { buscarVisaoAncora } from "@/lib/queries";
@@ -340,12 +340,11 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-
-
-
+  <ScoreDiario />
       <div className="flex flex-col gap-6">
         {/* 0. Missão do Dia personalizada */}
         <MissaoDia />
+
         {/* 1. Visão Âncora Hero — dados reais do Supabase */}
         <VisionAnchorHero
           manchete={manchete}
@@ -354,9 +353,6 @@ export default function DashboardPage() {
         />
 
         {/* 2. Grid central: Roda da Vida (carrega do Supabase) + Próximas Ações */}
-
-
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <LifeWheel />
           <NextActions />
