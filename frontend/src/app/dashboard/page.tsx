@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import LifeWheel from "@/components/dashboard/LifeWheel";
+import ScoreDiario from "@/components/dashboard/ScoreDiario"
 import NextActions from "@/components/dashboard/NextActions";
 import PhaseProgress from "@/components/dashboard/PhaseProgress";
 import MomentoKairosCard from "@/components/dashboard/MomentoKairosCard";
@@ -340,6 +341,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
+  <ScoreDiario />
       <div className="flex flex-col gap-6">
         {/* 0. Missão do Dia personalizada */}
         <MissaoDia />
