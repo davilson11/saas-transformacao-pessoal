@@ -8,6 +8,7 @@ import LifeWheel from "@/components/dashboard/LifeWheel";
 import NextActions from "@/components/dashboard/NextActions";
 import PhaseProgress from "@/components/dashboard/PhaseProgress";
 import MomentoKairosCard from "@/components/dashboard/MomentoKairosCard";
+import MissaoDia from "@/components/dashboard/MissaoDia";
 import { buscarVisaoAncora } from "@/lib/queries";
 import { useSupabaseClient } from "@/lib/useSupabaseClient";
 
@@ -340,6 +341,9 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-6">
+        {/* 0. Missão do Dia personalizada */}
+        <MissaoDia />
+
         {/* 1. Visão Âncora Hero — dados reais do Supabase */}
         <VisionAnchorHero
           manchete={manchete}
