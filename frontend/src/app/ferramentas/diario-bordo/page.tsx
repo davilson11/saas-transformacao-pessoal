@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
 import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
+import AnaliseIA from '@/components/dashboard/AnaliseIA';
 import { useUser } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
 import { buscarRodaVida, buscarTodasRespostas } from '@/lib/queries';
@@ -699,6 +700,15 @@ export default function DiarioBordoPage() {
           })}
         </div>
       )}
+
+      {/* Análise IA — últimos 7 registros do diario_kairos */}
+      <div style={{
+        marginTop: 4,
+        borderTop: `1px solid ${COR_BORDER}`,
+        paddingTop: 16,
+      }}>
+        <AnaliseIA />
+      </div>
     </div>
   );
 
