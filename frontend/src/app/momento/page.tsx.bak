@@ -252,11 +252,8 @@ export default function MomentoPage() {
     setSalvandoNoite(true);
     const client = await getClient();
     await client.from('diario_kairos').upsert({
-      user_id: user?.id, data: hoje,
-      conquista: diario.conquista ?? null,
-      aprendizado: diario.aprendizado ?? null,
+      user_id: user.id, data: hoje, qualidade_sono: qualidadeSono ?? null, emocao: emocao ?? null, preocupacao: preocupacao ?? null, gratidao: gratidao ?? null, missao_cumprida: false
       energia_fim: diario.energia_fim ?? null,
-      nota_dia: diario.nota_dia ?? null,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,data' });
     setSalvandoNoite(false); setSalvoNoite(true);

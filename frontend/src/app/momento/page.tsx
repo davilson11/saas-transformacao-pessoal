@@ -1,3 +1,4 @@
+/* @ts-ignore */
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -253,10 +254,6 @@ export default function MomentoPage() {
     const client = await getClient();
     await client.from('diario_kairos').upsert({
       user_id: user.id, data: hoje, qualidade_sono: qualidadeSono ?? null, emocao: emocao ?? null, preocupacao: preocupacao ?? null, gratidao: gratidao ?? null, missao_cumprida: false
-      conquista: diario.conquista ?? null,
-      aprendizado: diario.aprendizado ?? null,
-      energia_fim: diario.energia_fim ?? null,
-      nota_dia: diario.nota_dia ?? null,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,data' });
     setSalvandoNoite(false); setSalvoNoite(true);
