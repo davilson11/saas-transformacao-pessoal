@@ -3,28 +3,34 @@
 import { useState, useEffect } from 'react';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
 import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
+import { useUser } from '@clerk/nextjs';
+import { useSupabaseClient } from '@/lib/useSupabaseClient';
+import { buscarRodaVida, buscarTodasRespostas } from '@/lib/queries';
+import type { RodaVida, FerramentasRespostas } from '@/lib/database.types';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 type Tres = [string, string, string];
 
 type EntradaDiaria = {
-  data:           string;
+  data:             string;
   // Matinal
-  gratidoes:      Tres;
-  prioridades:    Tres;
-  sinto:          string;
-  afirmacao:      string;
-  pergunta:       string;
+  gratidoes:        Tres;
+  prioridades:      Tres;
+  sinto:            string;
+  afirmacao:        string;
+  pergunta:         string;
+  // Prompts personalizados
+  promptsRespostas: Tres;
   // Noturno
-  vitorias:       Tres;
-  desafio:        string;
-  aprendi:        string;
-  fariaDiferente: string;
-  energia:        number;
-  foco:           number;
-  humor:          number;
-  intencaoAmanha: string;
+  vitorias:         Tres;
+  desafio:          string;
+  aprendi:          string;
+  fariaDiferente:   string;
+  energia:          number;
+  foco:             number;
+  humor:            number;
+  intencaoAmanha:   string;
 };
 
 type RevisaoSemanal = {
@@ -72,10 +78,11 @@ const TRES_ZERO: Tres = ['', '', ''];
 
 const ENTRADA_DEFAULT: EntradaDiaria = {
   data: '',
-  gratidoes: [...TRES_ZERO] as Tres,
-  prioridades: [...TRES_ZERO] as Tres,
+  gratidoes:        [...TRES_ZERO] as Tres,
+  prioridades:      [...TRES_ZERO] as Tres,
   sinto: '', afirmacao: '', pergunta: '',
-  vitorias: [...TRES_ZERO] as Tres,
+  promptsRespostas: [...TRES_ZERO] as Tres,
+  vitorias:         [...TRES_ZERO] as Tres,
   desafio: '', aprendi: '', fariaDiferente: '',
   energia: 0, foco: 0, humor: 0,
   intencaoAmanha: '',
@@ -87,6 +94,127 @@ const REVISAO_DEFAULT: RevisaoSemanal = {
   naoFuncionou: '', progressoOKRs: '',
   prioxSemana: [...TRES_ZERO] as Tres,
 };
+
+// ─── Prompts adaptativos ──────────────────────────────────────────────────────
+
+type RodaAreaKey = keyof Omit<RodaVida, 'id' | 'user_id' | 'created_at'>;
+
+const RODA_AREA_LABELS: Record<RodaAreaKey, string> = {
+  saude:           'Saúde',
+  carreira:        'Carreira',
+  financas:        'Finanças',
+  relacionamentos: 'Relacionamentos',
+  crescimento:     'Crescimento',
+  lazer:           'Lazer',
+  familia:         'Família',
+  espiritualidade: 'Espiritualidade',
+};
+
+const FERRAMENTA_NOMES: Record<string, string> = {
+  F01: 'Raio-X 360°',          F02: 'Bússola de Valores',
+  F03: 'SWOT Pessoal',         F04: 'Feedback 360°',
+  F05: 'OKRs Pessoais',        F06: 'Design de Vida',
+  F07: 'DRE Pessoal',          F08: 'Rotina Ideal',
+  F09: 'Auditoria de Tempo',   F10: 'Arquiteto de Rotinas',
+  F11: 'Sprint de Aprendizado',F12: 'Energia e Vitalidade',
+  F13: 'Desconstrutor de Crenças', F14: 'CRM de Relacionamentos',
+  F15: 'Diário de Bordo',      F16: 'Prevenção de Recaída',
+};
+
+const STOP_WORDS = new Set([
+  'de', 'da', 'do', 'das', 'dos', 'a', 'o', 'as', 'os', 'e', 'em',
+  'no', 'na', 'nos', 'nas', 'um', 'uma', 'uns', 'umas', 'é', 'que',
+  'para', 'com', 'por', 'se', 'me', 'mais', 'mas', 'não', 'foi',
+  'ser', 'ter', 'bem', 'ao', 'ou', 'já', 'eu', 'meu', 'minha',
+]);
+
+function palavrasFrequentes(historico: EntradaDiaria[], n = 7): string[] {
+  const freq = new Map<string, number>();
+  historico.slice(-n).forEach((entry) => {
+    const texto = [
+      ...entry.gratidoes,
+      ...entry.prioridades,
+      entry.sinto,
+      entry.desafio,
+      entry.aprendi,
+      entry.fariaDiferente,
+      entry.intencaoAmanha,
+      ...entry.vitorias,
+    ].join(' ').toLowerCase();
+
+    texto.split(/[\s,.'!?;:]+/).forEach((w) => {
+      if (w.length > 4 && !STOP_WORDS.has(w)) {
+        freq.set(w, (freq.get(w) ?? 0) + 1);
+      }
+    });
+  });
+
+  return [...freq.entries()]
+    .filter(([, c]) => c >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([w]) => w);
+}
+
+const PROMPTS_PADRAO: [string, string, string] = [
+  'O que você fez hoje que te deixa orgulhoso, mesmo que pequeno?',
+  'Qual foi o momento mais desafiador do dia e o que ele te ensinou?',
+  'Se seu eu de daqui 1 ano pudesse te dar um conselho agora, o que ele diria?',
+];
+
+function gerarPrompts(
+  rodaVida: RodaVida | null,
+  respostas: FerramentasRespostas[],
+  historico: EntradaDiaria[],
+): [string, string, string] {
+  const qs: string[] = [];
+
+  // Q1 — área mais fraca na Roda da Vida
+  if (rodaVida) {
+    const keys: RodaAreaKey[] = [
+      'saude', 'carreira', 'financas', 'relacionamentos',
+      'crescimento', 'lazer', 'familia', 'espiritualidade',
+    ];
+    const menor = keys.reduce((m, k) =>
+      (rodaVida[k] as number) < (rodaVida[m] as number) ? k : m
+    );
+    const label = RODA_AREA_LABELS[menor];
+    const score = rodaVida[menor] as number;
+    qs.push(
+      `Baseado no seu Raio-X, sua ${label} está com nota ${score}/10. ` +
+      `O que te travou nessa área hoje?`
+    );
+  } else {
+    qs.push(PROMPTS_PADRAO[0]);
+  }
+
+  // Q2 — última ferramenta acessada (concluída ou em andamento)
+  const concluida = respostas.find((r) => r.concluida);
+  const emAndamento = respostas.find((r) => !r.concluida && r.progresso > 0);
+  const refFerramenta = concluida ?? emAndamento;
+  if (refFerramenta) {
+    const nome = FERRAMENTA_NOMES[refFerramenta.ferramenta_codigo] ?? refFerramenta.ferramenta_codigo;
+    const verbo = concluida ? 'completou' : 'está trabalhando na';
+    qs.push(
+      `Você ${verbo} ${nome} — como o que aprendeu lá influenciou suas decisões hoje?`
+    );
+  } else {
+    qs.push(PROMPTS_PADRAO[1]);
+  }
+
+  // Q3 — palavras mais frequentes nos últimos 7 diários
+  const palavras = palavrasFrequentes(historico);
+  if (palavras.length > 0) {
+    qs.push(
+      `A palavra "${palavras[0]}" aparece com frequência nos seus registros. ` +
+      `O que isso revela sobre o seu momento atual?`
+    );
+  } else {
+    qs.push(PROMPTS_PADRAO[2]);
+  }
+
+  return qs as [string, string, string];
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -202,6 +330,81 @@ function ScoreRow({ label, emoji, valor, cor, onChange }: {
   );
 }
 
+// ─── PromptCard ────────────────────────────────────────────────────────────────
+
+function PromptCard({ n, pergunta, resposta, onChange, loading }: {
+  n:        number;
+  pergunta: string;
+  resposta: string;
+  onChange: (v: string) => void;
+  loading:  boolean;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* Card dourado com a pergunta */}
+      <div style={{
+        background: 'rgba(181,132,10,0.07)',
+        border: `1px solid ${COR_GOLD}35`,
+        borderRadius: 10,
+        padding: '12px 16px',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 10,
+      }}>
+        <div style={{
+          width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+          background: COR_GOLD,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700,
+          color: '#fff',
+        }}>
+          {n}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{
+            fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600,
+            color: COR_GOLD, textTransform: 'uppercase', letterSpacing: '0.08em',
+            marginBottom: 4,
+          }}>
+            💡 Prompt personalizado
+          </p>
+          {loading ? (
+            <div style={{
+              height: 14, width: '80%', borderRadius: 4,
+              background: `${COR_GOLD}25`,
+              animation: 'promptPulse 1.5s ease-in-out infinite',
+            }} />
+          ) : (
+            <p style={{
+              fontFamily: 'var(--font-body)', fontSize: 14,
+              color: '#5c4a00', lineHeight: 1.55, fontWeight: 500, margin: 0,
+            }}>
+              {pergunta}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Campo de resposta */}
+      <textarea
+        value={resposta}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Escreva sua reflexão aqui…"
+        rows={3}
+        disabled={loading}
+        style={{
+          border: `1px solid ${resposta ? COR_GOLD + '55' : COR_BORDER}`,
+          borderRadius: 8, padding: '9px 14px', fontSize: 15,
+          fontFamily: 'var(--font-body)', color: '#1a2015',
+          outline: 'none', background: resposta ? 'rgba(181,132,10,0.02)' : '#fff',
+          resize: 'vertical', lineHeight: 1.55,
+          opacity: loading ? 0.5 : 1,
+        }}
+      />
+    </div>
+  );
+}
+
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
 export default function DiarioBordoPage() {
@@ -234,6 +437,30 @@ export default function DiarioBordoPage() {
       };
     });
   });
+
+  // ─── Prompts adaptativos ─────────────────────────────────────────────────
+
+  const { user } = useUser();
+  const { getClient } = useSupabaseClient();
+  const [prompts, setPrompts] = useState<[string, string, string]>(PROMPTS_PADRAO);
+  const [promptsLoading, setPromptsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setPromptsLoading(false);
+      return;
+    }
+    (async () => {
+      const client = await getClient();
+      const [rodaVida, todasRespostas] = await Promise.all([
+        buscarRodaVida(user.id, client),
+        buscarTodasRespostas(user.id, client),
+      ]);
+      // historico já está no estado — acesso via closure na chamada abaixo
+      setPrompts(gerarPrompts(rodaVida, todasRespostas, historico));
+      setPromptsLoading(false);
+    })();
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Helpers de estado ────────────────────────────────────────────────────
 
@@ -537,6 +764,13 @@ export default function DiarioBordoPage() {
 
   // ─── Etapa 1: Ritual Matinal ───────────────────────────────────────────────
 
+  const setPromptResposta = (idx: number, v: string) =>
+    setEntrada((prev) => {
+      const arr = [...prev.promptsRespostas] as Tres;
+      arr[idx] = v;
+      return { ...prev, promptsRespostas: arr };
+    });
+
   const step1 = (
     <div style={{ maxWidth: 640, display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div>
@@ -545,6 +779,43 @@ export default function DiarioBordoPage() {
           Comece o dia com intenção. Leva menos de 5 minutos e muda tudo.
         </p>
       </div>
+
+      {/* ── Prompts Personalizados do Dia ──────────────────────────── */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 14,
+        background: 'rgba(181,132,10,0.04)',
+        border: `1px solid ${COR_GOLD}28`,
+        borderRadius: 12, padding: '18px 20px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 18 }}>⚡</span>
+          <div>
+            <p style={{
+              fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700,
+              color: COR_GOLD, margin: 0,
+            }}>
+              Reflexões personalizadas para hoje
+            </p>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(181,132,10,0.7)', margin: 0, marginTop: 1 }}>
+              Baseadas no seu Raio-X, ferramentas e histórico de diário.
+            </p>
+          </div>
+        </div>
+
+        {prompts.map((p, i) => (
+          <PromptCard
+            key={i}
+            n={i + 1}
+            pergunta={p}
+            resposta={entrada.promptsRespostas[i] ?? ''}
+            onChange={(v) => setPromptResposta(i, v)}
+            loading={promptsLoading}
+          />
+        ))}
+      </div>
+
+      {/* Keyframes para o skeleton dos prompts */}
+      <style>{`@keyframes promptPulse{0%,100%{opacity:.4}50%{opacity:.9}}`}</style>
 
       {/* Data */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
