@@ -35,30 +35,30 @@ const ETAPAS = [
 
 const INSTRUCOES: Record<number, { titulo: string; itens: string[] }> = {
   1: {
-    titulo: "O que é o SWOT Pessoal?",
+    titulo: "SWOT com âncoras comportamentais",
     itens: [
-      "Uma análise estratégica adaptada para o autoconhecimento.",
-      "Mapeie suas forças internas e fraquezas a superar.",
-      "Identifique oportunidades externas e ameaças ao seu crescimento.",
-      "Transforme os dados em estratégias de ação concretas.",
+      "Cada quadrante começa com uma pergunta situada no tempo — 'últimas 4 semanas', '3 meses' — para ativar memórias concretas.",
+      "O cérebro é mais honesto quando pensa em situações reais do que em autoavaliações abstratas.",
+      "Responda a partir de fatos vividos, não do que você acha que é.",
+      "Uma linha por item é suficiente. Seja específico.",
     ],
   },
   2: {
     titulo: "Forças e Fraquezas",
     itens: [
-      "Forças: o que você faz excepcionalmente bem?",
-      "Fraquezas: onde você sabe que pode melhorar?",
-      "Seja honesto — a autoconsciência é sua maior força.",
+      "Forças: parta de uma situação concreta das últimas 4 semanas onde você brilhou.",
+      "Fraquezas: pense no que você evita — a evitação é o sintoma mais honesto de uma fraqueza.",
+      "Seja radical na honestidade — a autoconsciência é sua maior vantagem competitiva.",
       "Liste pelo menos 3 itens em cada quadrante.",
     ],
   },
   3: {
     titulo: "Oportunidades e Ameaças",
     itens: [
-      "Oportunidades: o que o ambiente oferece a você agora?",
-      "Ameaças: o que pode dificultar seu progresso?",
-      "Pense em tendências, pessoas e contextos externos.",
-      "Seja específico — evite respostas genéricas.",
+      "Oportunidades: procure a interseção entre o que o mundo oferece agora e o que você tem de melhor.",
+      "Ameaças: o que você já sabe que precisa mudar mas ainda não enfrentou? Essa é a ameaça mais real.",
+      "Seja específico — 'tendências do mercado' sem nome é uma não-resposta.",
+      "O desconforto ao responder indica que você está sendo honesto.",
     ],
   },
   4: {
@@ -72,34 +72,37 @@ const INSTRUCOES: Record<number, { titulo: string; itens: string[] }> = {
   },
 };
 
+// Perguntas com âncoras comportamentais e temporais (neurociência aplicada:
+// perguntas específicas e situadas no tempo ativam memórias concretas e
+// reduzem o viés de autoavaliação abstrata).
 const PERGUNTAS = {
   forcas: [
-    "Quais habilidades me diferenciam dos outros?",
-    "O que as pessoas costumam me elogiar?",
-    "Quais conquistas me deixam mais orgulhoso(a)?",
-    "Que recursos (conhecimento, rede, saúde) tenho à disposição?",
-    "Onde sou consistente mesmo sob pressão?",
+    "Em qual situação das últimas 4 semanas você foi a melhor versão de si mesmo?",
+    "O que você estava fazendo nessa situação e o que te fez se destacar?",
+    "Que habilidade ou traço de caráter esteve em evidência?",
+    "Que conquista recente te orgulha — mesmo que pareça pequena para outros?",
+    "O que pessoas próximas reconhecem em você que você às vezes esquece?",
   ],
   fraquezas: [
-    "Em que área eu frequentemente topo com obstáculos?",
-    "O que eu evito fazer por insegurança ou despreparo?",
-    "Quais hábitos negativos me travam?",
-    "O que eu gostaria de melhorar, mas ainda não priorizei?",
-    "Onde sinto que meu desempenho fica abaixo do esperado?",
+    "O que você evita fazer porque sabe que não vai bem?",
+    "Que tarefa ou situação você procrastina de forma consistente?",
+    "Que feedback recorrente você recebe mas ainda resiste em aceitar?",
+    "Em que momento das últimas 4 semanas você ficou abaixo do que poderia?",
+    "O que você gostaria de mudar em si mesmo, mas ainda não enfrentou de verdade?",
   ],
   oportunidades: [
-    "Quais tendências do meu setor posso aproveitar?",
-    "Que conexões ou mentores ainda não explorei?",
-    "Que janelas de crescimento se abriram recentemente?",
-    "Que recursos externos estão disponíveis para mim?",
-    "O que mudou no mercado que posso usar a meu favor?",
+    "O que está acontecendo no mundo agora que combina com o que você tem de melhor?",
+    "Que tendência do seu setor você poderia surfar nos próximos 90 dias?",
+    "Que conexão, mentor ou comunidade você ainda não ativou mas poderia?",
+    "Que janela de crescimento se abriu nos últimos 3 meses — e você ainda não entrou?",
+    "O que mudou no seu contexto (trabalho, mercado, tecnologia) que pode ser usado a seu favor?",
   ],
   ameacas: [
-    "O que no meu ambiente pode bloquear meu avanço?",
-    "Quais concorrentes ou obstáculos posso enfrentar?",
-    "Que mudanças externas me preocupam?",
-    "O que poderia me tirar o foco ou a energia?",
-    "Que riscos estou ignorando no momento?",
+    "O que você sabe que precisa mudar mas ainda não enfrentou?",
+    "Que hábito ou padrão interno pode sabotar seu crescimento nos próximos 12 meses?",
+    "Que mudança externa te preocupa e você ainda está ignorando?",
+    "O que você tem adiado enfrentar que está crescendo silenciosamente?",
+    "Que risco você conhece, mas ainda não tem plano para lidar com ele?",
   ],
 };
 
@@ -117,16 +120,21 @@ function QuadranteEditor({
   cor,
   emoji,
   perguntas,
+  placeholder,
   valor,
   onChange,
 }: {
-  titulo: string;
-  cor: string;
-  emoji: string;
-  perguntas: string[];
-  valor: string;
-  onChange: (v: string) => void;
+  titulo:      string;
+  cor:         string;
+  emoji:       string;
+  perguntas:   string[];
+  placeholder: string;
+  valor:       string;
+  onChange:    (v: string) => void;
 }) {
+  const ancora   = perguntas[0];   // primeira = âncora comportamental
+  const guias    = perguntas.slice(1); // demais = perguntas de aprofundamento
+
   return (
     <div
       className="flex flex-col rounded-2xl overflow-hidden h-full"
@@ -135,28 +143,34 @@ function QuadranteEditor({
       {/* Header */}
       <div className="px-5 py-4 flex items-center gap-3" style={{ background: `${cor}12`, borderBottom: `1px solid ${cor}22` }}>
         <span style={{ fontSize: 22 }}>{emoji}</span>
-        <h3
-          style={{
-            fontFamily: "var(--font-heading)",
-            fontSize: 20,
-            fontWeight: 700,
-            color: cor,
-          }}
-        >
+        <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 20, fontWeight: 700, color: cor }}>
           {titulo}
         </h3>
       </div>
 
-      {/* Perguntas */}
-      <div className="px-5 py-4 flex flex-col gap-2">
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600, color: "var(--color-brand-gray)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
-          Perguntas guiadoras
+      {/* Âncora comportamental — destaque principal */}
+      <div
+        className="px-5 py-4"
+        style={{ background: `${cor}07`, borderBottom: `1px solid ${cor}18` }}
+      >
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 700, color: cor, textTransform: "uppercase", letterSpacing: "0.10em", marginBottom: 6 }}>
+          ⚓ Âncora — comece por aqui
         </p>
-        <ul className="flex flex-col gap-1.5">
-          {perguntas.map((p, i) => (
+        <p style={{ fontSize: 15, fontWeight: 600, color: "var(--color-brand-dark-green)", lineHeight: 1.55 }}>
+          {ancora}
+        </p>
+      </div>
+
+      {/* Perguntas de aprofundamento */}
+      <div className="px-5 py-3 flex flex-col gap-2">
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600, color: "var(--color-brand-gray)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          Para aprofundar
+        </p>
+        <ul className="flex flex-col gap-1">
+          {guias.map((p, i) => (
             <li key={i} className="flex items-start gap-2">
-              <span style={{ color: cor, fontWeight: 700, fontSize: 15, marginTop: 1, flexShrink: 0 }}>•</span>
-              <span style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{p}</span>
+              <span style={{ color: cor, fontWeight: 700, fontSize: 13, marginTop: 2, flexShrink: 0 }}>→</span>
+              <span style={{ fontSize: 13, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{p}</span>
             </li>
           ))}
         </ul>
@@ -164,13 +178,13 @@ function QuadranteEditor({
 
       {/* Textarea */}
       <div className="px-5 pb-5 flex-1 flex flex-col">
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600, color: "var(--color-brand-gray)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 600, color: "var(--color-brand-gray)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
           Suas respostas
         </p>
         <textarea
           value={valor}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={`Escreva sobre suas ${titulo.toLowerCase()} aqui — uma por linha...`}
+          placeholder={placeholder}
           className="flex-1 resize-none rounded-xl p-3 text-sm outline-none transition-all duration-200"
           style={{
             border: `1.5px solid ${cor}33`,
@@ -181,7 +195,7 @@ function QuadranteEditor({
             minHeight: 140,
           }}
           onFocus={(e) => { e.target.style.borderColor = cor; e.target.style.boxShadow = `0 0 0 3px ${cor}18`; }}
-          onBlur={(e) => { e.target.style.borderColor = `${cor}33`; e.target.style.boxShadow = "none"; }}
+          onBlur={(e)  => { e.target.style.borderColor = `${cor}33`; e.target.style.boxShadow = "none"; }}
         />
       </div>
     </div>
@@ -584,6 +598,7 @@ export default function SwotPessoalPage() {
                 cor={COR_FORCAS}
                 emoji="💪"
                 perguntas={PERGUNTAS.forcas}
+                placeholder="Descreva a situação, o que você estava fazendo, qual força ficou evidente — uma por linha..."
                 valor={swot.forcas.texto}
                 onChange={(v) => update("forcas", v)}
               />
@@ -592,6 +607,7 @@ export default function SwotPessoalPage() {
                 cor={COR_FRAQUEZAS}
                 emoji="🎯"
                 perguntas={PERGUNTAS.fraquezas}
+                placeholder="O que você evita, onde trava, o que tem custado — seja honesto, é só para você..."
                 valor={swot.fraquezas.texto}
                 onChange={(v) => update("fraquezas", v)}
               />
@@ -623,6 +639,7 @@ export default function SwotPessoalPage() {
                 cor={COR_OPORTUNIDADES}
                 emoji="🌱"
                 perguntas={PERGUNTAS.oportunidades}
+                placeholder="Descreva o que está acontecendo no mundo e como suas forças se encaixam nisso — uma por linha..."
                 valor={swot.oportunidades.texto}
                 onChange={(v) => update("oportunidades", v)}
               />
@@ -631,6 +648,7 @@ export default function SwotPessoalPage() {
                 cor={COR_AMEACAS}
                 emoji="⚡"
                 perguntas={PERGUNTAS.ameacas}
+                placeholder="O que você precisa mudar e ainda não enfrentou — externo e os padrões internos que alimentam o risco..."
                 valor={swot.ameacas.texto}
                 onChange={(v) => update("ameacas", v)}
               />

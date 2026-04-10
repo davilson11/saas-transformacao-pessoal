@@ -26,6 +26,22 @@ type Area = {
   cor: string;
 };
 
+type Opcao = {
+  label: string;
+  score: number;
+};
+
+type AreaPergunta = {
+  pergunta:  string;   // comportamental com âncora temporal
+  subtexto?: string;   // exemplo ou contexto extra
+  opcoes:    Opcao[];  // 5 opções → scores 2/4/6/8/10
+};
+
+type RespostaArea = {
+  opcaoIdx:  number | null;  // índice da opção selecionada
+  revelacao: string;          // "E o que isso revela sobre você?"
+};
+
 const AREAS: Area[] = [
   { emoji: '💪', label: 'Saúde & Corpo',       descricao: 'Energia, sono, alimentação e movimento físico.',      cor: '#27AE60' },
   { emoji: '🧠', label: 'Mente & Emoções',      descricao: 'Saúde mental, clareza, equilíbrio emocional.',        cor: '#2980B9' },
@@ -37,9 +53,103 @@ const AREAS: Area[] = [
   { emoji: '🧘', label: 'Espiritualidade',       descricao: 'Propósito, gratidão, fé e conexão com o todo.',      cor: '#7aaa8c' },
 ];
 
+// Perguntas comportamentais com âncoras temporais (neurociência: o cérebro
+// responde mais honestamente a comportamentos concretos do que a autoavaliações
+// abstratas como "dê uma nota de 1 a 10").
+const AREAS_PERGUNTAS: AreaPergunta[] = [
+  {
+    pergunta: "Nos últimos 7 dias, quantas vezes você fez algo intencional pelo seu corpo?",
+    subtexto: "Ex: exercício, sono de qualidade, alimentação consciente, hidratação.",
+    opcoes: [
+      { label: "Nenhuma vez",          score: 2  },
+      { label: "1–2 vezes",            score: 4  },
+      { label: "3–4 vezes",            score: 6  },
+      { label: "5–6 vezes",            score: 8  },
+      { label: "Todos os dias",        score: 10 },
+    ],
+  },
+  {
+    pergunta: "Na última semana, com que frequência você manteve a clareza mental quando estava sob pressão?",
+    subtexto: "Pense em momentos de estresse, conflito ou sobrecarga.",
+    opcoes: [
+      { label: "Quase nunca",          score: 2  },
+      { label: "Raramente",            score: 4  },
+      { label: "Às vezes",             score: 6  },
+      { label: "Na maioria das vezes", score: 8  },
+      { label: "Quase sempre",         score: 10 },
+    ],
+  },
+  {
+    pergunta: "Nos últimos 30 dias, você sabia exatamente quanto entrou, saiu e ficou nas suas finanças?",
+    subtexto: "Considere seu nível de controle e intenção — não o valor em si.",
+    opcoes: [
+      { label: "Sem controle algum",       score: 2  },
+      { label: "Ideia vaga, sem registro", score: 4  },
+      { label: "Sei aproximadamente",      score: 6  },
+      { label: "Tenho registro e metas",   score: 8  },
+      { label: "Controle total e reserva", score: 10 },
+    ],
+  },
+  {
+    pergunta: "No último mês, com que frequência você terminou o dia sentindo que contribuiu com algo que importa de verdade?",
+    subtexto: "Não sobre produtividade — sobre propósito e significado.",
+    opcoes: [
+      { label: "Raramente ou nunca",        score: 2  },
+      { label: "1–2 dias no mês",           score: 4  },
+      { label: "Algumas semanas",           score: 6  },
+      { label: "Maioria das semanas",       score: 8  },
+      { label: "Quase todos os dias",       score: 10 },
+    ],
+  },
+  {
+    pergunta: "Na última semana, você teve pelo menos uma conversa genuína — não superficial — com alguém que importa para você?",
+    subtexto: "Conversa genuína: onde você ou o outro se sentiu visto de verdade.",
+    opcoes: [
+      { label: "Nenhuma",                        score: 2  },
+      { label: "Tentei, ficou superficial",       score: 4  },
+      { label: "Uma conversa razoável",           score: 6  },
+      { label: "2–3 conversas de qualidade",      score: 8  },
+      { label: "Me sinto profundamente conectado(a)", score: 10 },
+    ],
+  },
+  {
+    pergunta: "Nos últimos 7 dias, você fez algo apenas pelo prazer de fazer — sem nenhum objetivo de produtividade envolvido?",
+    subtexto: "Lazer real: algo que você faria mesmo sem audiência e sem resultado.",
+    opcoes: [
+      { label: "Não, não tive tempo",             score: 2  },
+      { label: "Tentei, mas me senti culpado(a)", score: 4  },
+      { label: "Algo pequeno e passageiro",       score: 6  },
+      { label: "Tive momentos genuínos",          score: 8  },
+      { label: "Me sinto recarregado(a)",         score: 10 },
+    ],
+  },
+  {
+    pergunta: "No último mês, você aprendeu algo novo de forma intencional — livro, curso, mentor ou prática deliberada?",
+    subtexto: "Intencional = com foco, não aprendizado acidental por acaso.",
+    opcoes: [
+      { label: "Nada de forma intencional", score: 2  },
+      { label: "Comecei, não mantive",      score: 4  },
+      { label: "Estudei ocasionalmente",    score: 6  },
+      { label: "Tenho rotina de estudo",    score: 8  },
+      { label: "Estou em sprint intenso",   score: 10 },
+    ],
+  },
+  {
+    pergunta: "Na última semana, você dedicou tempo a algo maior que você mesmo — gratidão, meditação, oração ou serviço ao próximo?",
+    subtexto: "Qualquer prática que te conecte com o todo, com sentido ou com transcendência.",
+    opcoes: [
+      { label: "Não faz parte da minha rotina",  score: 2  },
+      { label: "Pensei nisso, mas não pratiquei", score: 4  },
+      { label: "1–2 momentos de conexão",         score: 6  },
+      { label: "Pratiquei regularmente",          score: 8  },
+      { label: "É parte central da minha vida",   score: 10 },
+    ],
+  },
+];
+
 const ETAPAS = [
   { label: 'Bem-vindo',             descricao: 'Introdução à ferramenta' },
-  { label: 'Avalie as Áreas',       descricao: 'Note cada dimensão de 1 a 10' },
+  { label: 'Avalie as Áreas',       descricao: 'Responda com honestidade comportamental' },
   { label: 'Visualize o Resultado', descricao: 'Interprete seu mapa de vida' },
   { label: 'Próximos Passos',       descricao: 'Defina onde focar agora' },
 ];
@@ -49,25 +159,25 @@ const INSTRUCOES = [
     titulo: 'Bem-vindo ao Raio-X 360°',
     corpo: [
       'Esta é sua primeira e mais importante ferramenta. Ela revela com honestidade onde você está hoje — sem julgamentos.',
-      'Para cada área da vida, você vai dar uma nota de 1 a 10. Seja sincero consigo mesmo. Não existe resposta certa ou errada.',
-      'O resultado será um gráfico radar que mostra o equilíbrio (ou desequilíbrio) da sua vida neste momento.',
+      'Em vez de notas abstratas, você vai responder perguntas comportamentais com âncoras temporais reais. A neurociência mostra que o cérebro é mais honesto quando pensa em comportamentos concretos do que em autoavaliações genéricas.',
+      'Para cada área da vida, selecione a opção que melhor descreve seus últimos 7 a 30 dias. Depois, reflita brevemente sobre o que isso revela.',
     ],
-    dica: '💡 Reserve 15 minutos tranquilos para preencher com calma e atenção.',
+    dica: '💡 Reserve 20 minutos tranquilos. Confie no seu primeiro instinto — a intuição costuma ser mais honesta que a razão.',
   },
   {
-    titulo: 'Como avaliar cada área',
+    titulo: 'Perguntas comportamentais',
     corpo: [
-      'Use os sliders para dar uma nota de 1 a 10 para cada área da sua vida.',
-      '1 = Muito insatisfeito · 5 = Neutro · 10 = Completamente realizado',
-      'Avalie como você se sente AGORA — não como quer estar, nem como estava antes.',
+      'Cada pergunta tem uma âncora temporal — "nos últimos 7 dias", "no último mês" — para ativar memórias concretas, não impressões vagas.',
+      'Selecione a opção que melhor descreve o que você realmente fez (não o que queria ter feito). Sem julgamento.',
+      'Após selecionar, responda brevemente: "E o que isso revela sobre você?" — essa reflexão é o que transforma dado em autoconhecimento.',
     ],
-    dica: '💡 Confie no seu primeiro instinto. A intuição costuma ser mais honesta que a razão.',
+    dica: '💡 Não pule a pergunta de revelação. Ela é onde o insight acontece.',
   },
   {
     titulo: 'Seu Raio-X está pronto',
     corpo: [
       'O gráfico à direita mostra o mapa atual da sua vida. Áreas mais próximas do centro precisam de mais atenção.',
-      'O Índice de Equilíbrio é a média das suas notas. Mas atenção: não é sobre ter notas altas em tudo — é sobre equilíbrio.',
+      'O Índice de Equilíbrio é a média das suas respostas. Mas atenção: não é sobre ter notas altas em tudo — é sobre equilíbrio.',
       'Uma vida desequilibrada — mesmo com notas altas — gera insatisfação crônica.',
     ],
     dica: '💡 Observe quais áreas estão mais distantes umas das outras. Esse contraste revela onde focar.',
@@ -101,111 +211,173 @@ function scoreColor(v: number): string {
   return '#c0392b';
 }
 
+function scoreFromIdx(idx: number | null, opcoes: Opcao[]): number {
+  if (idx === null) return 5;
+  return opcoes[idx]?.score ?? 5;
+}
+
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
 
-function SliderArea({
+function PerguntaArea({
   area,
-  valor,
+  pergunta,
+  subtexto,
+  opcoes,
+  resposta,
   onChange,
 }: {
-  area: Area;
-  valor: number;
-  onChange: (v: number) => void;
+  area:      Area;
+  pergunta:  string;
+  subtexto?: string;
+  opcoes:    Opcao[];
+  resposta:  RespostaArea;
+  onChange:  (r: RespostaArea) => void;
 }) {
-  const [focused, setFocused] = useState(false);
+  const score         = scoreFromIdx(resposta.opcaoIdx, opcoes);
+  const selecionada   = resposta.opcaoIdx !== null;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div
+      className="flex flex-col gap-4 rounded-2xl p-5"
+      style={{
+        background: '#fff',
+        border: `1.5px solid ${selecionada ? area.cor + '40' : 'var(--color-brand-border)'}`,
+        boxShadow: 'var(--shadow-card)',
+        transition: 'border-color 0.2s',
+      }}
+    >
+      {/* Header da área */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <span style={{ fontSize: 18, flexShrink: 0 }}>{area.emoji}</span>
-          <div className="min-w-0">
-            <p style={{ fontSize: 16, fontWeight: 600, color: COR_PRIMARY, fontFamily: 'var(--font-body)', lineHeight: 1.2 }}>
-              {area.label}
-            </p>
-            <p style={{ fontSize: 13, color: 'var(--color-brand-gray)', lineHeight: 1.3 }}>
-              {area.descricao}
-            </p>
-          </div>
+          <p style={{ fontSize: 15, fontWeight: 700, color: COR_PRIMARY, fontFamily: 'var(--font-body)', lineHeight: 1.2 }}>
+            {area.label}
+          </p>
         </div>
-        <span
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 18,
-            fontWeight: 700,
-            color: scoreColor(valor),
-            minWidth: 28,
-            textAlign: 'right',
-            flexShrink: 0,
-          }}
-        >
-          {valor}
-        </span>
-      </div>
-
-      <div
-        className="relative flex items-center"
-        style={{ height: 24 }}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-      >
-        <div className="absolute rounded-full" style={{ left: 0, right: 0, height: 6, background: 'rgba(26,92,58,0.08)' }} />
-        <div
-          className="absolute rounded-full transition-all duration-150"
-          style={{
-            left: 0,
-            width: `${((valor - 1) / 9) * 100}%`,
-            height: 6,
-            background: focused ? area.cor : COR_PRIMARY,
-          }}
-        />
-        {[1, 3, 5, 7, 10].map((m) => (
-          <div
-            key={m}
-            className="absolute rounded-full"
+        {selecionada && (
+          <span
             style={{
-              left: `${((m - 1) / 9) * 100}%`,
-              width: 2,
-              height: 8,
-              background: 'rgba(26,92,58,0.15)',
-              transform: 'translateX(-1px)',
-              top: '50%',
-              marginTop: -4,
-              pointerEvents: 'none',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 16,
+              fontWeight: 700,
+              color: scoreColor(score),
+              background: `${scoreColor(score)}12`,
+              border: `1px solid ${scoreColor(score)}30`,
+              borderRadius: 99,
+              padding: '2px 10px',
+              flexShrink: 0,
             }}
-          />
-        ))}
-        <input
-          type="range"
-          min={1}
-          max={10}
-          value={valor}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="absolute w-full opacity-0 cursor-pointer"
-          style={{ height: 24 }}
-          aria-label={`${area.label}: ${valor}`}
-        />
-        <div
-          className="absolute rounded-full pointer-events-none transition-all duration-150"
-          style={{
-            left: `${((valor - 1) / 9) * 100}%`,
-            width: 16,
-            height: 16,
-            background: focused ? area.cor : COR_PRIMARY,
-            border: '2px solid #fff',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-            transform: 'translateX(-8px)',
-            top: '50%',
-            marginTop: -8,
-          }}
-        />
+          >
+            {score}/10
+          </span>
+        )}
       </div>
 
-      <div className="flex justify-between" style={{ fontSize: 9, color: 'rgba(26,92,58,0.35)', fontFamily: 'var(--font-mono)' }}>
-        <span>1 — Crítico</span>
-        <span>5 — Neutro</span>
-        <span>10 — Realizado</span>
+      {/* Pergunta comportamental */}
+      <div>
+        <p style={{ fontSize: 15, fontWeight: 600, color: COR_PRIMARY, lineHeight: 1.5, marginBottom: subtexto ? 4 : 0 }}>
+          {pergunta}
+        </p>
+        {subtexto && (
+          <p style={{ fontSize: 13, color: 'var(--color-brand-gray)', lineHeight: 1.4, fontStyle: 'italic' }}>
+            {subtexto}
+          </p>
+        )}
       </div>
+
+      {/* Opções */}
+      <div className="flex flex-col gap-2">
+        {opcoes.map((op, i) => {
+          const ativo = resposta.opcaoIdx === i;
+          return (
+            <button
+              key={i}
+              onClick={() => onChange({ ...resposta, opcaoIdx: i })}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                textAlign: 'left',
+                padding: '9px 14px',
+                borderRadius: 10,
+                border: `1.5px solid ${ativo ? area.cor : 'rgba(26,92,58,0.14)'}`,
+                background: ativo ? `${area.cor}10` : 'transparent',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                fontFamily: 'var(--font-body)',
+                fontSize: 14,
+                color: ativo ? area.cor : 'var(--color-brand-gray)',
+                fontWeight: ativo ? 700 : 400,
+              }}
+            >
+              {/* Bolinha de rádio */}
+              <span
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: '50%',
+                  border: `2px solid ${ativo ? area.cor : 'rgba(26,92,58,0.25)'}`,
+                  background: ativo ? area.cor : 'transparent',
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {ativo && (
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', display: 'block' }} />
+                )}
+              </span>
+              {op.label}
+              {ativo && (
+                <span
+                  style={{
+                    marginLeft: 'auto',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 11,
+                    color: area.cor,
+                    fontWeight: 700,
+                  }}
+                >
+                  {op.score}/10
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Revelação — aparece após selecionar */}
+      {selecionada && (
+        <div className="flex flex-col gap-2">
+          <p style={{ fontSize: 13, fontWeight: 700, color: COR_GOLD, letterSpacing: '0.04em' }}>
+            💡 E o que isso revela sobre você?
+          </p>
+          <textarea
+            value={resposta.revelacao}
+            onChange={(e) => onChange({ ...resposta, revelacao: e.target.value })}
+            placeholder="Escreva livremente — sem julgamento. Essa reflexão é só sua."
+            rows={2}
+            style={{
+              width: '100%',
+              resize: 'vertical',
+              borderRadius: 10,
+              border: `1.5px solid ${COR_GOLD}33`,
+              background: `${COR_GOLD}06`,
+              color: COR_PRIMARY,
+              fontFamily: 'var(--font-body)',
+              fontSize: 14,
+              lineHeight: 1.6,
+              padding: '10px 12px',
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
+            onFocus={(e) => { e.target.style.borderColor = COR_GOLD; e.target.style.boxShadow = `0 0 0 3px ${COR_GOLD}18`; }}
+            onBlur={(e)  => { e.target.style.borderColor = `${COR_GOLD}33`; e.target.style.boxShadow = 'none'; }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -213,16 +385,41 @@ function SliderArea({
 // ─── Página ───────────────────────────────────────────────────────────────────
 
 export default function RaioXPage() {
-  const [passo, setPasso] = useState<Passo>(0);
-  const [valores, setValores] = useState<number[]>(AREAS.map(() => 5));
+  const [passo,     setPasso]     = useState<Passo>(0);
+  const [respostas, setRespostas] = useState<RespostaArea[]>(
+    AREAS.map(() => ({ opcaoIdx: null, revelacao: '' }))
+  );
 
   const { dados: dadosSalvos } = useCarregarRespostas("raio-x");
-  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).valores) setValores((dadosSalvos as any).valores); }, [dadosSalvos]);
+  useEffect(() => {
+    if (!dadosSalvos) return;
+    const d = dadosSalvos as Record<string, unknown>;
+    // Formato novo
+    if (Array.isArray(d.respostas)) {
+      setRespostas(d.respostas as RespostaArea[]);
+    // Formato legado (só valores numéricos)
+    } else if (Array.isArray(d.valores)) {
+      const legado = d.valores as number[];
+      setRespostas(
+        AREAS.map((_, i) => {
+          const score    = legado[i] ?? 5;
+          const opcoes   = AREAS_PERGUNTAS[i].opcoes;
+          // Aproxima o score legado ao índice de opção mais próximo
+          const opcaoIdx = opcoes.reduce((best, op, j) =>
+            Math.abs(op.score - score) < Math.abs(opcoes[best].score - score) ? j : best, 0);
+          return { opcaoIdx, revelacao: '' };
+        })
+      );
+    }
+  }, [dadosSalvos]);
 
-  const media = useMemo(
-    () => valores.reduce((s, v) => s + v, 0) / valores.length,
-    [valores]
+  // valores derivados para o radar e cálculos
+  const valores = useMemo(
+    () => respostas.map((r, i) => scoreFromIdx(r.opcaoIdx, AREAS_PERGUNTAS[i].opcoes)),
+    [respostas]
   );
+
+  const media      = useMemo(() => valores.reduce((s, v) => s + v, 0) / valores.length, [valores]);
   const equilibrio = equilibrioLabel(media);
 
   const chartData = useMemo(() => ({
@@ -247,7 +444,6 @@ export default function RaioXPage() {
     responsive: true,
     maintainAspectRatio: true,
     animation: { duration: 250 },
-    // Padding externo empurra o gráfico para dentro, dando espaço aos labels
     layout: { padding: 24 },
     plugins: {
       legend: { display: false },
@@ -273,10 +469,9 @@ export default function RaioXPage() {
         grid:       { color: 'rgba(26,92,58,0.08)' },
         angleLines: { color: 'rgba(26,92,58,0.1)'  },
         pointLabels: {
-          padding: 10,   // espaço entre o polígono e o label
+          padding: 10,
           color: COR_PRIMARY,
           font: { size: 9, weight: 'bold' as const, family: 'Inter' },
-          // Labels longos quebram em duas linhas
           callback: (label: string): string | string[] => {
             if (label.includes(' & ')) {
               const idx = label.indexOf(' & ');
@@ -299,13 +494,15 @@ export default function RaioXPage() {
   const maxIdx      = valores.indexOf(Math.max(...valores));
   const progresso   = passo === 0 ? 5 : passo === 1 ? 35 : passo === 2 ? 70 : 100;
 
+  const respondidas = respostas.filter((r) => r.opcaoIdx !== null).length;
+
   const labelAvancar =
     passo === 0 ? 'Começar avaliação →'
     : passo === 1 ? 'Ver meu resultado →'
     : passo === 2 ? 'Ver próximos passos →'
     : 'Salvar Raio-X ✓';
 
-  // ── Painel direito — sempre visível ──
+  // ── Painel direito ──
   const painelResumo = (
     <>
       {/* Radar */}
@@ -397,7 +594,7 @@ export default function RaioXPage() {
     <FerramentaLayout
       codigo="F01"
       nome="Raio-X 360°"
-      descricao="Diagnóstico completo das 8 áreas da sua vida para saber exatamente onde você está hoje."
+      descricao="Diagnóstico comportamental das 8 áreas da sua vida com âncoras temporais para máxima honestidade."
       etapas={ETAPAS}
       etapaAtual={passo}
       progresso={progresso}
@@ -406,9 +603,8 @@ export default function RaioXPage() {
       podeAvancar
       labelAvancar={labelAvancar}
       resumo={painelResumo}
-  respostas={{ valores }}
+      respostas={{ respostas, valores }}
     >
-      {/* ── Conteúdo central ── */}
       <div className="p-8">
 
         {/* Instrução do passo atual */}
@@ -447,10 +643,10 @@ export default function RaioXPage() {
         {passo === 0 && (
           <div className="max-w-xl mx-auto grid grid-cols-2 gap-4">
             {[
-              { emoji: '🎯', titulo: '8 áreas avaliadas', desc: 'Cobertura completa das dimensões da vida.' },
-              { emoji: '📊', titulo: 'Gráfico radar', desc: 'Visualize seu equilíbrio de forma intuitiva.' },
-              { emoji: '⚡', titulo: '15 minutos', desc: 'Rápido e profundo ao mesmo tempo.' },
-              { emoji: '🔄', titulo: 'Revisão mensal', desc: 'Acompanhe sua evolução ao longo do tempo.' },
+              { emoji: '🧠', titulo: 'Perguntas comportamentais', desc: 'Âncoras temporais reais — não notas abstratas.' },
+              { emoji: '📊', titulo: 'Gráfico radar',             desc: 'Visualize seu equilíbrio de forma intuitiva.' },
+              { emoji: '💡', titulo: 'Revelação guiada',          desc: '"E o que isso revela sobre você?" por área.' },
+              { emoji: '🔄', titulo: 'Revisão mensal',            desc: 'Acompanhe sua evolução ao longo do tempo.' },
             ].map((c) => (
               <div
                 key={c.titulo}
@@ -465,27 +661,43 @@ export default function RaioXPage() {
           </div>
         )}
 
-        {/* Passos 1, 2, 3 — Sliders sempre visíveis */}
+        {/* Passos 1, 2, 3 — Perguntas comportamentais */}
         {passo >= 1 && (
           <div className="max-w-xl mx-auto flex flex-col gap-4">
             {passo === 1 && (
-              <p style={{ fontSize: 15, color: 'var(--color-brand-gray)', marginBottom: 4 }}>
-                Arraste os sliders para refletir como você se sente hoje. Seja honesto.
-              </p>
+              <div
+                className="flex items-center justify-between gap-3 rounded-xl p-3"
+                style={{ background: `${COR_PRIMARY}08`, border: `1px solid ${COR_PRIMARY}18` }}
+              >
+                <p style={{ fontSize: 14, color: 'var(--color-brand-gray)' }}>
+                  Selecione a opção que mais se aproxima do que você realmente viveu.
+                </p>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: respondidas === 8 ? '#1e8a4c' : COR_GOLD,
+                    flexShrink: 0,
+                  }}
+                >
+                  {respondidas}/8
+                </span>
+              </div>
             )}
 
             {AREAS.map((area, i) => (
-              <div
+              <PerguntaArea
                 key={area.label}
-                className="rounded-2xl p-5"
-                style={{ background: '#fff', border: '1px solid var(--color-brand-border)', boxShadow: 'var(--shadow-card)' }}
-              >
-                <SliderArea
-                  area={area}
-                  valor={valores[i]}
-                  onChange={(v) => setValores((prev) => prev.map((x, j) => (j === i ? v : x)))}
-                />
-              </div>
+                area={area}
+                pergunta={AREAS_PERGUNTAS[i].pergunta}
+                subtexto={AREAS_PERGUNTAS[i].subtexto}
+                opcoes={AREAS_PERGUNTAS[i].opcoes}
+                resposta={respostas[i]}
+                onChange={(r) =>
+                  setRespostas((prev) => prev.map((x, j) => (j === i ? r : x)))
+                }
+              />
             ))}
 
             {/* Resumo de equilíbrio inline */}
@@ -504,7 +716,7 @@ export default function RaioXPage() {
                   {equilibrio.label}
                 </p>
                 <p style={{ fontSize: 13, color: 'rgba(245,244,240,0.5)', marginTop: 2 }}>
-                  Baseado nas suas respostas
+                  {respondidas === 8 ? 'Todas as áreas respondidas' : `${respondidas} de 8 áreas respondidas`}
                 </p>
               </div>
             </div>
