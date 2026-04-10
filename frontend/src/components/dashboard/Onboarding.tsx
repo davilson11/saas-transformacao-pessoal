@@ -7,7 +7,20 @@ import Link from "next/link";
 
 type Passo = 0 | 1 | 2;
 
+type NotifStatus = "idle" | "loading" | "granted" | "denied" | "unsupported";
+
 const STORAGE_KEY = "kairos_onboarding_visto";
+
+// ─── Helper VAPID ─────────────────────────────────────────────────────────────
+
+function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64  = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw     = window.atob(base64);
+  const arr     = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr.buffer as ArrayBuffer;
+}
 
 // ─── Conteúdo dos passos ──────────────────────────────────────────────────────
 
@@ -111,9 +124,10 @@ function Dots({ atual, total }: { atual: number; total: number }) {
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
 export default function Onboarding() {
-  const [visivel, setVisivel] = useState(false);
-  const [passo,   setPasso]   = useState<Passo>(0);
-  const [saindo,  setSaindo]  = useState(false);
+  const [visivel,     setVisivel]     = useState(false);
+  const [passo,       setPasso]       = useState<Passo>(0);
+  const [saindo,      setSaindo]      = useState(false);
+  const [notifStatus, setNotifStatus] = useState<NotifStatus>("idle");
 
   // Mostrar apenas na primeira visita
   useEffect(() => {
@@ -142,6 +156,39 @@ export default function Onboarding() {
 
   function voltar() {
     if (passo > 0) setPasso((p) => (p - 1) as Passo);
+  }
+
+  async function ativarLembretes() {
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      setNotifStatus("unsupported");
+      return;
+    }
+    setNotifStatus("loading");
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setNotifStatus("denied");
+        return;
+      }
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
+      const subscription = await reg.pushManager.subscribe({
+        userVisibleOnly:      true,
+        applicationServerKey: vapidKey ? urlBase64ToUint8Array(vapidKey) : undefined,
+      });
+
+      await fetch("/api/notify", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ subscription }),
+      });
+
+      setNotifStatus("granted");
+    } catch {
+      setNotifStatus("denied");
+    }
   }
 
   if (!visivel) return null;
@@ -316,6 +363,63 @@ export default function Onboarding() {
               >
                 {step.cta.label}
               </Link>
+            )}
+
+            {/* Botão de notificações — último passo apenas */}
+            {ultimo && (
+              <div style={{ marginTop: 16 }}>
+                {notifStatus === "granted" ? (
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    fontFamily: "var(--font-body)", fontSize: 13,
+                    color: "#4ade80",
+                    background: "rgba(74,222,128,0.10)",
+                    border: "1px solid rgba(74,222,128,0.25)",
+                    borderRadius: 10, padding: "10px 16px",
+                  }}>
+                    <span>✓</span>
+                    <span>Lembretes diários ativados às 20h!</span>
+                  </div>
+                ) : notifStatus === "denied" ? (
+                  <p style={{
+                    fontFamily: "var(--font-body)", fontSize: 12,
+                    color: "rgba(245,244,240,0.40)",
+                    margin: 0, lineHeight: 1.5,
+                  }}>
+                    🔕 Notificações bloqueadas. Você pode ativar nas configurações do navegador.
+                  </p>
+                ) : notifStatus === "unsupported" ? (
+                  <p style={{
+                    fontFamily: "var(--font-body)", fontSize: 12,
+                    color: "rgba(245,244,240,0.35)", margin: 0,
+                  }}>
+                    Notificações não suportadas neste navegador.
+                  </p>
+                ) : (
+                  <button
+                    onClick={ativarLembretes}
+                    disabled={notifStatus === "loading"}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 8,
+                      fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600,
+                      color: "#C8A030",
+                      background: "rgba(200,160,48,0.10)",
+                      border: "1px solid rgba(200,160,48,0.30)",
+                      borderRadius: 10, padding: "10px 18px",
+                      cursor: notifStatus === "loading" ? "not-allowed" : "pointer",
+                      opacity: notifStatus === "loading" ? 0.7 : 1,
+                      transition: "opacity 0.15s",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {notifStatus === "loading" ? (
+                      <>⏳ Ativando…</>
+                    ) : (
+                      <>🔔 Ativar lembretes diários</>
+                    )}
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
