@@ -7,9 +7,15 @@ import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 type Identificacao = {
-  crenca:        string;
-  origem:        string;
-  tempoAcredita: string;
+  // ── Sequência de Descoberta (5 passos) ───────────────────────────────────
+  desejo:          string;  // P1: o que quer mas ainda não buscou
+  bloqueio:        string;  // P2: "Eu não vou atrás porque..." → É a crença
+  origem:          string;  // P3: de onde veio / quem ensinou
+  contraEvidencia: string;  // P4: evidência que contraria a crença
+  novaAfirmacao:   string;  // P5: reescrita em afirmação expansiva
+  // ── Campos mantidos ──────────────────────────────────────────────────────
+  crenca:          string;  // espelho do bloqueio (compatibilidade)
+  tempoAcredita:   string;
 };
 
 type Desconstrucao = {
@@ -169,7 +175,10 @@ const TEMPO_OPTS = [
   '5 a 10 anos', 'Mais de 10 anos', 'Desde criança',
 ];
 
-const IDENT_DEFAULT: Identificacao  = { crenca: '', origem: '', tempoAcredita: 'Menos de 1 ano' };
+const IDENT_DEFAULT: Identificacao  = {
+  desejo: '', bloqueio: '', origem: '', contraEvidencia: '', novaAfirmacao: '',
+  crenca: '', tempoAcredita: 'Menos de 1 ano',
+};
 const DESC_DEFAULT: Desconstrucao   = { evidencia1: '', evidencia2: '', evidencia3: '', opostoRadical: '', custo: '', beneficioEscondido: '', novaCrenca: '', acaoHoje: '', mantra: '' };
 const COMP_DEFAULT: Compromisso     = { mantraFinal: '', acoes: Array.from({ length: 7 }, () => '') };
 
@@ -199,9 +208,13 @@ export default function DesconstritorCrencasPage() {
   const ativa = crencas[crencaAtiva];
 
   const setIdent = (p: Partial<Identificacao>) =>
-    setCrencas(prev => prev.map((c, i) =>
-      i === crencaAtiva ? { ...c, identificacao: { ...c.identificacao, ...p } } : c
-    ));
+    setCrencas(prev => prev.map((c, i) => {
+      if (i !== crencaAtiva) return c;
+      const updated = { ...c.identificacao, ...p };
+      // mantém crenca espelhando bloqueio para compatibilidade com etapa 2
+      if ('bloqueio' in p) updated.crenca = p.bloqueio ?? '';
+      return { ...c, identificacao: updated };
+    }));
 
   const setDesc = (p: Partial<Desconstrucao>) =>
     setCrencas(prev => prev.map((c, i) =>
@@ -224,7 +237,7 @@ export default function DesconstritorCrencasPage() {
 
   // ─── Métricas ──────────────────────────────────────────────────────────────
 
-  const identPreenchidas = crencas.filter(c => c.identificacao.crenca.trim().length > 0).length;
+  const identPreenchidas = crencas.filter(c => c.identificacao.bloqueio.trim().length > 0).length;
 
   const descRespondidas = (c: CrencaItem) =>
     Object.values(c.desconstrucao).filter(v => v.trim().length > 0).length;
@@ -243,7 +256,7 @@ export default function DesconstritorCrencasPage() {
 
   const podeAvancar =
     etapa === 0 ? true
-    : etapa === 1 ? ativa.identificacao.crenca.trim().length > 0
+    : etapa === 1 ? ativa.identificacao.bloqueio.trim().length > 5
     : etapa === 2 ? descAtiva >= 5
     : ativa.compromisso.mantraFinal.trim().length > 0;
 
@@ -298,7 +311,7 @@ export default function DesconstritorCrencasPage() {
   const STATUS_LABEL = (c: CrencaItem): { label: string; cor: string } => {
     if (c.compromisso.mantraFinal) return { label: 'Comprometida', cor: '#16a34a' };
     if (descRespondidas(c) >= 5)   return { label: 'Desconstruída', cor: COR_GOLD  };
-    if (c.identificacao.crenca)    return { label: 'Identificada',  cor: '#2563eb' };
+    if (c.identificacao.bloqueio || c.identificacao.crenca) return { label: 'Identificada', cor: '#2563eb' };
     return                                 { label: 'Não iniciada', cor: 'rgba(26,92,58,0.3)' };
   };
 
@@ -340,14 +353,15 @@ export default function DesconstritorCrencasPage() {
               </span>
             </div>
 
-            {c.identificacao.crenca ? (
+            {(c.identificacao.bloqueio || c.identificacao.crenca) ? (
               <p style={{
                 fontFamily: 'var(--font-body)', fontSize: 13, color: '#2d3748',
                 fontStyle: 'italic', lineHeight: 1.4, marginBottom: 8,
               }}>
-                &ldquo;{c.identificacao.crenca.length > 60
-                  ? c.identificacao.crenca.slice(0, 60) + '…'
-                  : c.identificacao.crenca}&rdquo;
+                {(() => {
+                  const txt = c.identificacao.bloqueio || c.identificacao.crenca;
+                  return <>&ldquo;{txt.length > 60 ? txt.slice(0, 60) + '…' : txt}&rdquo;</>;
+                })()}
               </p>
             ) : (
               <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(26,92,58,0.35)', fontStyle: 'italic', marginBottom: 8 }}>
@@ -493,67 +507,200 @@ export default function DesconstritorCrencasPage() {
     </div>
   );
 
-  // ─── Etapa 1: Identificação ───────────────────────────────────────────────
+  // ─── Etapa 1: Sequência de Descoberta ────────────────────────────────────
+
+  const PASSOS_DESCOBERTA = [
+    {
+      num:      1,
+      cor:      '#7c3aed',
+      bg:       'rgba(124,58,237,0.06)',
+      titulo:   'O que você quer muito, mas ainda não buscou?',
+      subtexto: 'Escreva sem filtro — não existe resposta certa. Quanto mais honesto(a), mais poderoso o processo.',
+      exemplo:  '"Quero abrir meu próprio negócio, mas nunca dei o primeiro passo."',
+      placeholder: 'Escreva livremente. Pode ser um sonho antigo, algo que você evita pensar, um desejo que parece impossível…',
+      campo:    'desejo' as keyof Identificacao,
+    },
+    {
+      num:      2,
+      cor:      '#e11d48',
+      bg:       'rgba(225,29,72,0.05)',
+      titulo:   'Complete a frase: "Eu não vou atrás porque…"',
+      subtexto: 'Essa frase vai revelar a crença limitante. Não edite — escreva o primeiro pensamento que veio.',
+      exemplo:  '"…não sou bom o suficiente para competir com quem já está lá."',
+      placeholder: 'Eu não vou atrás porque… (escreva sem censura, essa é a crença que vamos desconstruir)',
+      campo:    'bloqueio' as keyof Identificacao,
+    },
+    {
+      num:      3,
+      cor:      '#d97706',
+      bg:       'rgba(217,119,6,0.06)',
+      titulo:   'De onde veio essa crença? Quem te ensinou isso?',
+      subtexto: 'Crenças não nascem do nada — alguém plantou isso em você. Identificar a origem tira o poder dela.',
+      exemplo:  '"Meu pai sempre dizia que sonhar demais é coisa de gente preguiçosa. Cresci acreditando nisso."',
+      placeholder: 'Pode ter vindo de um familiar, professor, evento marcante, fracasso, ou até de algo que você interpretou sozinho…',
+      campo:    'origem' as keyof Identificacao,
+    },
+    {
+      num:      4,
+      cor:      '#16a34a',
+      bg:       'rgba(22,163,74,0.06)',
+      titulo:   'Qual evidência CONTRARIA essa crença na sua vida?',
+      subtexto: 'O cérebro confirma o que acredita e ignora o que contradiz. Force-o a enxergar o oposto.',
+      exemplo:  '"Já dei uma virada completa na minha vida antes — mudei de cidade sem nada garantido e deu certo."',
+      placeholder: 'Pense em uma situação real — por menor que seja — em que você agiu diferente do que essa crença afirma…',
+      campo:    'contraEvidencia' as keyof Identificacao,
+    },
+    {
+      num:      5,
+      cor:      COR_GOLD,
+      bg:       `rgba(181,132,10,0.06)`,
+      titulo:   'Reescreva a crença como uma afirmação que te expande.',
+      subtexto: 'Não precisa ser uma frase perfeita. Precisa ser verdadeira o suficiente para você acreditar — ao menos 51%.',
+      exemplo:  '"Eu tenho tudo o que preciso para começar. Cada passo pequeno me aproxima do que quero."',
+      placeholder: 'Escreva no tempo presente, na primeira pessoa, como se já fosse sua nova verdade…',
+      campo:    'novaAfirmacao' as keyof Identificacao,
+    },
+  ];
 
   const step1 = (
-    <div style={{ maxWidth: 640, display: 'flex', flexDirection: 'column', gap: 22 }}>
+    <div style={{ maxWidth: 640, display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+      {/* Cabeçalho */}
       <div>
-        <h2 style={{ color: COR_VERDE, marginBottom: 8 }}>Identificação da Crença</h2>
-        <p style={{ color: '#4a5568' }}>
-          Para desconstruir uma crença, precisamos primeiro entendê-la completamente — de onde veio e há quanto tempo te acompanha.
+        <h2 style={{ color: COR_VERDE, marginBottom: 8 }}>Sequência de Descoberta</h2>
+        <p style={{ color: '#4a5568', lineHeight: 1.65 }}>
+          Em vez de identificar diretamente a crença — o que ativa defesas —, vamos chegar nela de forma indireta, através do desejo. Responda cada passo com o primeiro pensamento honesto que surgir.
         </p>
       </div>
 
       <CrencaTabs />
 
-      {/* Crença */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <label style={{ fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: COR_VERDE }}>
-          A crença limitante <span style={{ color: '#ef4444' }}>*</span>
-        </label>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(26,92,58,0.55)', margin: 0 }}>
-          Escreva exatamente como você diz internamente — na sua voz, sem filtros.
-        </p>
-        <textarea
-          value={ativa.identificacao.crenca}
-          onChange={e => setIdent({ crenca: e.target.value })}
-          placeholder='Ex: "Não sou inteligente o suficiente para ter sucesso…"'
-          rows={3}
-          style={{
-            border: `1.5px solid ${ativa.identificacao.crenca ? COR_VERDE + '50' : COR_BORDER}`,
-            borderRadius: 8, padding: '10px 14px', fontSize: 15,
-            fontFamily: 'var(--font-body)', color: '#1a2015',
-            outline: 'none', background: '#fff', resize: 'vertical', lineHeight: 1.55,
-          }}
-        />
-      </div>
+      {/* 5 passos */}
+      {PASSOS_DESCOBERTA.map((passo, pi) => {
+        const valor = ativa.identificacao[passo.campo] as string;
+        const preenchido = valor.trim().length > 0;
 
-      {/* Origem */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <label style={{ fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: COR_VERDE }}>
-          De onde veio essa crença?
-        </label>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(26,92,58,0.55)', margin: 0 }}>
-          Família, escola, um evento específico, uma pessoa, uma fase da vida?
-        </p>
-        <textarea
-          value={ativa.identificacao.origem}
-          onChange={e => setIdent({ origem: e.target.value })}
-          placeholder="Descreva a origem que você consegue identificar — pode ser vaga, está tudo bem…"
-          rows={3}
-          style={{
-            border: `1px solid ${COR_BORDER}`, borderRadius: 8,
-            padding: '10px 14px', fontSize: 15,
-            fontFamily: 'var(--font-body)', color: '#1a2015',
-            outline: 'none', background: '#fff', resize: 'vertical', lineHeight: 1.55,
-          }}
-        />
-      </div>
+        return (
+          <div key={passo.num}>
+            {/* Card do passo */}
+            <div style={{
+              background: preenchido ? passo.bg : '#fff',
+              border: `1.5px solid ${preenchido ? passo.cor + '40' : COR_BORDER}`,
+              borderRadius: 14,
+              overflow: 'hidden',
+              transition: 'border-color 0.2s, background 0.2s',
+            }}>
+              {/* Header */}
+              <div style={{
+                display: 'flex', alignItems: 'flex-start', gap: 14,
+                padding: '16px 20px 14px',
+                borderBottom: `1px solid ${preenchido ? passo.cor + '20' : COR_BORDER}`,
+                background: `${passo.cor}08`,
+              }}>
+                {/* Número */}
+                <div style={{
+                  width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                  background: preenchido ? passo.cor : `${passo.cor}15`,
+                  border: `1.5px solid ${passo.cor}30`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700,
+                  color: preenchido ? '#fff' : passo.cor,
+                  transition: 'all 0.2s',
+                }}>
+                  {preenchido ? '✓' : passo.num}
+                </div>
 
-      {/* Tempo */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <label style={{ fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: COR_VERDE }}>
-          Há quanto tempo você carrega essa crença?
+                {/* Texto */}
+                <div style={{ flex: 1 }}>
+                  <p style={{
+                    fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 700,
+                    color: preenchido ? passo.cor : '#2d3748', lineHeight: 1.4, marginBottom: 4,
+                  }}>
+                    {passo.titulo}
+                  </p>
+                  <p style={{
+                    fontFamily: 'var(--font-body)', fontSize: 13,
+                    color: 'rgba(26,92,58,0.55)', lineHeight: 1.5,
+                  }}>
+                    {passo.subtexto}
+                  </p>
+                </div>
+              </div>
+
+              {/* Corpo */}
+              <div style={{ padding: '14px 20px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {/* Exemplo */}
+                <div style={{
+                  background: `${passo.cor}08`, border: `1px solid ${passo.cor}20`,
+                  borderRadius: 8, padding: '8px 12px',
+                  display: 'flex', alignItems: 'flex-start', gap: 8,
+                }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: passo.cor, flexShrink: 0, marginTop: 1 }}>
+                    Ex:
+                  </span>
+                  <span style={{
+                    fontFamily: 'var(--font-body)', fontSize: 13,
+                    color: '#4a5568', fontStyle: 'italic', lineHeight: 1.5,
+                  }}>
+                    {passo.exemplo}
+                  </span>
+                </div>
+
+                {/* Textarea */}
+                <textarea
+                  value={valor}
+                  onChange={e => setIdent({ [passo.campo]: e.target.value })}
+                  placeholder={passo.placeholder}
+                  rows={passo.num === 5 ? 2 : 3}
+                  style={{
+                    border: `1.5px solid ${preenchido ? passo.cor + '40' : `${passo.cor}20`}`,
+                    borderRadius: 8, padding: '10px 14px', fontSize: 15,
+                    fontFamily: 'var(--font-body)', color: '#1a2015',
+                    outline: 'none', background: 'rgba(255,255,255,0.9)',
+                    resize: 'vertical', lineHeight: 1.6,
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={e => { e.target.style.borderColor = passo.cor; e.target.style.boxShadow = `0 0 0 3px ${passo.cor}14`; }}
+                  onBlur={e  => { e.target.style.borderColor = preenchido ? `${passo.cor}40` : `${passo.cor}20`; e.target.style.boxShadow = 'none'; }}
+                />
+
+                {/* Nota especial para passo 2 */}
+                {passo.num === 2 && valor.trim().length > 5 && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    background: 'rgba(225,29,72,0.05)', border: '1px solid rgba(225,29,72,0.18)',
+                    borderRadius: 7, padding: '7px 12px',
+                  }}>
+                    <span style={{ fontSize: 13 }}>🎯</span>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#9b1239', lineHeight: 1.4 }}>
+                      <strong>Crença identificada.</strong> Vamos desconstruí-la nos próximos passos — e na Etapa 2.
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Conector entre passos */}
+            {pi < PASSOS_DESCOBERTA.length - 1 && (
+              <div style={{
+                display: 'flex', justifyContent: 'center', padding: '4px 0',
+                color: 'rgba(26,92,58,0.2)', fontSize: 18, userSelect: 'none',
+              }}>
+                ↓
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Há quanto tempo */}
+      <div style={{
+        background: `${COR_VERDE}05`, border: `1px solid ${COR_BORDER}`,
+        borderRadius: 12, padding: '16px 20px',
+        display: 'flex', flexDirection: 'column', gap: 10,
+      }}>
+        <label style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: COR_VERDE }}>
+          ⏱ Há quanto tempo você carrega essa crença?
         </label>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {TEMPO_OPTS.map(t => (
@@ -561,7 +708,7 @@ export default function DesconstritorCrencasPage() {
               key={t}
               onClick={() => setIdent({ tempoAcredita: t })}
               style={{
-                padding: '7px 14px', borderRadius: 8,
+                padding: '6px 13px', borderRadius: 8,
                 border: `1.5px solid ${ativa.identificacao.tempoAcredita === t ? COR_VERDE : COR_BORDER}`,
                 background: ativa.identificacao.tempoAcredita === t ? `${COR_VERDE}10` : '#fff',
                 fontFamily: 'var(--font-body)', fontSize: 13,
@@ -576,13 +723,13 @@ export default function DesconstritorCrencasPage() {
         </div>
       </div>
 
-      {!ativa.identificacao.crenca && (
+      {!ativa.identificacao.bloqueio.trim() && (
         <p style={{
           fontFamily: 'var(--font-body)', fontSize: 14, color: '#92400e',
           background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)',
           borderRadius: 8, padding: '10px 14px', margin: 0,
         }}>
-          Preencha a crença para continuar.
+          Complete o Passo 2 (&ldquo;Eu não vou atrás porque…&rdquo;) para continuar.
         </p>
       )}
     </div>
@@ -602,17 +749,28 @@ export default function DesconstritorCrencasPage() {
       <CrencaTabs />
 
       {/* Crença em foco */}
-      {ativa.identificacao.crenca && (
+      {(ativa.identificacao.bloqueio || ativa.identificacao.crenca) && (
         <div style={{
           background: 'rgba(26,92,58,0.05)', border: `1px solid ${COR_VERDE}20`,
           borderRadius: 10, padding: '12px 16px',
+          display: 'flex', flexDirection: 'column', gap: 8,
         }}>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: 'rgba(26,92,58,0.45)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: 'rgba(26,92,58,0.45)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
             Crença em desconstrução
           </p>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: COR_VERDE, fontStyle: 'italic', fontWeight: 600 }}>
-            &ldquo;{ativa.identificacao.crenca}&rdquo;
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: '#e11d48', fontStyle: 'italic', fontWeight: 600, lineHeight: 1.5 }}>
+            &ldquo;{ativa.identificacao.bloqueio || ativa.identificacao.crenca}&rdquo;
           </p>
+          {ativa.identificacao.novaAfirmacao && (
+            <div style={{ borderTop: `1px solid ${COR_VERDE}15`, paddingTop: 8, marginTop: 2 }}>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, color: `${COR_GOLD}99`, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>
+                Sua nova afirmação (Passo 5)
+              </p>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#7c5500', fontStyle: 'italic', lineHeight: 1.5 }}>
+                &ldquo;{ativa.identificacao.novaAfirmacao}&rdquo;
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -714,10 +872,19 @@ export default function DesconstritorCrencasPage() {
             Seu mantra definitivo <span style={{ color: '#ef4444' }}>*</span>
           </label>
         </div>
-        {ativa.desconstrucao.mantra && (
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(124,85,0,0.7)', fontStyle: 'italic', margin: 0 }}>
-            Sugestão da desconstrução: &ldquo;{ativa.desconstrucao.mantra}&rdquo;
-          </p>
+        {(ativa.identificacao.novaAfirmacao || ativa.desconstrucao.mantra) && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {ativa.identificacao.novaAfirmacao && (
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(124,85,0,0.7)', fontStyle: 'italic', margin: 0 }}>
+                💡 Da descoberta (Passo 5): &ldquo;{ativa.identificacao.novaAfirmacao}&rdquo;
+              </p>
+            )}
+            {ativa.desconstrucao.mantra && (
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(124,85,0,0.7)', fontStyle: 'italic', margin: 0 }}>
+                💡 Da desconstrução (Q9): &ldquo;{ativa.desconstrucao.mantra}&rdquo;
+              </p>
+            )}
+          </div>
         )}
         <textarea
           value={ativa.compromisso.mantraFinal}
