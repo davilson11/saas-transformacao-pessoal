@@ -36,6 +36,54 @@ type FerramentaLayoutProps = {
   respostas?: Record<string, unknown>;
 };
 
+// ─── Banner contextual ────────────────────────────────────────────────────────
+
+const AREAS_RAIO_X = ['Saúde', 'Mente', 'Carreira', 'Finanças', 'Relacionamentos', 'Lazer', 'Crescimento', 'Espiritualidade'];
+
+type BannerRule = {
+  slug: string;
+  getMensagem: (data: Record<string, unknown>) => string | null;
+};
+
+const BANNER_RULES: Record<string, BannerRule> = {
+  F03: {
+    slug: 'raio-x',
+    getMensagem: (d) => {
+      const vals = (d as { valores?: number[] }).valores;
+      if (!vals?.length) return null;
+      const minIdx = vals.indexOf(Math.min(...vals));
+      return `🎯 Seu Raio-X aponta ${AREAS_RAIO_X[minIdx] ?? 'uma área'} como ponto a fortalecer. Use como ponto de partida para sua análise SWOT.`;
+    },
+  },
+  F05: {
+    slug: 'raio-x',
+    getMensagem: (d) => {
+      const vals = (d as { valores?: number[] }).valores;
+      if (!vals?.length) return null;
+      const minIdx = vals.indexOf(Math.min(...vals));
+      return `🎯 Seu Raio-X mostra ${AREAS_RAIO_X[minIdx] ?? 'uma área'} como a dimensão que mais precisa evoluir. Que tal criar OKRs específicos para ela?`;
+    },
+  },
+  F08: {
+    slug: 'raio-x',
+    getMensagem: (d) => {
+      const vals = (d as { valores?: number[] }).valores;
+      if (!vals?.length) return null;
+      const minIdx = vals.indexOf(Math.min(...vals));
+      return `🎯 No Raio-X, ${AREAS_RAIO_X[minIdx] ?? 'uma área'} ficou mais baixa. Considere reservar um bloco matinal dedicado a ela.`;
+    },
+  },
+  F04: {
+    slug: 'raio-x',
+    getMensagem: (d) => {
+      const vals = (d as { valores?: number[] }).valores;
+      if (!vals?.length) return null;
+      const minIdx = vals.indexOf(Math.min(...vals));
+      return `🎯 Cruzamento com o Raio-X: ${AREAS_RAIO_X[minIdx] ?? 'uma área'} teve a pontuação mais baixa. Vale pedir feedback específico sobre essa dimensão.`;
+    },
+  },
+};
+
 // ─── Mensagens motivacionais por ferramenta ───────────────────────────────────
 
 const MENSAGENS_MOTIVACIONAIS: Record<string, string> = {
@@ -87,6 +135,8 @@ export default function FerramentaLayout({
   const [autoSaveIndicator, setAutoSaveIndicator] = useState(false);
   const [toastVisivel, setToastVisivel] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
+  const [bannerMsg, setBannerMsg] = useState<string | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
 
@@ -146,6 +196,28 @@ export default function FerramentaLayout({
       if (autoSaveIndicatorTimeoutRef.current) clearTimeout(autoSaveIndicatorTimeoutRef.current);
     };
   }, [user?.id, codigo, getClient]);
+
+  // Banner contextual: busca dados de ferramenta relacionada
+  useEffect(() => {
+    const rule = BANNER_RULES[codigo.toUpperCase()];
+    if (!rule || !user?.id) return;
+    (async () => {
+      try {
+        const client = await getClient();
+        const { data } = await client
+          .from('ferramentas_respostas')
+          .select('respostas')
+          .eq('user_id', user.id)
+          .eq('ferramenta_slug', rule.slug)
+          .maybeSingle();
+        if (data?.respostas) {
+          const msg = rule.getMensagem(data.respostas as Record<string, unknown>);
+          if (msg) setBannerMsg(msg);
+        }
+      } catch { /* silencioso */ }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, codigo]);
 
   const isUltimaEtapa = etapaAtual === etapas.length - 1;
 
@@ -613,6 +685,35 @@ export default function FerramentaLayout({
           flex-shrink: 0;
         }
 
+        /* BANNER CONTEXTUAL */
+        .fl-banner {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 16px;
+          margin-bottom: 20px;
+          border-radius: 10px;
+          background: linear-gradient(135deg, rgba(200,160,48,0.12), rgba(200,160,48,0.06));
+          border: 1px solid rgba(200,160,48,0.35);
+          font-size: 13.5px;
+          color: #3d3d3d;
+          line-height: 1.5;
+        }
+        .fl-banner-text { flex: 1; min-width: 0; }
+        .fl-banner-dismiss {
+          background: none;
+          border: none;
+          color: rgba(0,0,0,0.3);
+          cursor: pointer;
+          font-size: 16px;
+          padding: 2px 6px;
+          border-radius: 4px;
+          flex-shrink: 0;
+          line-height: 1;
+          transition: color 0.15s;
+        }
+        .fl-banner-dismiss:hover { color: rgba(0,0,0,0.55); }
+
         /* AUTO-SAVE INDICATOR */
         .fl-autosave {
           font-size: 11px;
@@ -818,6 +919,18 @@ export default function FerramentaLayout({
 
           {/* ── Área central ── */}
           <main className="fl-main">
+            {bannerMsg && !bannerDismissed && (
+              <div className="fl-banner">
+                <span className="fl-banner-text">{bannerMsg}</span>
+                <button
+                  className="fl-banner-dismiss"
+                  onClick={() => setBannerDismissed(true)}
+                  aria-label="Fechar banner"
+                >
+                  ×
+                </button>
+              </div>
+            )}
             {children}
           </main>
 

@@ -150,16 +150,34 @@ function formatarMinutos(total: number): string {
   return m > 0 ? `${h}h ${m}min` : `${h}h`;
 }
 
+function ajustarHorario(base: string, offsetMin: number): string {
+  const [hh, mm] = base.split(':').map(Number);
+  const total = hh * 60 + mm + offsetMin;
+  const h = Math.floor(((total % 1440) + 1440) / 60) % 24;
+  const m = ((total % 60) + 60) % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+const CRONOTIPO_OPTS: Array<{ id: string; emoji: string; nome: string; desc: string; offset: number }> = [
+  { id: 'matutino-extremo', emoji: '🌄', nome: 'Madrugador',    desc: 'Acorda naturalmente antes das 5h. Pico de energia muito cedo.', offset: -60 },
+  { id: 'matutino',         emoji: '🌅', nome: 'Matutino',      desc: 'Acorda antes das 7h. Melhor performance pela manhã.',           offset: 0   },
+  { id: 'intermediario',    emoji: '⚖️', nome: 'Intermediário', desc: 'Sem preferência forte. Adapta-se bem a qualquer horário.',      offset: 60  },
+  { id: 'vespertino',       emoji: '🌇', nome: 'Vespertino',    desc: 'Acorda após as 8h. Energia e foco melhoram à tarde.',           offset: 120 },
+  { id: 'vespertino-extremo', emoji: '🌃', nome: 'Noturno',     desc: 'Pico de energia à noite. Acorda naturalmente após as 9h.',     offset: 180 },
+];
+
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
 
 function AtividadeMatinalRow({
   config,
   valor,
   onChange,
+  sugestaoAjustada,
 }: {
   config: typeof ATIV_MATINAIS[0];
   valor: Atividade;
   onChange: (v: Partial<Atividade>) => void;
+  sugestaoAjustada?: string;
 }) {
   return (
     <div
@@ -173,9 +191,24 @@ function AtividadeMatinalRow({
       }}
     >
       <span style={{ fontSize: 20, flexShrink: 0 }}>{config.emoji}</span>
-      <span style={{ fontSize: 15, fontWeight: 500, color: COR_PRIMARY, flex: 1, fontFamily: 'var(--font-body)' }}>
-        {config.nome}
-      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: 15, fontWeight: 500, color: COR_PRIMARY, fontFamily: 'var(--font-body)' }}>
+          {config.nome}
+        </span>
+        {sugestaoAjustada && !valor.horario && (
+          <button
+            onClick={() => onChange({ horario: sugestaoAjustada })}
+            style={{ display: 'block', fontSize: 11, color: COR_GOLD, background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginTop: 2, fontFamily: 'var(--font-mono)' }}
+          >
+            💡 Usar {sugestaoAjustada}
+          </button>
+        )}
+        {sugestaoAjustada && valor.horario && valor.horario !== sugestaoAjustada && (
+          <span style={{ display: 'block', fontSize: 11, color: 'rgba(26,92,58,0.45)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+            sugestão: {sugestaoAjustada}
+          </span>
+        )}
+      </div>
 
       {/* Horário */}
       <input
@@ -414,8 +447,10 @@ export default function RotinaIdealPage() {
     dormir:      { horario: '' },
   });
 
+  const [cronotipo, setCronotipo] = useState('');
+
   const { dados: dadosSalvos } = useCarregarRespostas("rotina-ideal");
-  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).matinal) setMatinal((dadosSalvos as any).matinal); if ((dadosSalvos as any).blocos) setBlocos((dadosSalvos as any).blocos); if ((dadosSalvos as any).noturno) setNoturno((dadosSalvos as any).noturno); }, [dadosSalvos]);
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).matinal) setMatinal((dadosSalvos as any).matinal); if ((dadosSalvos as any).blocos) setBlocos((dadosSalvos as any).blocos); if ((dadosSalvos as any).noturno) setNoturno((dadosSalvos as any).noturno); if ((dadosSalvos as any).cronotipo) setCronotipo((dadosSalvos as any).cronotipo); }, [dadosSalvos]);
 
   // ── Helpers de update ────────────────────────────────────────────────────────
 
@@ -601,7 +636,7 @@ export default function RotinaIdealPage() {
       totalItens={totalItens > 0 ? totalItens : undefined}
       labelItens="atividades"
       resumo={painelResumo}
-  respostas={{ matinal, blocos, noturno }}
+  respostas={{ matinal, blocos, noturno, cronotipo }}
     >
       <div className="p-8">
 
@@ -677,6 +712,65 @@ export default function RotinaIdealPage() {
                 </p>
               </div>
             </div>
+
+            {/* Seletor de cronotipo */}
+            <div
+              className="flex flex-col gap-4 rounded-2xl p-5"
+              style={{ background: '#fff', border: '1.5px solid var(--color-brand-border)', boxShadow: 'var(--shadow-card)' }}
+            >
+              <div>
+                <p style={{ fontFamily: 'var(--font-heading)', fontSize: 17, fontStyle: 'italic', color: COR_PRIMARY }}>
+                  Qual é o seu cronotipo?
+                </p>
+                <p style={{ fontSize: 14, color: 'var(--color-brand-gray)', marginTop: 4, lineHeight: 1.55 }}>
+                  Seu ritmo biológico determina quando sua energia é máxima. As sugestões de horário da rotina serão adaptadas automaticamente.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                {CRONOTIPO_OPTS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setCronotipo(opt.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '12px 16px',
+                      borderRadius: 12,
+                      border: cronotipo === opt.id
+                        ? `2px solid ${COR_PRIMARY}`
+                        : '1.5px solid var(--color-brand-border)',
+                      background: cronotipo === opt.id ? `${COR_PRIMARY}08` : 'transparent',
+                      cursor: 'pointer',
+                      textAlign: 'left' as const,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <span style={{ fontSize: 22, flexShrink: 0 }}>{opt.emoji}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 15, fontWeight: cronotipo === opt.id ? 600 : 400, color: COR_PRIMARY, fontFamily: 'var(--font-body)' }}>
+                        {opt.nome}
+                      </p>
+                      <p style={{ fontSize: 13, color: 'var(--color-brand-gray)', lineHeight: 1.4, marginTop: 2 }}>
+                        {opt.desc}
+                      </p>
+                    </div>
+                    {cronotipo === opt.id && (
+                      <div
+                        style={{ width: 20, height: 20, borderRadius: '50%', background: COR_PRIMARY, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                      >
+                        <span style={{ color: '#fff', fontSize: 10, fontWeight: 700 }}>✓</span>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              {cronotipo && (
+                <p style={{ fontSize: 13, color: COR_PRIMARY, fontWeight: 500 }}>
+                  ✅ Sugestões de horário adaptadas para o seu cronotipo. Você verá as sugestões no próximo passo.
+                </p>
+              )}
+            </div>
           </div>
         )}
 
@@ -701,15 +795,31 @@ export default function RotinaIdealPage() {
             </div>
 
             {/* Atividades */}
+            {cronotipo && (
+              <div
+                className="flex items-center gap-3 rounded-xl px-4 py-3"
+                style={{ background: `${COR_GOLD}10`, border: `1px solid ${COR_GOLD}30` }}
+              >
+                <span style={{ fontSize: 16 }}>{CRONOTIPO_OPTS.find(o => o.id === cronotipo)?.emoji ?? '⚖️'}</span>
+                <p style={{ fontSize: 14, color: COR_GOLD, fontWeight: 500, lineHeight: 1.4 }}>
+                  Cronotipo <strong>{CRONOTIPO_OPTS.find(o => o.id === cronotipo)?.nome}</strong> — sugestões ajustadas. Clique em &ldquo;Usar HH:MM&rdquo; para aplicar cada horário.
+                </p>
+              </div>
+            )}
             <div className="flex flex-col gap-2">
-              {ATIV_MATINAIS.map((a) => (
-                <AtividadeMatinalRow
-                  key={a.key}
-                  config={a}
-                  valor={matinal[a.key]}
-                  onChange={(v) => updateMatinal(a.key, v)}
-                />
-              ))}
+              {ATIV_MATINAIS.map((a) => {
+                const opt = CRONOTIPO_OPTS.find(o => o.id === cronotipo);
+                const sugestaoAjustada = opt ? ajustarHorario(a.sugestao, opt.offset) : undefined;
+                return (
+                  <AtividadeMatinalRow
+                    key={a.key}
+                    config={a}
+                    valor={matinal[a.key]}
+                    onChange={(v) => updateMatinal(a.key, v)}
+                    sugestaoAjustada={sugestaoAjustada}
+                  />
+                );
+              })}
             </div>
 
             {/* Resumo total do ritual */}

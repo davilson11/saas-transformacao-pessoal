@@ -560,9 +560,10 @@ export default function DesignVidaPage() {
     seBuscar: "",
     declaracao: "",
   });
+  const [obituario, setObituario] = useState('');
 
   const { dados: dadosSalvos } = useCarregarRespostas("design-vida");
-  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).dia) setDia((dadosSalvos as any).dia); if ((dadosSalvos as any).visao) setVisao((dadosSalvos as any).visao); if ((dadosSalvos as any).porque) setPorque((dadosSalvos as any).porque); }, [dadosSalvos]);
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).dia) setDia((dadosSalvos as any).dia); if ((dadosSalvos as any).visao) setVisao((dadosSalvos as any).visao); if ((dadosSalvos as any).porque) setPorque((dadosSalvos as any).porque); if ((dadosSalvos as any).obituario) setObituario((dadosSalvos as any).obituario); }, [dadosSalvos]);
 
   const updateDia = (campo: keyof DiaPerfeito, valor: string) =>
     setDia((prev) => ({ ...prev, [campo]: valor }));
@@ -820,7 +821,7 @@ export default function DesignVidaPage() {
       podeAvancar={podeAvancar()}
       labelAvancar={passo === 0 ? "Começar →" : passo === ETAPAS.length - 1 ? "Salvar Visão ✓" : "Continuar →"}
       resumo={painelResumo}
-  respostas={{ dia, visao, porque }}
+  respostas={{ dia, visao, porque, obituario }}
     >
       <div className="p-8">
 
@@ -882,6 +883,61 @@ export default function DesignVidaPage() {
               >
                 Grandes vidas não acontecem por acidente — elas são projetadas. Esta ferramenta te ajuda a construir uma visão vívida e concreta do que você quer criar, e conectar essa visão ao porquê que vai te manter no caminho.
               </p>
+            </div>
+
+            {/* Obituário reverso */}
+            <div
+              className="flex flex-col rounded-2xl overflow-hidden"
+              style={{ background: COR_DARK, border: `1.5px solid ${COR_GOLD}33` }}
+            >
+              <div
+                className="flex items-center gap-3 px-6 py-4"
+                style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+              >
+                <span style={{ fontSize: 24 }}>📜</span>
+                <div className="flex-1 min-w-0">
+                  <p style={{ fontFamily: "var(--font-heading)", fontSize: 16, fontStyle: "italic", color: COR_GOLD, lineHeight: 1.2 }}>
+                    Obituário Reverso
+                  </p>
+                  <p style={{ fontSize: 12, color: "rgba(244,241,222,0.45)", marginTop: 2 }}>
+                    Técnica de clareza de valores — opcional, mas transformadora
+                  </p>
+                </div>
+                <span style={{ fontFamily: "var(--font-body)", fontSize: 10, fontWeight: 600, color: COR_GOLD, background: `${COR_GOLD}20`, padding: "2px 8px", borderRadius: 99, letterSpacing: "0.05em", textTransform: "uppercase" as const, flexShrink: 0 }}>
+                  OPCIONAL
+                </span>
+              </div>
+              <div className="px-6 pb-6 pt-4 flex flex-col gap-3">
+                <p style={{ fontSize: 14, color: "rgba(244,241,222,0.65)", lineHeight: 1.7 }}>
+                  Imagine que você tem <strong style={{ color: COR_GOLD }}>85 anos</strong> e está olhando para sua vida. O que você quer que tenha acontecido? O que você se arrepende de não ter feito?
+                </p>
+                <p style={{ fontSize: 13, color: "rgba(244,241,222,0.4)", lineHeight: 1.5, fontStyle: "italic" }}>
+                  Escreva na primeira pessoa, no passado: &ldquo;Quando olho para trás, fico feliz que...&rdquo;
+                </p>
+                <textarea
+                  rows={5}
+                  value={obituario}
+                  onChange={(e) => setObituario(e.target.value)}
+                  placeholder='Ex.: "Quando olho para trás, fico feliz que criei uma família com amor e presença real. Construí um trabalho que fez diferença na vida de pessoas. Me arrependo de não ter dedicado mais tempo a..."'
+                  className="w-full resize-none rounded-xl outline-none transition-all duration-200"
+                  style={{
+                    padding: "14px 16px",
+                    fontSize: 14,
+                    background: "rgba(255,255,255,0.04)",
+                    border: `1.5px solid ${obituario.trim() ? COR_GOLD + "55" : "rgba(255,255,255,0.1)"}`,
+                    color: "#F4F1DE",
+                    lineHeight: 1.75,
+                    fontFamily: "var(--font-body)",
+                  }}
+                  onFocus={(e) => { e.target.style.borderColor = COR_GOLD; e.target.style.boxShadow = `0 0 0 3px ${COR_GOLD}22`; }}
+                  onBlur={(e) => { e.target.style.borderColor = obituario.trim() ? `${COR_GOLD}55` : "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}
+                />
+                {obituario.trim().length > 20 && (
+                  <p style={{ fontSize: 13, color: COR_GOLD, fontWeight: 500 }}>
+                    ✨ Esta visão será a bússola para todo o restante da ferramenta.
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* 3 blocos */}
