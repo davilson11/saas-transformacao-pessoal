@@ -9,6 +9,7 @@ import { useSupabaseClient } from "@/lib/useSupabaseClient";
 import type { FerramentasRespostas, RodaVida, VisaoAncora } from "@/lib/database.types";
 import { calcularBadges, calcularStreakDias } from "@/lib/badges";
 import type { BadgeStatus } from "@/lib/badges";
+import ExportarProgresso from "@/components/dashboard/ExportarProgresso";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -555,6 +556,7 @@ export default function PerfilPage() {
   const [roda,         setRoda]         = useState<RodaVida | null>(null);
   const [diarioCount,  setDiarioCount]  = useState(0);
   const [streakDiario, setStreakDiario] = useState(0);
+  const [notaMedia,    setNotaMedia]    = useState<number | null>(null);
   const [loading,      setLoading]      = useState(true);
 
   useEffect(() => {
@@ -568,7 +570,7 @@ export default function PerfilPage() {
         buscarRodaVida(user.id, client),
         client
           .from('diario_kairos')
-          .select('data')
+          .select('data, nota_dia')
           .eq('user_id', user.id)
           .order('data', { ascending: false })
           .limit(60),
@@ -576,9 +578,14 @@ export default function PerfilPage() {
       setRespostas(r);
       setVisao(v);
       setRoda(w);
-      const datas = (diario.data ?? []).map((d) => d.data as string);
+      const diarioRows = diario.data ?? [];
+      const datas = diarioRows.map((d) => d.data as string);
       setDiarioCount(datas.length);
       setStreakDiario(calcularStreakDias(datas));
+      const notas = diarioRows
+        .map((d) => d.nota_dia as number | null)
+        .filter((n): n is number => typeof n === "number");
+      setNotaMedia(notas.length > 0 ? notas.reduce((a, b) => a + b, 0) / notas.length : null);
       setLoading(false);
     })();
   }, [isLoaded, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1446,6 +1453,35 @@ export default function PerfilPage() {
             )}
           </Card>
         </div>
+
+        {/* ══════════════════════════════════════════════════════════════
+            EXPORTAR PROGRESSO
+        ══════════════════════════════════════════════════════════════ */}
+        {!loading && (
+          <Card style={{ background: "#0E0E0E", border: "1px solid rgba(200,160,48,0.22)" }}>
+            <h2
+              style={{
+                fontFamily: "var(--font-heading)",
+                fontSize: 18,
+                fontWeight: 700,
+                color: "#C8A030",
+                margin: "0 0 6px",
+              }}
+            >
+              Compartilhar progresso
+            </h2>
+            <p style={{ fontSize: 13, color: "rgba(245,240,232,0.45)", margin: "0 0 24px", lineHeight: 1.5 }}>
+              Gere um card visual com seu progresso na jornada Kairos e salve como PNG.
+            </p>
+            <ExportarProgresso
+              nome={nomeCompleto}
+              streak={streakDiario}
+              notaMedia={notaMedia}
+              fasesConcluidas={FASES.filter((f) => fasePct(f.slugs) === 100).length}
+              totalConcluidas={concluidas.length}
+            />
+          </Card>
+        )}
 
       </div>
     </DashboardLayout>
