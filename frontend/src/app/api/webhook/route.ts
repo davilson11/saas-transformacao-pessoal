@@ -109,8 +109,3 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   return NextResponse.json({ received: true }, { status: 200 });
 }
-
-// Desabilitar parsing automático do body (necessário para verificação da assinatura)
-export const config = {
-  api: { bodyParser: false },
-};
