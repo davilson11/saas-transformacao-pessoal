@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
 import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
 import AnaliseIA from '@/components/dashboard/AnaliseIA';
@@ -13,6 +13,7 @@ import type { RodaVida } from '@/lib/database.types';
 
 type EntradaDiaria = {
   data:           string;
+  espacoSagrado:  string;  // escrita expressiva Pennebaker
   emoji:          string;
   nota:           number;
   promptResposta: string;
@@ -42,6 +43,7 @@ const EMOJIS_HUMOR = [
 
 const ENTRADA_DEFAULT: EntradaDiaria = {
   data:           '',
+  espacoSagrado:  '',
   emoji:          '',
   nota:           0,
   promptResposta: '',
@@ -177,6 +179,263 @@ function GoldPulse({ visivel }: { visivel: boolean }) {
       <div className="gold-pulse gold-pulse-2" />
       <div className="gold-pulse gold-pulse-3" />
     </>
+  );
+}
+
+// ─── EspacoSagrado — escrita expressiva (Pennebaker) ─────────────────────────
+
+const TIMER_TOTAL = 120; // 2 minutos em segundos
+
+function EspacoSagrado({ valor, onChange }: { valor: string; onChange: (v: string) => void }) {
+  const [timerAtivo,    setTimerAtivo]    = useState(false);
+  const [segundos,      setSegundos]      = useState(TIMER_TOTAL);
+  const [timerCompleto, setTimerCompleto] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const limparInterval = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  function iniciarTimer() {
+    limparInterval();
+    setSegundos(TIMER_TOTAL);
+    setTimerCompleto(false);
+    setTimerAtivo(true);
+  }
+
+  function pararTimer() {
+    limparInterval();
+    setTimerAtivo(false);
+  }
+
+  useEffect(() => {
+    if (!timerAtivo) return;
+    intervalRef.current = setInterval(() => {
+      setSegundos((s) => {
+        if (s <= 1) {
+          setTimerAtivo(false);
+          setTimerCompleto(true);
+          limparInterval();
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return limparInterval;
+  }, [timerAtivo, limparInterval]);
+
+  const mins    = Math.floor(segundos / 60);
+  const secs    = segundos % 60;
+  const pct     = ((TIMER_TOTAL - segundos) / TIMER_TOTAL) * 100;
+  const temTexto = valor.trim().length > 20;
+
+  // ── SVG ring ──
+  const R        = 22;
+  const circum   = 2 * Math.PI * R;
+  const offset   = circum * (1 - pct / 100);
+
+  return (
+    <div style={{
+      borderRadius: 16, overflow: 'hidden',
+      border: `1.5px solid ${temTexto ? 'rgba(109,40,217,0.28)' : 'rgba(109,40,217,0.14)'}`,
+      background: '#fff',
+      transition: 'border-color 0.3s',
+    }}>
+      {/* Barra de cor no topo */}
+      <div style={{
+        height: 3,
+        background: 'linear-gradient(90deg, #7c3aed 0%, #a78bfa 60%, transparent 100%)',
+      }} />
+
+      {/* Header */}
+      <div style={{
+        padding: '18px 22px 14px',
+        background: 'rgba(109,40,217,0.04)',
+        borderBottom: '1px solid rgba(109,40,217,0.10)',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16,
+      }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 18 }}>🕯</span>
+            <h3 style={{
+              fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
+              color: '#5b21b6', margin: 0,
+            }}>
+              Espaço Sagrado
+            </h3>
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
+              color: 'rgba(109,40,217,0.55)', background: 'rgba(109,40,217,0.08)',
+              border: '1px solid rgba(109,40,217,0.18)',
+              borderRadius: 99, padding: '2px 8px', letterSpacing: '0.08em',
+              textTransform: 'uppercase' as const,
+            }}>
+              Opcional
+            </span>
+          </div>
+          <p style={{
+            fontFamily: 'var(--font-body)', fontSize: 12,
+            color: 'rgba(109,40,217,0.55)', margin: 0, lineHeight: 1.4,
+          }}>
+            Técnica de escrita expressiva — Dr. James Pennebaker, Univ. do Texas
+          </p>
+        </div>
+
+        {/* Timer circular */}
+        <div style={{ flexShrink: 0 }}>
+          {timerAtivo ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <svg width={56} height={56} viewBox="0 0 56 56">
+                {/* Track */}
+                <circle cx={28} cy={28} r={R} fill="none"
+                  stroke="rgba(109,40,217,0.10)" strokeWidth={4} />
+                {/* Fill */}
+                <circle cx={28} cy={28} r={R} fill="none"
+                  stroke="#7c3aed" strokeWidth={4}
+                  strokeLinecap="round"
+                  strokeDasharray={circum}
+                  strokeDashoffset={offset}
+                  transform="rotate(-90 28 28)"
+                  style={{ transition: 'stroke-dashoffset 0.9s linear' }}
+                />
+                <text x={28} y={33} textAnchor="middle"
+                  style={{
+                    fontSize: 12, fontWeight: 700, fill: '#7c3aed',
+                    fontFamily: 'monospace',
+                  }}>
+                  {mins}:{secs.toString().padStart(2, '0')}
+                </text>
+              </svg>
+              <button
+                onClick={pararTimer}
+                style={{
+                  fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600,
+                  color: 'rgba(109,40,217,0.6)', background: 'transparent',
+                  border: '1px solid rgba(109,40,217,0.25)',
+                  borderRadius: 6, padding: '3px 10px', cursor: 'pointer',
+                }}
+              >
+                Parar
+              </button>
+            </div>
+          ) : timerCompleto ? (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.25)',
+              borderRadius: 10, padding: '8px 12px',
+            }}>
+              <span style={{ fontSize: 18 }}>✓</span>
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
+                color: '#16a34a', letterSpacing: '0.06em',
+              }}>
+                2 MIN
+              </span>
+            </div>
+          ) : (
+            <button
+              onClick={iniciarTimer}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                background: 'rgba(109,40,217,0.06)',
+                border: '1.5px solid rgba(109,40,217,0.20)',
+                borderRadius: 10, padding: '10px 14px', cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(109,40,217,0.12)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(109,40,217,0.06)'; }}
+            >
+              <span style={{ fontSize: 18 }}>⏱</span>
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
+                color: '#7c3aed', letterSpacing: '0.05em', whiteSpace: 'nowrap' as const,
+              }}>
+                2 MIN
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Instrução */}
+      <div style={{
+        padding: '14px 22px 10px',
+        borderBottom: '1px solid rgba(109,40,217,0.07)',
+      }}>
+        <p style={{
+          fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 500,
+          color: '#2d1b69', lineHeight: 1.65, margin: 0,
+        }}>
+          Escreva o que está no seu coração agora.{' '}
+          <span style={{ color: '#7c3aed', fontWeight: 700 }}>Ninguém vai ler.</span>
+          {' '}Sem julgamento, sem filtro. Deixe fluir por pelo menos 2 minutos.
+        </p>
+      </div>
+
+      {/* Textarea */}
+      <div style={{ padding: '14px 22px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <textarea
+          value={valor}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Escreva livremente… pensamentos, emoções, medos, desejos, o que vier primeiro. Sem editar."
+          rows={6}
+          style={{
+            border: `1.5px solid ${timerAtivo
+              ? '#7c3aed'
+              : valor.trim().length > 0
+                ? 'rgba(109,40,217,0.35)'
+                : 'rgba(109,40,217,0.14)'}`,
+            borderRadius: 10,
+            padding: '12px 16px',
+            fontSize: 15,
+            fontFamily: 'var(--font-body)',
+            color: '#1e0a3c',
+            background: timerAtivo ? 'rgba(109,40,217,0.02)' : '#fff',
+            outline: 'none',
+            resize: 'vertical',
+            lineHeight: 1.7,
+            transition: 'border-color 0.2s, background 0.2s',
+            boxShadow: timerAtivo ? '0 0 0 3px rgba(124,58,237,0.10)' : 'none',
+          }}
+          onFocus={(e) => {
+            if (!timerAtivo) {
+              e.target.style.borderColor = 'rgba(109,40,217,0.40)';
+              e.target.style.boxShadow   = '0 0 0 3px rgba(124,58,237,0.08)';
+            }
+          }}
+          onBlur={(e) => {
+            if (!timerAtivo) {
+              e.target.style.borderColor = valor.trim().length > 0
+                ? 'rgba(109,40,217,0.35)' : 'rgba(109,40,217,0.14)';
+              e.target.style.boxShadow   = 'none';
+            }
+          }}
+        />
+
+        {/* Mensagem de conclusão — aparece ao escrever */}
+        {temTexto && (
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 10,
+            background: 'rgba(109,40,217,0.05)',
+            border: '1px solid rgba(109,40,217,0.15)',
+            borderRadius: 10, padding: '10px 14px',
+          }}>
+            <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>🔒</span>
+            <p style={{
+              fontFamily: 'var(--font-body)', fontSize: 13,
+              color: 'rgba(45,27,105,0.70)', lineHeight: 1.6, margin: 0,
+              fontStyle: 'italic',
+            }}>
+              Isso que você escreveu ficará guardado apenas para você.
+              A honestidade com si mesmo é o primeiro passo da transformação.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -471,6 +730,12 @@ export default function DiarioBordoPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {[
           {
+            n: '00', emoji: '🕯',
+            titulo: 'Espaço Sagrado',
+            desc:   'Escrita livre sem filtro por 2 minutos — só para você. Com timer opcional.',
+            extra:  true,
+          },
+          {
             n: '01', emoji: '😊',
             titulo: 'Como você está',
             desc:   'Escolha um emoji e dê uma nota ao seu dia — 10 segundos.',
@@ -490,29 +755,41 @@ export default function DiarioBordoPage() {
             key={item.n}
             style={{
               display: 'flex', gap: 16, alignItems: 'flex-start',
-              background: '#fff', border: `1px solid ${COR_BORDER}`,
+              background: 'extra' in item ? 'rgba(109,40,217,0.03)' : '#fff',
+              border: `1px solid ${'extra' in item ? 'rgba(109,40,217,0.14)' : COR_BORDER}`,
               borderRadius: 12, padding: '16px 20px',
             }}
           >
             <div style={{
               width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-              background: `${COR_VERDE}12`,
+              background: 'extra' in item ? 'rgba(109,40,217,0.10)' : `${COR_VERDE}12`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700,
-              color: COR_VERDE,
+              color: 'extra' in item ? '#7c3aed' : COR_VERDE,
             }}>
               {item.n}
             </div>
-            <div>
+            <div style={{ flex: 1 }}>
               <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
                 fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 700,
-                color: COR_VERDE, marginBottom: 4,
+                color: 'extra' in item ? '#5b21b6' : COR_VERDE, marginBottom: 4,
               }}>
                 {item.emoji} {item.titulo}
+                {'extra' in item && (
+                  <span style={{
+                    fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
+                    color: 'rgba(109,40,217,0.55)', background: 'rgba(109,40,217,0.08)',
+                    borderRadius: 99, padding: '2px 7px', letterSpacing: '0.06em',
+                  }}>
+                    OPCIONAL
+                  </span>
+                )}
               </div>
               <div style={{
                 fontFamily: 'var(--font-body)', fontSize: 13,
-                color: 'rgba(26,92,58,0.6)', lineHeight: 1.5,
+                color: 'extra' in item ? 'rgba(109,40,217,0.60)' : 'rgba(26,92,58,0.6)',
+                lineHeight: 1.5,
               }}>
                 {item.desc}
               </div>
@@ -527,6 +804,12 @@ export default function DiarioBordoPage() {
   // ── Etapa 1: O Registro ────────────────────────────────────────────────────
   const step1 = (
     <div style={{ maxWidth: 580, display: 'flex', flexDirection: 'column', gap: 36 }}>
+
+      {/* Campo 0: Espaço Sagrado (Pennebaker) */}
+      <EspacoSagrado
+        valor={entrada.espacoSagrado}
+        onChange={(v) => setEnt({ espacoSagrado: v })}
+      />
 
       {/* Campo 1: Humor + Nota */}
       <div style={{
