@@ -7,9 +7,9 @@ export function Footer() {
         <div className="footer-logo">KAIROS</div>
         <div className="footer-copy">© 2025 Kairos · Todos os direitos reservados</div>
         <div className="footer-links">
-          <Link href="#">Privacidade</Link>
-          <Link href="#">Termos</Link>
-          <Link href="#">Contato</Link>
+          <Link href="/privacidade">Privacidade</Link>
+          <Link href="/termos">Termos</Link>
+          <Link href="mailto:contato@kairos.app">Contato</Link>
         </div>
       </div>
     </footer>
