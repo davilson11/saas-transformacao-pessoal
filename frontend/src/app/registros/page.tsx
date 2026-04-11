@@ -821,14 +821,17 @@ export default function RegistrosPage() {
       <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
         {/* Header */}
-        <div>
-          <p style={{ fontSize: 11, color: GOLD, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.18em', margin: '0 0 6px' }}>
+        <div style={{
+          background: CARD, borderRadius: 16, padding: '22px 24px',
+          border: `1px solid rgba(200,160,48,0.18)`,
+        }}>
+          <p style={{ fontSize: 11, color: GOLD, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.18em', margin: '0 0 8px' }}>
             Registros
           </p>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: CREAM, margin: '0 0 4px', fontFamily: 'var(--font-heading)' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: CREAM, margin: '0 0 6px', fontFamily: 'var(--font-heading)' }}>
             Sua jornada em dados
           </h1>
-          <p style={{ fontSize: 13, color: 'rgba(245,240,232,0.45)', margin: 0 }}>
+          <p style={{ fontSize: 13, color: 'rgba(245,240,232,0.6)', margin: 0, lineHeight: 1.6 }}>
             Diário, padrões e marcos da sua transformação pessoal.
           </p>
         </div>
