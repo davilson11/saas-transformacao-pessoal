@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, createContext, useContext } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton, useAuth, useUser } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
 import { buscarTodasRespostas } from '@/lib/queries';
+
+// ─── Modo Foco Context ────────────────────────────────────────────────────────
+
+export const ModoFocoContext = createContext(false);
+export function useModoFoco() { return useContext(ModoFocoContext); }
 
 // ─── Ferramentas para busca ───────────────────────────────────────────────────
 
@@ -70,12 +75,11 @@ function IconPerfil() {
   );
 }
 
-function IconConfiguracoes() {
+function IconDiario() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.22 3.22l1.42 1.42M13.36 13.36l1.42 1.42M3.22 14.78l1.42-1.42M13.36 4.64l1.42-1.42"
-        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <rect x="3" y="1.5" width="12" height="15" rx="2" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M6 5.5h6M6 8.5h6M6 11.5h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
@@ -83,8 +87,9 @@ function IconConfiguracoes() {
 function IconMomento() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path d="M9 2v2M9 14v2M2 9h2M14 9h2M4.22 4.22l1.42 1.42M12.36 12.36l1.42 1.42M4.22 13.78l1.42-1.42M12.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      <circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M9 2v2M9 14v2M2 9h2M14 9h2M4.22 4.22l1.42 1.42M12.36 12.36l1.42 1.42M4.22 13.78l1.42-1.42M12.36 5.64l1.42-1.42"
+        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   );
 }
@@ -98,123 +103,41 @@ function IconSearch() {
   );
 }
 
+function IconFoco({ active }: { active: boolean }) {
+  return active ? (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <circle cx="7.5" cy="7.5" r="2.5" fill="currentColor" />
+      <path d="M1 1l4 4M14 1l-4 4M1 14l4-4M14 14l-4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  ) : (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <circle cx="7.5" cy="7.5" r="2.5" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="7.5" cy="7.5" r="6" stroke="currentColor" strokeWidth="1.2" strokeDasharray="2 2" />
+    </svg>
+  );
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getSaudacao(hora: number): string {
+  if (hora >= 5 && hora < 12) return 'Bom dia';
+  if (hora >= 12 && hora < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
 const PRIMARY_NAV = [
-  { label: 'Dashboard',   href: '/dashboard',   icon: <IconDashboard />,   exact: true },
-  { label: 'Momento',     href: '/momento',     icon: <IconMomento />,     exact: true },
-  { label: 'Ferramentas', href: '/ferramentas', icon: <IconFerramentas />, exact: false },
-  { label: 'Progresso',   href: '/progresso',   icon: <IconProgresso />,   exact: true },
+  { label: 'Dashboard',   href: '/dashboard',                  icon: <IconDashboard />,  exact: true  },
+  { label: 'Ferramentas', href: '/ferramentas',                icon: <IconFerramentas />, exact: false },
+  { label: 'Diário',      href: '/ferramentas/diario-bordo',   icon: <IconDiario />,     exact: false },
+  { label: 'Progresso',   href: '/progresso',                  icon: <IconProgresso />,  exact: true  },
 ];
 
 const SECONDARY_NAV = [
-  { label: 'Perfil',        href: '/perfil',    icon: <IconPerfil />,        exact: true },
-  { label: 'Config.',       href: '/dashboard', icon: <IconConfiguracoes />, exact: true },
+  { label: 'Perfil',   href: '/perfil',   icon: <IconPerfil />,   exact: true },
+  { label: 'Momento',  href: '/momento',  icon: <IconMomento />,  exact: true },
 ];
-
-// ─── Mock content ─────────────────────────────────────────────────────────────
-
-const MOCK_STATS = [
-  { label: 'Ferramentas concluídas', valor: '7', total: '/16', cor: '#1E392A' },
-  { label: 'Sequência de dias',      valor: '14', total: ' dias', cor: '#E0A55F' },
-  { label: 'Progresso geral',        valor: '44', total: '%',    cor: '#2D5A4F' },
-  { label: 'Revisões feitas',        valor: '3',  total: '/12',  cor: '#81B29A' },
-];
-
-const MOCK_FERRAMENTAS = [
-  { codigo: 'F01', nome: 'Raio-X 360°',     status: 'concluido',    pct: 100 },
-  { codigo: 'F02', nome: 'Mapa de Valores', status: 'concluido',    pct: 100 },
-  { codigo: 'F03', nome: 'Propósito de Vida', status: 'em-progresso', pct: 60 },
-  { codigo: 'F04', nome: 'Visão de Futuro',  status: 'nao-iniciado', pct: 0 },
-];
-
-function StatusPill({ status }: { status: string }) {
-  const map: Record<string, { label: string; bg: string; color: string }> = {
-    'concluido':    { label: 'Concluído',    bg: 'rgba(39,174,96,0.1)',   color: '#1a7a40' },
-    'em-progresso': { label: 'Em progresso', bg: 'rgba(224,165,95,0.15)', color: '#a0692d' },
-    'nao-iniciado': { label: 'Não iniciado', bg: 'rgba(107,114,128,0.1)', color: '#6B7280' },
-  };
-  const s = map[status] ?? map['nao-iniciado'];
-  return (
-    <span className="rounded-full px-2 py-0.5 text-xs font-medium"
-      style={{ background: s.bg, color: s.color, fontFamily: 'var(--font-body)', whiteSpace: 'nowrap' }}>
-      {s.label}
-    </span>
-  );
-}
-
-function MockContent() {
-  return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#F5F0E8', fontSize: 22, fontWeight: 400, fontStyle: 'italic' }}>
-          Bom dia, Ana 👋
-        </h2>
-        <p style={{ fontSize: 14, color: 'rgba(245,240,232,0.5)', marginTop: 4 }}>
-          Você está na Fase 1 — Autoconhecimento. Continue de onde parou.
-        </p>
-      </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {MOCK_STATS.map((s) => (
-          <div key={s.label} className="rounded-2xl p-5 flex flex-col gap-1"
-            style={{ background: '#1A1A1A', border: '1px solid rgba(200,160,48,0.15)' }}>
-            <p style={{ fontSize: 12, color: 'rgba(245,240,232,0.45)', fontFamily: 'var(--font-body)' }}>
-              {s.label}
-            </p>
-            <p style={{ fontFamily: 'var(--font-heading)', fontSize: 32, fontWeight: 700, lineHeight: 1, color: s.cor }}>
-              {s.valor}<span style={{ fontSize: 16, fontWeight: 500, color: 'var(--color-brand-gray)' }}>{s.total}</span>
-            </p>
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 rounded-2xl p-6"
-          style={{ background: '#1A1A1A', border: '1px solid rgba(200,160,48,0.15)' }}>
-          <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 400, fontStyle: 'italic', fontSize: 15, color: '#C8A030', marginBottom: 16 }}>
-            Fase 1 — Autoconhecimento
-          </p>
-          <div className="flex flex-col gap-3">
-            {MOCK_FERRAMENTAS.map((f) => (
-              <div key={f.codigo} className="flex items-center gap-4">
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#C8A030',
-                  background: 'rgba(200,160,48,0.1)', padding: '2px 8px', borderRadius: 99, whiteSpace: 'nowrap' }}>
-                  {f.codigo}
-                </span>
-                <span style={{ fontSize: 14, color: '#F5F0E8', flex: 1 }}>{f.nome}</span>
-                <div className="rounded-full overflow-hidden flex-shrink-0" style={{ width: 64, height: 4, background: 'var(--color-brand-border)' }}>
-                  <div className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${f.pct}%`, background: f.pct === 100 ? '#27AE60' : 'var(--color-brand-gold)' }} />
-                </div>
-                <StatusPill status={f.status} />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-2xl p-6 flex flex-col gap-4"
-          style={{ background: 'linear-gradient(135deg, #1E392A 0%, #2D5A4F 100%)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
-            color: 'var(--color-brand-gold)', fontFamily: 'var(--font-body)' }}>
-            Próxima ação
-          </p>
-          <div>
-            <p style={{ fontFamily: 'var(--font-heading)', fontSize: 18, color: 'var(--color-brand-cream)', fontWeight: 700, lineHeight: 1.3 }}>
-              Propósito de Vida
-            </p>
-            <p style={{ fontSize: 13, color: 'rgba(244,241,222,0.6)', marginTop: 6, lineHeight: 1.6 }}>
-              Você está 60% — faltam apenas 3 perguntas.
-            </p>
-          </div>
-          <div className="rounded-full overflow-hidden" style={{ height: 4, background: 'rgba(255,255,255,0.12)' }}>
-            <div className="h-full rounded-full" style={{ width: '60%', background: 'var(--color-brand-gold)' }} />
-          </div>
-          <a href="#" className="btn-gold text-sm mt-auto" style={{ justifyContent: 'center', padding: '10px 16px', borderRadius: 10 }}>
-            Continuar →
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Search bar ───────────────────────────────────────────────────────────────
 
@@ -231,145 +154,69 @@ function SearchBar() {
       ).slice(0, 6)
     : [];
 
-  // Fechar ao clicar fora
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   return (
-    <div ref={ref} style={{ position: 'relative', flex: '0 1 320px', minWidth: 0 }}>
-      {/* Input */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          background: 'rgba(255,255,255,0.05)',
-          border: `1px solid ${open ? 'rgba(200,160,48,0.45)' : 'rgba(255,255,255,0.09)'}`,
-          borderRadius: 10,
-          padding: '0 12px',
-          height: 36,
-          transition: 'border-color 0.15s',
-        }}
-      >
-        <span style={{ color: 'rgba(245,240,232,0.35)', flexShrink: 0 }}>
-          <IconSearch />
-        </span>
+    <div ref={ref} style={{ position: 'relative', flex: '0 1 280px', minWidth: 0 }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        background: 'rgba(255,255,255,0.05)',
+        border: `1px solid ${open ? 'rgba(200,160,48,0.45)' : 'rgba(255,255,255,0.09)'}`,
+        borderRadius: 10, padding: '0 12px', height: 34,
+        transition: 'border-color 0.15s',
+      }}>
+        <span style={{ color: 'rgba(245,240,232,0.35)', flexShrink: 0 }}><IconSearch /></span>
         <input
-          type="text"
-          value={query}
-          placeholder="Buscar ferramenta..."
+          type="text" value={query} placeholder="Buscar ferramenta..."
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           style={{
-            flex: 1,
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            fontFamily: 'var(--font-body)',
-            fontSize: 13,
-            color: '#F5F0E8',
-            minWidth: 0,
+            flex: 1, background: 'transparent', border: 'none', outline: 'none',
+            fontFamily: 'var(--font-body)', fontSize: 12, color: '#F5F0E8', minWidth: 0,
           }}
         />
         {query && (
-          <button
-            onClick={() => { setQuery(''); setOpen(false); }}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'rgba(245,240,232,0.3)',
-              fontSize: 14,
-              lineHeight: 1,
-              padding: 0,
-              flexShrink: 0,
-            }}
-            aria-label="Limpar busca"
-          >
-            ✕
-          </button>
+          <button onClick={() => { setQuery(''); setOpen(false); }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,240,232,0.3)', fontSize: 13, lineHeight: 1, padding: 0, flexShrink: 0 }}
+            aria-label="Limpar busca">✕</button>
         )}
       </div>
 
-      {/* Dropdown de resultados */}
       {open && results.length > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            left: 0,
-            right: 0,
-            background: '#1A1A1A',
-            border: '1px solid rgba(200,160,48,0.25)',
-            borderRadius: 12,
-            overflow: 'hidden',
-            boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
-            zIndex: 200,
-          }}
-        >
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
+          background: '#1A1A1A', border: '1px solid rgba(200,160,48,0.25)',
+          borderRadius: 12, overflow: 'hidden',
+          boxShadow: '0 16px 40px rgba(0,0,0,0.5)', zIndex: 200,
+        }}>
           {results.map((tool) => (
-            <Link
-              key={tool.slug}
-              href={`/ferramentas/${tool.slug}`}
+            <Link key={tool.slug} href={`/ferramentas/${tool.slug}`}
               onClick={() => { setQuery(''); setOpen(false); }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '10px 14px',
-                textDecoration: 'none',
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
-                transition: 'background 0.1s',
-              }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.1s' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(200,160,48,0.08)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-            >
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: '#C8A030',
-                  background: 'rgba(200,160,48,0.12)',
-                  padding: '2px 7px',
-                  borderRadius: 99,
-                  flexShrink: 0,
-                }}
-              >
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: '#C8A030', background: 'rgba(200,160,48,0.12)', padding: '2px 7px', borderRadius: 99, flexShrink: 0 }}>
                 {tool.codigo}
               </span>
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#F5F0E8', flex: 1 }}>
-                {tool.nome}
-              </span>
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#F5F0E8', flex: 1 }}>{tool.nome}</span>
               <span style={{ fontSize: 10, color: 'rgba(245,240,232,0.3)', flexShrink: 0 }}>→</span>
             </Link>
           ))}
         </div>
       )}
 
-      {/* Sem resultados */}
       {open && query.trim().length > 0 && results.length === 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            left: 0,
-            right: 0,
-            background: '#1A1A1A',
-            border: '1px solid rgba(200,160,48,0.15)',
-            borderRadius: 12,
-            padding: '14px',
-            textAlign: 'center',
-            zIndex: 200,
-          }}
-        >
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
+          background: '#1A1A1A', border: '1px solid rgba(200,160,48,0.15)',
+          borderRadius: 12, padding: '14px', textAlign: 'center', zIndex: 200,
+        }}>
           <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(245,240,232,0.4)' }}>
             Nenhuma ferramenta encontrada
           </span>
@@ -383,20 +230,19 @@ function SearchBar() {
 
 function DashboardSkeleton() {
   return (
-    <div className="flex overflow-hidden" style={{ height: '100dvh', background: '#0E0E0E' }}>
-      <aside className="flex flex-col items-center py-4 flex-shrink-0"
-        style={{ width: 72, background: '#0E0E0E', gap: 2, borderRight: '1px solid rgba(200,160,48,0.08)' }}>
-        <div style={{ width: 36, height: 12, background: 'rgba(200,160,48,0.12)', borderRadius: 2, marginBottom: 12 }} />
+    <div style={{ display: 'flex', overflow: 'hidden', height: '100dvh', background: '#0E0E0E' }}>
+      <aside style={{ width: 72, background: '#0E0E0E', borderRight: '1px solid rgba(200,160,48,0.08)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 16, gap: 4 }}>
+        <div style={{ width: 36, height: 10, background: 'rgba(200,160,48,0.12)', borderRadius: 2, marginBottom: 12 }} />
         {[...Array(5)].map((_, i) => (
-          <div key={i} style={{ width: 52, height: 52, background: 'rgba(255,255,255,0.04)', borderRadius: 12, marginBottom: 2 }} />
+          <div key={i} style={{ width: 52, height: 52, background: 'rgba(255,255,255,0.04)', borderRadius: 12 }} />
         ))}
       </aside>
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <header style={{ height: 56, background: '#111111', borderBottom: '1px solid rgba(200,160,48,0.12)' }} />
-        <main className="flex-1 p-6" style={{ background: '#0E0E0E' }}>
-          <div style={{ width: 200, height: 24, background: 'rgba(200,160,48,0.1)', borderRadius: 4, marginBottom: 8 }} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <header style={{ height: 54, background: '#111111', borderBottom: '1px solid rgba(200,160,48,0.12)' }} />
+        <main style={{ flex: 1, padding: 24, background: '#0E0E0E' }}>
+          <div style={{ width: 220, height: 24, background: 'rgba(200,160,48,0.1)', borderRadius: 4, marginBottom: 8 }} />
           <div style={{ width: 300, height: 14, background: 'rgba(255,255,255,0.06)', borderRadius: 4, marginBottom: 24 }} />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" style={{ marginBottom: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 24 }}>
             {[...Array(4)].map((_, i) => (
               <div key={i} style={{ height: 80, background: '#1A1A1A', border: '1px solid rgba(200,160,48,0.12)', borderRadius: 16 }} />
             ))}
@@ -420,53 +266,62 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname     = usePathname();
   const { getClient } = useSupabaseClient();
 
-  const [pendingCount, setPendingCount] = useState<number | null>(null);
-  const [streakDiario, setStreakDiario] = useState(0);
+  const [pendingCount,  setPendingCount]  = useState<number | null>(null);
+  const [streakDiario,  setStreakDiario]  = useState(0);
+  const [diarioHoje,    setDiarioHoje]    = useState<boolean | null>(null);
+  const [modoFoco,      setModoFoco]      = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
       const client = await getClient();
+      // Ferramentas pendentes
       const respostas = await buscarTodasRespostas(user.id, client);
       const concluidas = respostas.filter((r) => r.concluida).length;
       setPendingCount(16 - concluidas);
-      const { data: hist } = await client
-  .from('diario_kairos')
-  .select('data')
-  .eq('user_id', user.id)
-  .order('data', { ascending: false })
-  .limit(30);
 
-if (hist) {
-  const datas = hist.map((h: { data: string }) => h.data).sort((a: string, b: string) => b.localeCompare(a));
-  let s = 0;
-  const hoje = new Date();
-  for (let i = 0; i < datas.length; i++) {
-    const esp = new Date(hoje);
-    esp.setDate(hoje.getDate() - i);
-    if (datas[i] === esp.toISOString().split('T')[0]) s++;
-    else break;
-  }
-  setStreakDiario(s);
-}
+      // Diário — streak + hoje
+      const hoje = new Date().toISOString().split('T')[0];
+      const { data: hist } = await client
+        .from('diario_kairos')
+        .select('data')
+        .eq('user_id', user.id)
+        .order('data', { ascending: false })
+        .limit(60);
+
+      if (hist) {
+        const datas = hist.map((h: { data: string }) => h.data).sort((a: string, b: string) => b.localeCompare(a));
+        setDiarioHoje(datas.includes(hoje));
+        let s = 0;
+        const now = new Date();
+        for (let i = 0; i < datas.length; i++) {
+          const esp = new Date(now);
+          esp.setDate(now.getDate() - i);
+          if (datas[i] === esp.toISOString().split('T')[0]) s++;
+          else break;
+        }
+        setStreakDiario(s);
+      }
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isLoaded) return <DashboardSkeleton />;
 
-  const now = new Date();
-  const dateLabel = now.toLocaleDateString('pt-BR', {
-    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
-  });
+  const hora        = new Date().getHours();
+  const saudacao    = getSaudacao(hora);
+  const primeiroNome = user?.firstName ?? user?.fullName?.split(' ')[0] ?? 'você';
+
+  // ── NavItem ────────────────────────────────────────────────────────────────
 
   function NavItem({
-    label, href, icon, exact, badge,
+    label, href, icon, exact, badgeCount, badgeRed,
   }: {
     label: string;
     href: string;
     icon: React.ReactNode;
     exact?: boolean;
-    badge?: number | null;
+    badgeCount?: number | null;
+    badgeRed?: boolean;
   }) {
     const isActive = exact ? pathname === href : pathname.startsWith(href);
 
@@ -480,15 +335,16 @@ if (hist) {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 4,
+          gap: 3,
           width: '100%',
-          height: 56,
+          minHeight: 56,
+          padding: '8px 0',
           borderRadius: 0,
           textDecoration: 'none',
           color: isActive ? '#C8A030' : 'rgba(245,240,232,0.38)',
-          background: isActive ? 'rgba(200,160,48,0.15)' : 'transparent',
-          borderLeft: isActive ? '3px solid #C8A030' : '3px solid transparent',
-          transition: 'all 0.15s',
+          background: isActive ? 'rgba(200,160,48,0.12)' : 'transparent',
+          borderLeft: isActive ? '2.5px solid #C8A030' : '2.5px solid transparent',
+          transition: 'all 0.2s',
           cursor: 'pointer',
         }}
         onMouseEnter={(e) => {
@@ -504,47 +360,45 @@ if (hist) {
           }
         }}
       >
-        {/* Ícone */}
-        <div style={{ position: 'relative' }}>
+        {/* Ícone + badge */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
           {icon}
-          {/* Badge de pendentes */}
-          {badge !== null && badge !== undefined && badge > 0 && (
-            <span
-              style={{
-                position: 'absolute',
-                top: -5,
-                right: -7,
-                minWidth: 14,
-                height: 14,
-                background: '#C8A030',
-                color: '#0E0E0E',
-                borderRadius: 99,
-                fontSize: 8,
-                fontWeight: 800,
-                fontFamily: 'var(--font-body)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '0 3px',
-                lineHeight: 1,
-                boxShadow: '0 0 0 2px #0E0E0E',
-              }}
-            >
-              {badge > 99 ? '99+' : badge}
+          {/* Badge dourado (ferramentas pendentes) */}
+          {badgeCount !== null && badgeCount !== undefined && badgeCount > 0 && !badgeRed && (
+            <span style={{
+              position: 'absolute', top: -5, right: -7,
+              minWidth: 14, height: 14,
+              background: '#C8A030', color: '#0E0E0E',
+              borderRadius: 99, fontSize: 8, fontWeight: 800,
+              fontFamily: 'var(--font-body)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '0 3px', lineHeight: 1,
+              boxShadow: '0 0 0 2px #0E0E0E',
+            }}>
+              {badgeCount > 99 ? '99+' : badgeCount}
             </span>
+          )}
+          {/* Badge vermelho (diário não feito) */}
+          {badgeRed && (
+            <span style={{
+              position: 'absolute', top: -4, right: -5,
+              width: 8, height: 8,
+              background: '#ef4444',
+              borderRadius: '50%',
+              boxShadow: '0 0 0 2px #0E0E0E',
+            }} />
           )}
         </div>
         {/* Label */}
-        <span
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 9,
-            fontWeight: isActive ? 700 : 400,
-            letterSpacing: '0.01em',
-            lineHeight: 1,
-            color: 'inherit',
-          }}
-        >
+        <span style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 9,
+          fontWeight: isActive ? 700 : 400,
+          letterSpacing: '0.02em',
+          lineHeight: 1,
+          color: 'inherit',
+          textAlign: 'center',
+        }}>
           {label}
         </span>
       </Link>
@@ -552,195 +406,218 @@ if (hist) {
   }
 
   return (
-    <div className="flex overflow-hidden" style={{ height: '100dvh', fontFamily: 'var(--font-body)', background: '#0E0E0E' }}>
+    <ModoFocoContext.Provider value={modoFoco}>
+      <div style={{ display: 'flex', overflow: 'hidden', height: '100dvh', fontFamily: 'var(--font-body)', background: '#0E0E0E' }}>
 
-      {/* ── Sidebar ───────────────────────────────────────────────── */}
-      <aside
-        style={{
+        {/* ══════════════════════════════════════════
+            SIDEBAR
+        ══════════════════════════════════════════ */}
+        <aside style={{
           width: 72,
           flexShrink: 0,
-          display: 'flex',
+          display: modoFoco ? 'none' : 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          paddingTop: 16,
-          paddingBottom: 16,
-          background: '#0E0E0E',
+          paddingTop: 14,
+          paddingBottom: 14,
+          background: '#0A0A0A',
           borderRight: '1px solid rgba(200,160,48,0.10)',
           overflowY: 'auto',
-        }}
-      >
-        {/* Logo mark */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 16, gap: 3 }}>
-          <span
-            style={{
+        }}>
+          {/* Logo */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 14, gap: 3 }}>
+            <span style={{
               fontFamily: "Georgia, 'Times New Roman', serif",
-              fontSize: 10,
-              fontWeight: 400,
-              color: '#F5F0E8',
-              letterSpacing: '0.22em',
-              textTransform: 'uppercase',
-              lineHeight: 1,
-            }}
-          >
-            KAIROS
-          </span>
-          <span style={{ width: 5, height: 5, background: '#C8A030', borderRadius: '50%', display: 'inline-block' }} />
-        </div>
+              fontSize: 9, fontWeight: 400, color: '#F5F0E8',
+              letterSpacing: '0.22em', textTransform: 'uppercase', lineHeight: 1,
+            }}>
+              KAIROS
+            </span>
+            <span style={{ width: 4, height: 4, background: '#C8A030', borderRadius: '50%', display: 'inline-block' }} />
+          </div>
 
-        {/* Nav principal */}
-        <nav style={{ width: '100%' }}>
-          {PRIMARY_NAV.map((item) => (
-            <NavItem
-              key={item.label}
-              label={item.label}
-              href={item.href}
-              icon={item.icon}
-              exact={item.exact}
-              badge={item.label === 'Ferramentas' ? pendingCount : null}
-            />
-          ))}
-        </nav>
+          {/* Nav principal */}
+          <nav style={{ width: '100%' }}>
+            {PRIMARY_NAV.map((item) => (
+              <NavItem
+                key={item.label}
+                label={item.label}
+                href={item.href}
+                icon={item.icon}
+                exact={item.exact}
+                badgeCount={item.label === 'Ferramentas' ? pendingCount : null}
+                badgeRed={item.label === 'Diário' && diarioHoje === false}
+              />
+            ))}
+          </nav>
 
-        {/* Separador */}
-        <div
-          style={{
-            width: 32,
-            height: 1,
-            background: 'rgba(200,160,48,0.14)',
-            margin: '8px 0',
-            flexShrink: 0,
-          }}
-        />
+          {/* Separador */}
+          <div style={{ width: 28, height: 1, background: 'rgba(200,160,48,0.14)', margin: '6px 0', flexShrink: 0 }} />
 
-        {/* Nav secundária */}
-        <nav style={{ width: '100%' }}>
-          {SECONDARY_NAV.map((item) => (
-            <NavItem
-              key={item.label}
-              label={item.label}
-              href={item.href}
-              icon={item.icon}
-              exact={item.exact}
-            />
-          ))}
-        </nav>
+          {/* Nav secundária */}
+          <nav style={{ width: '100%' }}>
+            {SECONDARY_NAV.map((item) => (
+              <NavItem key={item.label} label={item.label} href={item.href} icon={item.icon} exact={item.exact} />
+            ))}
+          </nav>
 
-        {/* Spacer */}
-        <div style={{ flex: 1 }} />
-
-        {/* Avatar placeholder */}
-        <div
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
+          {/* Spacer + avatar */}
+          <div style={{ flex: 1 }} />
+          <div style={{
+            width: 34, height: 34, borderRadius: '50%',
             background: 'rgba(200,160,48,0.12)',
             border: '1.5px solid rgba(200,160,48,0.28)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: 'var(--font-heading)',
-            fontWeight: 700,
-            fontSize: 12,
-            color: '#C8A030',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 12, color: '#C8A030',
             flexShrink: 0,
-          }}
-        >
-          {user?.firstName?.[0] ?? 'K'}
-        </div>
-      </aside>
+          }}>
+            {user?.firstName?.[0] ?? 'K'}
+          </div>
+        </aside>
 
-      {/* ── Main ──────────────────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 overflow-hidden">
+        {/* ══════════════════════════════════════════
+            MAIN COLUMN
+        ══════════════════════════════════════════ */}
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
 
-        {/* Topbar */}
-        <header
-          style={{
-            height: 56,
+          {/* ── TOPBAR ───────────────────────────────── */}
+          <header style={{
+            height: 54,
             flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
-            gap: 16,
-            padding: '0 20px',
+            gap: 12,
+            padding: '0 16px',
             background: '#111111',
             borderBottom: '1px solid rgba(200,160,48,0.12)',
-          }}
-        >
-          {/* Esquerda: logo + data */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, minWidth: 0 }}>
-            <span
-              style={{
-                fontFamily: "'Playfair Display', Georgia, serif",
-                fontStyle: 'italic',
-                fontSize: 18,
-                fontWeight: 400,
-                color: '#C8A030',
-                lineHeight: 1,
-                letterSpacing: '-0.01em',
-                flexShrink: 0,
-              }}
-            >
-              Kairos
-            </span>
-            <span
-              style={{
-                display: 'inline-block',
-                width: 1,
-                height: 16,
-                background: 'rgba(200,160,48,0.2)',
-                flexShrink: 0,
-              }}
-            />
-            <span
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 12,
-                color: 'rgba(245,240,232,0.4)',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                maxWidth: 160,
-              }}
-            >
-              {dateLabel}
-            </span>
-          </div>
+          }}>
 
-          {/* Centro: busca */}
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-            <SearchBar />
-          </div>
+            {/* ── Esquerda: logo + saudação ── */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, minWidth: 0 }}>
+              {modoFoco && (
+                <span style={{
+                  fontFamily: "'Playfair Display', Georgia, serif",
+                  fontStyle: 'italic', fontSize: 17, fontWeight: 400, color: '#C8A030', lineHeight: 1, flexShrink: 0,
+                }}>
+                  Kairos
+                </span>
+              )}
+              {!modoFoco && (
+                <>
+                  <span style={{
+                    fontFamily: "'Playfair Display', Georgia, serif",
+                    fontStyle: 'italic', fontSize: 17, fontWeight: 400, color: '#C8A030', lineHeight: 1, flexShrink: 0,
+                  }}>
+                    Kairos
+                  </span>
+                  <span style={{ display: 'inline-block', width: 1, height: 14, background: 'rgba(200,160,48,0.2)', flexShrink: 0 }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
+                    <span style={{
+                      fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 500,
+                      color: 'rgba(245,240,232,0.82)', whiteSpace: 'nowrap',
+                      overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>
+                      {saudacao}, <strong style={{ color: '#F5F0E8' }}>{primeiroNome}</strong>
+                    </span>
+                    {/* Indicador do diário */}
+                    {diarioHoje !== null && (
+                      <span
+                        title={diarioHoje ? 'Diário registrado hoje' : 'Diário pendente'}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          fontSize: 11, fontWeight: 600,
+                          color: diarioHoje ? '#22c55e' : '#f59e0b',
+                          background: diarioHoje ? 'rgba(34,197,94,0.10)' : 'rgba(245,158,11,0.10)',
+                          border: `1px solid ${diarioHoje ? 'rgba(34,197,94,0.25)' : 'rgba(245,158,11,0.25)'}`,
+                          padding: '2px 8px', borderRadius: 99, flexShrink: 0,
+                        }}
+                      >
+                        {diarioHoje ? (
+                          <>
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                              <path d="M1.5 5l2.5 2.5 4.5-5" stroke="#22c55e" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            Hoje ✓
+                          </>
+                        ) : '📔 Registrar'}
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
 
-          {/* Direita: streak + UserButton */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <span
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 12,
-                fontWeight: 600,
-                color: '#C8A030',
-                background: 'rgba(200,160,48,0.10)',
-                border: '1px solid rgba(200,160,48,0.22)',
-                borderRadius: 99,
-                padding: '4px 11px',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {streakDiario > 0 ? `🔥 ${streakDiario} dias` : '💤 0 dias'}
-            </span>
-            <UserButton
-              appearance={{
-                elements: { avatarBox: { width: 32, height: 32 } },
-              }}
-            />
-          </div>
-        </header>
+            {/* ── Centro: busca ── */}
+            {!modoFoco && (
+              <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                <SearchBar />
+              </div>
+            )}
+            {modoFoco && <div style={{ flex: 1 }} />}
 
-        {/* Content */}
-        <main className="flex-1 overflow-auto p-6" style={{ background: '#0E0E0E' }}>
-          {children ?? <MockContent />}
-        </main>
+            {/* ── Direita: streak + modo foco + avatar ── */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+
+              {/* Streak */}
+              {!modoFoco && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700,
+                  color: streakDiario > 0 ? '#C8A030' : 'rgba(245,240,232,0.3)',
+                  background: streakDiario > 0 ? 'rgba(200,160,48,0.12)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${streakDiario > 0 ? 'rgba(200,160,48,0.28)' : 'rgba(255,255,255,0.07)'}`,
+                  borderRadius: 99, padding: '4px 10px', whiteSpace: 'nowrap',
+                  transition: 'all 0.2s',
+                }}>
+                  {streakDiario > 0 ? `🔥 ${streakDiario}d` : '💤 0d'}
+                </span>
+              )}
+
+              {/* Botão Modo Foco */}
+              <button
+                onClick={() => setModoFoco((v) => !v)}
+                title={modoFoco ? 'Sair do Modo Foco' : 'Modo Foco — mostrar só o essencial'}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                  color: modoFoco ? '#0E0E0E' : '#C8A030',
+                  background: modoFoco
+                    ? 'linear-gradient(135deg, #C8A030, #e8c76a)'
+                    : 'rgba(200,160,48,0.10)',
+                  border: `1px solid ${modoFoco ? 'transparent' : 'rgba(200,160,48,0.28)'}`,
+                  borderRadius: 99, padding: '5px 12px', whiteSpace: 'nowrap',
+                  transition: 'all 0.2s',
+                  boxShadow: modoFoco ? '0 2px 12px rgba(200,160,48,0.4)' : 'none',
+                }}
+              >
+                <IconFoco active={modoFoco} />
+                {modoFoco ? 'Sair do Foco' : 'Modo Foco'}
+              </button>
+
+              <UserButton appearance={{ elements: { avatarBox: { width: 30, height: 30 } } }} />
+            </div>
+          </header>
+
+          {/* ── CONTENT ──────────────────────────────── */}
+          <main
+            style={{
+              flex: 1, overflowY: 'auto',
+              padding: modoFoco ? '0' : '24px',
+              background: modoFoco ? '#0E0E0E' : '#F5F2EC',
+              transition: 'padding 0.3s ease, background 0.3s ease',
+            }}
+          >
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+
+      <style>{`
+        @keyframes dl-pulse {
+          0%, 100% { opacity: 0.4 }
+          50%       { opacity: 0.8 }
+        }
+      `}</style>
+    </ModoFocoContext.Provider>
   );
 }
