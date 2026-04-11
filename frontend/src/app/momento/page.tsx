@@ -15,6 +15,15 @@ const EMOCAO_VALOR: Record<string, number> = {
   animado: 5, grato: 5, focado: 4, tranquilo: 3, cansado: 2, ansioso: 1,
 };
 
+const EMOCAO_COR: Record<string, string> = {
+  animado:   '#22c55e',
+  focado:    '#3b82f6',
+  grato:     '#C8A030',
+  cansado:   '#f97316',
+  ansioso:   '#ef4444',
+  tranquilo: '#8b5cf6',
+};
+
 
 function calcularStreak(hist: Partial<DiarioKairos>[]): number {
   if (!hist.length) return 0;
@@ -202,6 +211,7 @@ export default function MomentoPage() {
   const [diaSelecionado, setDiaSelecionado] = useState<Partial<DiarioKairos> | null>(null);
   const [streak, setStreak] = useState(0);
   const [notifAtiva, setNotifAtiva] = useState(false);
+  const [emocaoHover, setEmocaoHover] = useState<string | null>(null);
   const [faseUsuario, setFaseUsuario] = useState(1);
   const hoje = new Date().toLocaleDateString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
@@ -339,12 +349,26 @@ export default function MomentoPage() {
 
 
         {/* Header */}
-        <div style={{ background: '#0E0E0E', borderRadius: 12, padding: '20px 24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-            <span style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#C8A030', fontWeight: 500 }}>Momento Kairos · Fase 0{faseUsuario}</span>
-            <span style={{ fontSize: 11, color: 'rgba(245,240,232,0.4)', textTransform: 'capitalize' }}>{dataLabel}</span>
+        <div style={{ background: '#0E0E0E', borderRadius: 14, padding: '22px 24px', border: '1px solid rgba(200,160,48,0.18)' }}>
+          {/* Linha decorativa dourada */}
+          <div style={{ width: 36, height: 2, background: 'linear-gradient(90deg, #C8A030, rgba(200,160,48,0))', borderRadius: 1, marginBottom: 14 }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#C8A030', fontWeight: 700 }}>Momento Kairos</span>
+              {(momento.trilha || momento.tom) && (
+                <span style={{ fontSize: 10, color: '#C8A030', background: 'rgba(200,160,48,0.12)', border: '1px solid rgba(200,160,48,0.28)', borderRadius: 99, padding: '2px 9px', fontWeight: 600, letterSpacing: '0.06em' }}>
+                  {momento.trilha ?? momento.tom}
+                </span>
+              )}
+              <span style={{ fontSize: 10, color: 'rgba(245,240,232,0.35)', background: 'rgba(255,255,255,0.05)', borderRadius: 99, padding: '2px 9px' }}>
+                Fase 0{faseUsuario}
+              </span>
+            </div>
+            <span style={{ fontSize: 11, color: 'rgba(245,240,232,0.45)', textTransform: 'capitalize' }}>{dataLabel}</span>
           </div>
-          <p style={{ fontSize: 22, fontFamily: 'var(--font-heading)', color: '#F5F0E8', fontWeight: 400, margin: 0 }}>Bom dia, {nomeUsuario}.</p>
+          <p style={{ fontSize: 23, fontFamily: 'var(--font-heading)', color: '#F5F0E8', fontWeight: 400, margin: 0, lineHeight: 1.3 }}>
+            Bom dia, {nomeUsuario}.
+          </p>
         </div>
 
 
@@ -356,7 +380,7 @@ export default function MomentoPage() {
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: 22, fontWeight: 700, color: streak > 0 ? '#C8A030' : 'var(--color-brand-gray)', margin: 0, lineHeight: 1 }}>{streak} {streak === 1 ? 'dia' : 'dias'}</p>
             <p style={{ fontSize: 12, color: streak >= 7 ? 'rgba(200,160,48,0.7)' : 'var(--color-brand-gray)', margin: '4px 0 0', fontWeight: 500 }}>
-              {streak === 0 && 'Comece hoje sua sequência!'}
+              {streak === 0 && 'Hoje é o dia 1. Todo streak começa aqui.'}
               {streak === 1 && 'Primeiro dia — continue amanhã!'}
               {streak >= 2 && streak < 7 && `${streak} dias seguidos — não pare agora!`}
               {streak >= 7 && streak < 14 && '🔥 Uma semana de consistência!'}
@@ -386,32 +410,50 @@ export default function MomentoPage() {
 
 
         {/* Voz do dia */}
-        <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '20px 24px', borderLeft: '3px solid #C8A030' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-brand-gray)', marginBottom: 12 }}>A voz do dia</p>
-          <p style={{ fontSize: 15, color: 'var(--color-brand-dark-green)', lineHeight: 1.8, fontFamily: 'var(--font-heading)', fontStyle: 'italic', margin: 0 }}>&ldquo;{momento.voz_texto}&rdquo;</p>
+        <div style={{ background: '#111111', borderRadius: 14, padding: '24px 28px', borderLeft: '3px solid #C8A030', border: '1px solid rgba(200,160,48,0.2)', borderLeftWidth: 3, position: 'relative' }}>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#C8A030', marginBottom: 16 }}>A voz do dia</p>
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', top: -8, left: -4, fontSize: 48, color: '#C8A030', lineHeight: 1, opacity: 0.5, fontFamily: 'Georgia, serif', pointerEvents: 'none' }}>&ldquo;</span>
+            <p style={{ fontSize: 18, color: '#F5F0E8', lineHeight: 1.9, fontFamily: 'var(--font-heading)', fontStyle: 'italic', margin: 0, paddingLeft: 20 }}>
+              {momento.voz_texto}
+            </p>
+            <span style={{ float: 'right', fontSize: 48, color: '#C8A030', lineHeight: 0.5, opacity: 0.5, fontFamily: 'Georgia, serif', marginTop: 8 }}>&rdquo;</span>
+          </div>
         </div>
 
 
         {/* Versículo */}
-        <div style={{ background: 'rgba(200,160,48,0.05)', border: '1px solid rgba(200,160,48,0.2)', borderRadius: 12, padding: '16px 20px', display: 'flex', gap: 14 }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(200,160,48,0.15)', border: '1px solid rgba(200,160,48,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 14 }}>✝</span>
+        <div style={{ background: '#0A0A0A', border: '1px solid rgba(200,160,48,0.18)', borderRadius: 14, padding: '18px 22px', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(200,160,48,0.12)', border: '1.5px solid rgba(200,160,48,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+            <span style={{ fontSize: 18, color: '#C8A030' }}>✝</span>
           </div>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-brand-gray)', marginBottom: 6 }}>Versículo do dia</p>
-            <p style={{ fontSize: 14, color: 'var(--color-brand-dark-green)', lineHeight: 1.7, margin: 0 }}>{momento.versiculo}</p>
-            <p style={{ fontSize: 12, color: '#C8A030', marginTop: 6, fontWeight: 600 }}>{momento.versiculo_ref}</p>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(200,160,48,0.6)', marginBottom: 8 }}>Versículo do dia</p>
+            <p style={{ fontSize: 14, color: '#F5F0E8', lineHeight: 1.75, margin: 0, fontStyle: 'italic', opacity: 0.9 }}>{momento.versiculo}</p>
+            <p style={{ fontSize: 12, color: 'rgba(200,160,48,0.75)', marginTop: 8, fontWeight: 600, letterSpacing: '0.04em' }}>{momento.versiculo_ref}</p>
           </div>
         </div>
 
 
         {/* Missão — dinâmica por fase */}
-        <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '16px 20px' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C8A030', marginBottom: 8 }}>Sua missão de hoje</p>
-          <p style={{ fontSize: 15, color: 'var(--color-brand-dark-green)', lineHeight: 1.7, margin: '0 0 12px' }}>{missaoDoDia}</p>
+        <div style={{ background: 'linear-gradient(135deg, #1A0F00 0%, #0E0E0E 100%)', border: '1.5px solid rgba(200,160,48,0.38)', borderRadius: 14, padding: '22px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <span style={{ fontSize: 22 }}>🎯</span>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#C8A030', margin: 0 }}>Sua missão de hoje</p>
+          </div>
+          <p style={{ fontSize: 17, color: '#F5F0E8', lineHeight: 1.7, margin: '0 0 20px', fontWeight: 600 }}>{missaoDoDia}</p>
           <button onClick={() => setDiario(d => ({ ...d, missao_cumprida: !d.missao_cumprida }))}
-            style={{ width: '100%', padding: '9px', borderRadius: 8, fontSize: 13, cursor: 'pointer', background: diario.missao_cumprida ? '#C8A030' : 'transparent', color: diario.missao_cumprida ? '#0E0E0E' : 'var(--color-brand-dark-green)', border: `1px solid ${diario.missao_cumprida ? '#C8A030' : 'var(--color-brand-border)'}`, fontWeight: diario.missao_cumprida ? 600 : 400, transition: 'all 0.2s' }}>
-            {diario.missao_cumprida ? '✓ Missão cumprida!' : 'Marcar como cumprida'}
+            style={{
+              width: '100%', padding: '14px', borderRadius: 10, fontSize: 14, fontWeight: 800,
+              cursor: 'pointer', letterSpacing: '0.05em', border: 'none', transition: 'all 0.2s',
+              background: diario.missao_cumprida ? '#22c55e' : '#C8A030',
+              color: '#0E0E0E',
+              boxShadow: diario.missao_cumprida
+                ? '0 4px 16px rgba(34,197,94,0.35)'
+                : '0 4px 20px rgba(200,160,48,0.45)',
+              animation: diario.missao_cumprida ? 'none' : 'pulse-missao 2.2s ease-in-out infinite',
+            }}>
+            {diario.missao_cumprida ? '✓ Missão cumprida!' : '🎯 Marcar como cumprida'}
           </button>
         </div>
 
@@ -434,10 +476,26 @@ export default function MomentoPage() {
           <div style={{ marginBottom: 16 }}>
             <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginBottom: 8, fontWeight: 500 }}>Como estou agora?</p>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {EMOCOES.map(e => (
-                <button key={e} onClick={() => setDiario(d => ({ ...d, emocao: e }))}
-                  style={{ padding: '5px 12px', borderRadius: 99, fontSize: 13, cursor: 'pointer', background: diario.emocao === e ? 'rgba(200,160,48,0.12)' : 'transparent', border: `1px solid ${diario.emocao === e ? 'rgba(200,160,48,0.5)' : 'var(--color-brand-border)'}`, color: diario.emocao === e ? '#854F0B' : 'var(--color-brand-gray)', fontWeight: diario.emocao === e ? 600 : 400 }}>{e}</button>
-              ))}
+              {EMOCOES.map(e => {
+                const cor = EMOCAO_COR[e] ?? '#C8A030';
+                const ativo = diario.emocao === e;
+                const hover = emocaoHover === e;
+                return (
+                  <button key={e}
+                    onClick={() => setDiario(d => ({ ...d, emocao: e }))}
+                    onMouseEnter={() => setEmocaoHover(e)}
+                    onMouseLeave={() => setEmocaoHover(null)}
+                    style={{
+                      padding: '5px 12px', borderRadius: 99, fontSize: 13, cursor: 'pointer', transition: 'all 0.15s',
+                      background: ativo ? `${cor}20` : hover ? `${cor}10` : 'transparent',
+                      border: `1px solid ${ativo ? cor : hover ? `${cor}70` : 'var(--color-brand-border)'}`,
+                      color: ativo || hover ? cor : 'var(--color-brand-gray)',
+                      fontWeight: ativo ? 700 : 400,
+                    }}>
+                    {e}
+                  </button>
+                );
+              })}
             </div>
           </div>
           <div style={{ marginBottom: 14 }}>
@@ -518,8 +576,19 @@ export default function MomentoPage() {
               const registro = historico.find(h => h.data === dataStr);
               const isHoje = dataStr === hoje;
               return (
-                <button key={dataStr} onClick={() => registro ? setDiaSelecionado(diaSelecionado?.data === dataStr ? null : registro) : null} title={dataStr}
-                  style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', cursor: registro ? 'pointer' : 'default', background: isHoje ? '#C8A030' : registro ? '#1E392A' : 'rgba(30,57,42,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: isHoje ? '0 0 10px rgba(200,160,48,0.4)' : 'none' }}>
+                <button key={dataStr}
+                  onClick={() => registro ? setDiaSelecionado(diaSelecionado?.data === dataStr ? null : registro) : null}
+                  title={dataStr}
+                  style={{
+                    width: 32, height: 32, borderRadius: '50%', border: 'none',
+                    cursor: registro ? 'pointer' : 'default',
+                    background: isHoje ? '#C8A030' : registro ? '#1E392A' : 'rgba(30,57,42,0.06)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    boxShadow: isHoje ? '0 0 10px rgba(200,160,48,0.4)' : 'none',
+                    opacity: 0,
+                    animation: 'fadeInDot 0.3s ease forwards',
+                    animationDelay: `${i * 0.022}s`,
+                  }}>
                   {isHoje ? <span style={{ fontSize: 14 }}>🔥</span> : registro ? <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#C8A030" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> : null}
                 </button>
               );
@@ -547,6 +616,17 @@ export default function MomentoPage() {
 
 
       </div>
+
+      <style>{`
+        @keyframes pulse-missao {
+          0%, 100% { box-shadow: 0 4px 20px rgba(200,160,48,0.45); }
+          50%       { box-shadow: 0 4px 28px rgba(200,160,48,0.75), 0 0 0 6px rgba(200,160,48,0.12); }
+        }
+        @keyframes fadeInDot {
+          from { opacity: 0; transform: scale(0.7); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </DashboardLayout>
   );
 }
