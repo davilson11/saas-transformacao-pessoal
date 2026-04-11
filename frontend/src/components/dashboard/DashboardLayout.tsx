@@ -94,6 +94,15 @@ function IconMomento() {
   );
 }
 
+function IconRegistros() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M9 2a7 7 0 1 0 0 14A7 7 0 0 0 9 2Z" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M9 5v4l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function IconSearch() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -135,8 +144,9 @@ const PRIMARY_NAV = [
 ];
 
 const SECONDARY_NAV = [
-  { label: 'Perfil',   href: '/perfil',   icon: <IconPerfil />,   exact: true },
-  { label: 'Momento',  href: '/momento',  icon: <IconMomento />,  exact: true },
+  { label: 'Perfil',    href: '/perfil',    icon: <IconPerfil />,    exact: true },
+  { label: 'Momento',   href: '/momento',   icon: <IconMomento />,   exact: true },
+  { label: 'Registros', href: '/registros', icon: <IconRegistros />, exact: true },
 ];
 
 // ─── Search bar ───────────────────────────────────────────────────────────────
