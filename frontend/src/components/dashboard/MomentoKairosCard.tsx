@@ -166,6 +166,29 @@ export default function MomentoKairosCard() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
+      {/* ── 0. Banner contextual por horário ────────────────────────────── */}
+      <div style={{
+        borderRadius: 12, padding: '12px 18px',
+        display: 'flex', alignItems: 'center', gap: 12,
+        background: hora < 12
+          ? 'linear-gradient(135deg, rgba(255,200,80,0.13), rgba(200,140,0,0.07))'
+          : hora < 18
+            ? 'linear-gradient(135deg, rgba(255,140,30,0.13), rgba(180,90,0,0.07))'
+            : 'linear-gradient(135deg, rgba(80,80,180,0.18), rgba(30,30,90,0.1))',
+        border: `1px solid ${hora < 12 ? 'rgba(255,200,80,0.3)' : hora < 18 ? 'rgba(255,140,30,0.28)' : 'rgba(100,100,200,0.25)'}`,
+      }}>
+        <span style={{ fontSize: 20, flexShrink: 0 }}>
+          {hora < 12 ? '🌅' : hora < 18 ? '🌞' : '🌙'}
+        </span>
+        <p style={{ fontSize: 13, fontWeight: 600, color: CREAM, margin: 0 }}>
+          {hora < 12
+            ? 'Bom dia — registre sua manhã'
+            : hora < 18
+              ? 'Boa tarde — sua missão te espera'
+              : 'Boa noite — hora da reflexão'}
+        </p>
+      </div>
+
       {/* ── 1. Topo: saudação + data ─────────────────────────────────────── */}
       <div style={{
         background: DARK,
@@ -228,14 +251,16 @@ export default function MomentoKairosCard() {
         <button
           onClick={() => setDiario(d => ({ ...d, missao_cumprida: !d.missao_cumprida }))}
           style={{
-            width: '100%', padding: '13px', borderRadius: 10, fontSize: 14, fontWeight: 700,
-            cursor: 'pointer', letterSpacing: '0.04em', transition: 'all 0.2s',
-            background: diario.missao_cumprida ? GOLD : 'transparent',
-            color: diario.missao_cumprida ? DARK : GOLD,
-            border: `1.5px solid ${diario.missao_cumprida ? GOLD : 'rgba(200,160,48,0.5)'}`,
+            width: '100%', padding: '15px', borderRadius: 10, fontSize: 15, fontWeight: 800,
+            cursor: 'pointer', letterSpacing: '0.06em', transition: 'all 0.2s', border: 'none',
+            background: diario.missao_cumprida ? '#22c55e' : GOLD,
+            color: DARK,
+            boxShadow: diario.missao_cumprida
+              ? '0 4px 16px rgba(34,197,94,0.35)'
+              : `0 4px 20px rgba(200,160,48,0.45)`,
           }}
         >
-          {diario.missao_cumprida ? '✓ Missão cumprida!' : 'Marcar como cumprida'}
+          {diario.missao_cumprida ? '✓ Missão cumprida!' : '🎯 Marcar como cumprida'}
         </button>
       </div>
 
@@ -347,6 +372,17 @@ export default function MomentoKairosCard() {
         </div>
       )}
 
+      {/* ── Separador matinal / noturno (quando ambos visíveis, 12–18h) ── */}
+      {mostrarMatinal && mostrarNoturno && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '4px 0' }}>
+          <div style={{ flex: 1, height: 1, background: 'rgba(200,160,48,0.18)' }} />
+          <span style={{ fontSize: 10, color: 'rgba(245,240,232,0.35)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.16em', whiteSpace: 'nowrap' }}>
+            Reflexão da noite
+          </span>
+          <div style={{ flex: 1, height: 1, background: 'rgba(200,160,48,0.18)' }} />
+        </div>
+      )}
+
       {/* ── 6. Reflexão da noite (depois das 12h) ──────────────────────── */}
       {mostrarNoturno && (
         <div style={{
@@ -415,7 +451,24 @@ export default function MomentoKairosCard() {
         </div>
       )}
 
-      {/* ── 7. Histórico colapsado ───────────────────────────────────────── */}
+      {/* ── 7. Compartilhar meu dia (CTA secundário) ────────────────────── */}
+      <a href="/momento"
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+          padding: '14px', borderRadius: 12, textDecoration: 'none',
+          background: 'rgba(200,160,48,0.08)',
+          border: `1px solid rgba(200,160,48,0.3)`,
+          color: GOLD, fontWeight: 600, fontSize: 13,
+          transition: 'all 0.2s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,160,48,0.15)'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(200,160,48,0.08)'; }}
+      >
+        <span style={{ fontSize: 16 }}>📤</span>
+        Compartilhar meu dia
+      </a>
+
+      {/* ── 8. Histórico colapsado ───────────────────────────────────────── */}
       <div style={{ background: '#fff', borderRadius: 14, border: '1px solid var(--color-brand-border)', overflow: 'hidden' }}>
         <button
           onClick={() => setMostrarHistorico(h => !h)}
