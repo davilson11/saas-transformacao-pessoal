@@ -567,21 +567,28 @@ export default function DashboardPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1200 }}>
 
         {/* ════════════════════════════════════════════════════
-            ZONA 1 — Hoje
+            ZONA 1 — Momento Kairos
+        ════════════════════════════════════════════════════ */}
+        <section>
+          <MomentoKairosCard />
+        </section>
+
+        {/* ════════════════════════════════════════════════════
+            ZONA 2 — Hoje (Diário de Bordo)
         ════════════════════════════════════════════════════ */}
         <section>
           <CardHoje />
         </section>
 
         {/* ════════════════════════════════════════════════════
-            ZONA 2 — Progresso das 4 Fases (horizontal)
+            ZONA 3 — Progresso das 4 Fases (horizontal)
         ════════════════════════════════════════════════════ */}
         <section>
           <FasesProgresso />
         </section>
 
         {/* ════════════════════════════════════════════════════
-            ZONA 3 — Insights + Roda da Vida
+            ZONA 4 — Insights + Roda da Vida
         ════════════════════════════════════════════════════ */}
         <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20, alignItems: 'start' }}>
 
@@ -629,11 +636,6 @@ export default function DashboardPage() {
               <NextActions />
             </div>
           </div>
-        </section>
-
-        {/* Momento Kairos */}
-        <section>
-          <MomentoKairosCard />
         </section>
 
         {/* Bottom CTA */}
