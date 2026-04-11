@@ -6,7 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import DashboardLayout, { useModoFoco } from "@/components/dashboard/DashboardLayout";
 import LifeWheel from "@/components/dashboard/LifeWheel";
 import NextActions from "@/components/dashboard/NextActions";
-import MomentoKairosCard from "@/components/dashboard/MomentoKairosCard";
+import type { MomentoKairos } from "@/lib/database.types";
 import Onboarding from "@/components/dashboard/Onboarding";
 import { buscarVisaoAncora } from "@/lib/queries";
 import { useSupabaseClient } from "@/lib/useSupabaseClient";
@@ -17,6 +17,91 @@ import { calcularStreakDias } from "@/lib/badges";
 const G       = '#0E0E0E';
 const GOLD    = '#C8A030';
 const CREAM   = '#F5F2EC';
+
+// ─── Card compacto — Momento Kairos ──────────────────────────────────────────
+
+function CardMomentoCompacto() {
+  const { user }       = useUser();
+  const { getClient }  = useSupabaseClient();
+  const [voz, setVoz]  = useState<string | null>(null);
+
+  const hoje = new Date().toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).split('/').reverse().join('-');
+
+  const hora         = new Date().getHours();
+  const saudacaoStr  = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
+  const dataLabel    = new Date().toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo', weekday: 'long', day: 'numeric', month: 'long',
+  });
+
+  useEffect(() => {
+    if (!user?.id) return;
+    (async () => {
+      const client = await getClient();
+      const { data } = await client
+        .from('momento_kairos')
+        .select('voz_texto')
+        .eq('data', hoje)
+        .maybeSingle();
+      if (data) setVoz((data as Pick<MomentoKairos, 'voz_texto'>).voz_texto);
+    })();
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const trecho = voz
+    ? (voz.length > 100 ? voz.slice(0, 100).trimEnd() + '…' : voz)
+    : null;
+
+  return (
+    <Link href="/momento" style={{ textDecoration: 'none', display: 'block' }}>
+      <div style={{
+        background: G,
+        borderRadius: 14,
+        padding: '16px 20px',
+        border: `1px solid rgba(200,160,48,0.22)`,
+        display: 'flex', alignItems: 'center', gap: 16,
+        minHeight: 0,
+        transition: 'border-color 0.2s',
+      }}
+        onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(200,160,48,0.5)')}
+        onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(200,160,48,0.22)')}
+      >
+        {/* Left: saudação + voz */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: GOLD, textTransform: 'uppercase', letterSpacing: '0.16em' }}>
+              Momento Kairos
+            </span>
+            <span style={{ fontSize: 11, color: 'rgba(245,240,232,0.35)', textTransform: 'capitalize' }}>
+              · {dataLabel}
+            </span>
+          </div>
+          <p style={{ fontSize: 13, color: '#F5F0E8', margin: 0, lineHeight: 1.5 }}>
+            <span style={{ fontWeight: 600 }}>{saudacaoStr}.</span>
+            {trecho ? (
+              <span style={{ color: 'rgba(245,240,232,0.65)', marginLeft: 6, fontStyle: 'italic' }}>
+                &ldquo;{trecho}&rdquo;
+              </span>
+            ) : (
+              <span style={{ color: 'rgba(245,240,232,0.4)', marginLeft: 6 }}>
+                Seu momento do dia te espera.
+              </span>
+            )}
+          </p>
+        </div>
+
+        {/* Right: CTA */}
+        <span style={{
+          flexShrink: 0, fontSize: 12, fontWeight: 700, color: GOLD,
+          background: 'rgba(200,160,48,0.1)', border: `1px solid rgba(200,160,48,0.3)`,
+          borderRadius: 8, padding: '7px 14px', whiteSpace: 'nowrap',
+        }}>
+          Abrir →
+        </span>
+      </div>
+    </Link>
+  );
+}
 
 // ─── Dados das fases ──────────────────────────────────────────────────────────
 
@@ -567,10 +652,10 @@ export default function DashboardPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1200 }}>
 
         {/* ════════════════════════════════════════════════════
-            ZONA 1 — Momento Kairos
+            ZONA 1 — Momento Kairos (compacto)
         ════════════════════════════════════════════════════ */}
         <section>
-          <MomentoKairosCard />
+          <CardMomentoCompacto />
         </section>
 
         {/* ════════════════════════════════════════════════════
