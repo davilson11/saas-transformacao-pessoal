@@ -1,9 +1,9 @@
 const problemas = [
-  { n: '01', icon: '🧭', titulo: 'Falta de direção',       desc: 'Você tem vontade de mudar, mas não sabe por onde começar. Cada dia parece igual ao anterior.', span: false },
-  { n: '02', icon: '🗂️', titulo: 'Fragmentação',           desc: 'Começa vários projetos e não termina nenhum. A energia se dispersa sem gerar resultado.',       span: false },
-  { n: '03', icon: '⏳', titulo: 'Procrastinação',          desc: 'Sabe o que precisa fazer, mas adia sempre para amanhã. O amanhã nunca chega.',                   span: false },
-  { n: '04', icon: '🌫️', titulo: 'Falta de clareza',       desc: 'Não consegue visualizar como será sua vida daqui 1 ano. O futuro parece indefinido.',             span: false },
-  { n: '05', icon: '📚', titulo: 'Excesso de informação',  desc: 'Consome muito conteúdo mas coloca pouco em prática. Informação sem sistema não vira ação.',        span: true  },
+  { n: '01', icon: '🧭', titulo: 'Falta de direção',      desc: 'Você tem vontade de mudar, mas não sabe por onde começar. Cada dia parece igual ao anterior.', span: false },
+  { n: '02', icon: '🗂️', titulo: 'Fragmentação',          desc: 'Começa vários projetos e não termina nenhum. A energia se dispersa sem gerar resultado.',       span: false },
+  { n: '03', icon: '⏳', titulo: 'Procrastinação',         desc: 'Sabe o que precisa fazer, mas adia sempre para amanhã. O amanhã nunca chega.',                   span: false },
+  { n: '04', icon: '🌫️', titulo: 'Falta de clareza',      desc: 'Não consegue visualizar como será sua vida daqui 1 ano. O futuro parece indefinido.',             span: false },
+  { n: '05', icon: '📚', titulo: 'Excesso de informação', desc: 'Consome muito conteúdo mas coloca pouco em prática. Informação sem sistema não vira ação.',        span: true  },
 ]
 
 export function Problema() {
@@ -30,7 +30,7 @@ export function Problema() {
         </div>
 
         <div className="problema-cta">
-          <p>&ldquo;Se você reconheceu pelo menos um desses cenários, o Kairos foi feito para você.&rdquo;</p>
+          <p>&ldquo;Aqui você não consome mais conteúdo. Você se confronta, se conhece e age.&rdquo;</p>
         </div>
       </div>
     </section>
