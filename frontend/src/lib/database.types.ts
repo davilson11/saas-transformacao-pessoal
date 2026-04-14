@@ -83,20 +83,21 @@ export type MomentoKairos = {
 };
 
 export type DiarioKairos = {
-  id:              string;
-  user_id:         string;
-  data:            string;
-  qualidade_sono:  number | null;
-  emocao:          string | null;
-  preocupacao:     string | null;
-  gratidao:        string | null;
-  missao_cumprida: boolean;
-  created_at:      string;
-  updated_at:      string;
-  conquista: string | null;
-  aprendizado: string | null;
-  energia_fim: number | null;
-  nota_dia: number | null;
+  id:               string;
+  user_id:          string;
+  data:             string;
+  qualidade_sono:   number | null;
+  emocao:           string | null;
+  preocupacao:      string | null;
+  gratidao:         string | null;
+  missao_cumprida:  boolean;
+  missao_execucao:  string | null;
+  created_at:       string;
+  updated_at:       string;
+  conquista:        string | null;
+  aprendizado:      string | null;
+  energia_fim:      number | null;
+  nota_dia:         number | null;
 };
 
 // ─── Schema completo para createClient<Database> ─────────────────────────────
@@ -243,27 +244,29 @@ export type Database = {
       diario_kairos: {
         Row: DiarioKairos;
         Insert: {
-          id?:              string;
-          user_id:          string;
-          data:             string;
-          qualidade_sono?:  number | null;
-          emocao?:          string | null;
-          preocupacao?:     string | null;
-          gratidao?:        string | null;
-          missao_cumprida?: boolean;
-          created_at?:      string;
-          updated_at?:      string;
+          id?:               string;
+          user_id:           string;
+          data:              string;
+          qualidade_sono?:   number | null;
+          emocao?:           string | null;
+          preocupacao?:      string | null;
+          gratidao?:         string | null;
+          missao_cumprida?:  boolean;
+          missao_execucao?:  string | null;
+          created_at?:       string;
+          updated_at?:       string;
         };
         Update: {
-          id?:              string;
-          user_id?:         string;
-          data?:            string;
-          qualidade_sono?:  number | null;
-          emocao?:          string | null;
-          preocupacao?:     string | null;
-          gratidao?:        string | null;
-          missao_cumprida?: boolean;
-          updated_at?:      string;
+          id?:               string;
+          user_id?:          string;
+          data?:             string;
+          qualidade_sono?:   number | null;
+          emocao?:           string | null;
+          preocupacao?:      string | null;
+          gratidao?:         string | null;
+          missao_cumprida?:  boolean;
+          missao_execucao?:  string | null;
+          updated_at?:       string;
         };
         Relationships: [];
       };

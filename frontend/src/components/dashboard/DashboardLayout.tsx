@@ -103,6 +103,16 @@ function IconRegistros() {
   );
 }
 
+function IconMissoes() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="9" cy="9" r="3" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M9 2v2M9 14v2M2 9h2M14 9h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function IconSearch() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -139,6 +149,7 @@ function getSaudacao(hora: number): string {
 const PRIMARY_NAV = [
   { label: 'Dashboard',   href: '/dashboard',                  icon: <IconDashboard />,  exact: true  },
   { label: 'Ferramentas', href: '/ferramentas',                icon: <IconFerramentas />, exact: false },
+  { label: 'Missões',     href: '/missoes',                    icon: <IconMissoes />,    exact: true  },
   { label: 'Diário',      href: '/ferramentas/diario-bordo',   icon: <IconDiario />,     exact: false },
   { label: 'Progresso',   href: '/progresso',                  icon: <IconProgresso />,  exact: true  },
 ];
