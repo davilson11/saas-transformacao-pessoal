@@ -16,6 +16,7 @@ type ConfigSprint = {
   tempoDiario:      string;
   definicaoSucesso: string;
   porqueAgora:      string;
+  aplicacaoSemana:  string;
 };
 
 type Recurso = {
@@ -79,10 +80,23 @@ const DIA_DEFAULT: DiaSprint   = { completado: false, aprendizado: '', energia: 
 
 const SPRINT_DEFAULT: ConfigSprint = {
   habilidade: '', dataInicio: '', dataFim: '',
-  tempoDiario: '1h', definicaoSucesso: '', porqueAgora: '',
+  tempoDiario: '1h', definicaoSucesso: '', porqueAgora: '', aplicacaoSemana: '',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function ebbinghausDates(dataInicio: string): { label: string; data: string }[] | null {
+  if (!dataInicio) return null;
+  const base = new Date(dataInicio + 'T00:00:00');
+  if (isNaN(base.getTime())) return null;
+  const fmt = (d: Date) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  const add = (days: number) => { const d = new Date(base); d.setDate(d.getDate() + days); return d; };
+  return [
+    { label: 'Revisão 1 (+1 dia)',   data: fmt(add(1))  },
+    { label: 'Revisão 2 (+7 dias)',  data: fmt(add(7))  },
+    { label: 'Revisão 3 (+30 dias)', data: fmt(add(30)) },
+  ];
+}
 
 function calcStreak(dias: DiaSprint[]): number {
   let lastIdx = -1;
@@ -133,7 +147,16 @@ export default function SprintAprendizadoPage() {
   );
 
   const { dados: dadosSalvos } = useCarregarRespostas("sprint-aprendizado");
-  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).config) setConfig((dadosSalvos as any).config); if ((dadosSalvos as any).recursos) setRecursos((dadosSalvos as any).recursos); if ((dadosSalvos as any).projetos) setProjetos((dadosSalvos as any).projetos); if ((dadosSalvos as any).dias) setDias((dadosSalvos as any).dias); }, [dadosSalvos]);
+  useEffect(() => {
+    if (!dadosSalvos) return;
+    if ((dadosSalvos as any).config) {
+      const c = (dadosSalvos as any).config as ConfigSprint;
+      setConfig({ ...SPRINT_DEFAULT, ...c });
+    }
+    if ((dadosSalvos as any).recursos) setRecursos((dadosSalvos as any).recursos);
+    if ((dadosSalvos as any).projetos) setProjetos((dadosSalvos as any).projetos);
+    if ((dadosSalvos as any).dias) setDias((dadosSalvos as any).dias);
+  }, [dadosSalvos]);
 
   const [diaSelecionado, setDiaSelecionado] = useState<number | null>(null);
 
@@ -509,6 +532,68 @@ export default function SprintAprendizadoPage() {
             resize: 'vertical', lineHeight: 1.55,
           }}
         />
+      </div>
+
+      {/* Cronograma de revisão espaçada — Curva de Ebbinghaus */}
+      {ebbinghausDates(config.dataInicio) && (
+        <div style={{
+          background: 'rgba(26,92,58,0.05)', border: `1px solid ${COR_VERDE}20`,
+          borderRadius: 12, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 18 }}>🧠</span>
+            <div>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: COR_VERDE, margin: 0 }}>
+                Revisão Espaçada — Curva de Ebbinghaus
+              </p>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(26,92,58,0.55)', margin: 0, marginTop: 2 }}>
+                Revisões nos momentos certos impedem o esquecimento e fixam o aprendizado na memória de longo prazo.
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {ebbinghausDates(config.dataInicio)!.map((r, i) => (
+              <div key={i} style={{
+                background: '#fff', border: `1px solid ${COR_VERDE}25`,
+                borderRadius: 8, padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: COR_VERDE, flexShrink: 0 }} />
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: COR_VERDE, fontWeight: 600 }}>
+                  {r.label}
+                </span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'rgba(26,92,58,0.6)' }}>
+                  {r.data}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(26,92,58,0.5)', margin: 0, fontStyle: 'italic' }}>
+            Marque esses dias no calendário agora — a revisão só funciona se for planejada com antecedência.
+          </p>
+        </div>
+      )}
+
+      {/* Aplicação prática semanal */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label style={{ fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: COR_VERDE }}>
+          Como vou aplicar esse aprendizado esta semana?
+        </label>
+        <textarea
+          value={config.aplicacaoSemana}
+          onChange={e => setConfig_({ aplicacaoSemana: e.target.value })}
+          placeholder="Ex: Vou criar uma landing page real para meu produto usando o que aprender sobre copy. Vou compartilhar com 2 pessoas e pedir feedback até sexta-feira..."
+          rows={3}
+          style={{
+            border: `1px solid ${config.aplicacaoSemana ? COR_VERDE + '40' : COR_BORDER}`,
+            borderRadius: 8, padding: '10px 14px', fontSize: 15,
+            fontFamily: 'var(--font-body)', color: '#1a2015',
+            outline: 'none', background: '#fff',
+            resize: 'vertical', lineHeight: 1.55,
+          }}
+        />
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(26,92,58,0.5)' }}>
+          Aprendizado sem aplicação é entretenimento — defina uma ação concreta para esta semana.
+        </p>
       </div>
 
       {!podeAvancar && (
@@ -909,7 +994,7 @@ export default function SprintAprendizadoPage() {
       totalItens={totalItens}
       labelItens={labelItens}
       resumo={painelResumo}
-  respostas={{ config, recursos, projetos, dias }}
+  respostas={{ config, recursos, projetos, dias, aplicacaoSemana: config.aplicacaoSemana }}
     >
       {steps[etapa]}
     </FerramentaLayout>

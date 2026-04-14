@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import FerramentaLayout from "@/components/dashboard/FerramentaLayout";
 import { useCarregarRespostas } from "@/lib/useCarregarRespostas";
+import { useUser } from "@clerk/nextjs";
+import { useSupabaseClient } from "@/lib/useSupabaseClient";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -285,9 +287,23 @@ export default function DREPessoalPage() {
   const [fixos, setFixos] = useState<CustosFixos>({ moradia: "", saude: "", internet: "", transporte: "", escola: "" });
   const [variaveis, setVariaveis] = useState<CustosVariaveis>({ alimentacao: "", lazer: "", assinaturas: "", roupas: "", outros: "" });
   const [invest, setInvest] = useState<Investimentos>({ reserva: "", investimentos: "", previdencia: "" });
+  const [scoreFinancas, setScoreFinancas] = useState<number | null>(null);
+  const [vazamentoFinanceiro, setVazamentoFinanceiro] = useState("");
+  const [compraImplanejada, setCompraImplanejada] = useState("");
+
+  const { user } = useUser();
+  const { getClient } = useSupabaseClient();
 
   const { dados: dadosSalvos } = useCarregarRespostas("dre-pessoal");
-  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).mes) setMes((dadosSalvos as any).mes); if ((dadosSalvos as any).receitas) setReceitas((dadosSalvos as any).receitas); if ((dadosSalvos as any).fixos) setFixos((dadosSalvos as any).fixos); if ((dadosSalvos as any).variaveis) setVariaveis((dadosSalvos as any).variaveis); if ((dadosSalvos as any).invest) setInvest((dadosSalvos as any).invest); }, [dadosSalvos]);
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).mes) setMes((dadosSalvos as any).mes); if ((dadosSalvos as any).receitas) setReceitas((dadosSalvos as any).receitas); if ((dadosSalvos as any).fixos) setFixos((dadosSalvos as any).fixos); if ((dadosSalvos as any).variaveis) setVariaveis((dadosSalvos as any).variaveis); if ((dadosSalvos as any).invest) setInvest((dadosSalvos as any).invest); if ((dadosSalvos as any).vazamentoFinanceiro) setVazamentoFinanceiro((dadosSalvos as any).vazamentoFinanceiro); if ((dadosSalvos as any).compraImplanejada) setCompraImplanejada((dadosSalvos as any).compraImplanejada); }, [dadosSalvos]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    getClient().then((sb) => {
+      sb.from("roda_vida").select("financas").eq("user_id", user.id).single()
+        .then(({ data }) => { if (data && typeof data.financas === "number") setScoreFinancas(data.financas); });
+    });
+  }, [user?.id, getClient]);
 
   const totalReceitas = soma(receitas.salario, receitas.freelance, receitas.rendimentos, receitas.aluguel, receitas.outras);
   const totalFixos = soma(fixos.moradia, fixos.saude, fixos.internet, fixos.transporte, fixos.escola);
@@ -416,7 +432,7 @@ export default function DREPessoalPage() {
       podeAvancar={podeAvancar()}
       labelAvancar={passo === 0 ? "Começar →" : passo === ETAPAS.length - 1 ? "Salvar DRE ✓" : "Continuar →"}
       resumo={painelResumo}
-  respostas={{ mes, receitas, fixos, variaveis, invest }}
+  respostas={{ mes, receitas, fixos, variaveis, invest, vazamentoFinanceiro, compraImplanejada }}
     >
       <div className="p-8">
 
@@ -521,6 +537,23 @@ export default function DREPessoalPage() {
         {/* Passo 1 — Receitas */}
         {passo === 1 && (
           <div className="flex flex-col gap-6 max-w-2xl mx-auto">
+
+            {/* Banner Roda da Vida — Finanças crítico */}
+            {scoreFinancas !== null && scoreFinancas <= 4 && (
+              <div className="flex items-start gap-3 rounded-xl px-4 py-4"
+                style={{ background: "rgba(231,76,60,0.08)", border: "1.5px solid rgba(231,76,60,0.35)" }}>
+                <span style={{ fontSize: 20, flexShrink: 0 }}>🚨</span>
+                <div className="flex flex-col gap-1">
+                  <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_RED }}>
+                    Sua área financeira está crítica (nota {scoreFinancas}/10).
+                  </p>
+                  <p style={{ fontSize: 13, color: COR_RED, lineHeight: 1.5, opacity: 0.85 }}>
+                    Vamos entender o porquê. Preencha cada campo com atenção — o diagnóstico vai revelar onde a situação pode ser revertida.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
                 <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 700, color: COR_DARK }}>
@@ -558,6 +591,34 @@ export default function DREPessoalPage() {
                 <p style={{ fontSize: 13, color: COR_RED, fontWeight: 600 }}>Insira ao menos uma receita para continuar.</p>
               </div>
             )}
+
+            {/* Âncora comportamental — compra implanejada */}
+            <div className="flex flex-col gap-3 rounded-2xl p-5"
+              style={{ background: `${COR_YELLOW}0a`, border: `1.5px solid ${COR_YELLOW}33` }}>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center rounded-xl" style={{ width: 36, height: 36, background: `${COR_YELLOW}20`, fontSize: 18 }}>🛒</div>
+                <div>
+                  <p style={{ fontFamily: "var(--font-heading)", fontSize: 14, fontWeight: 700, color: COR_DARK }}>Âncora comportamental</p>
+                  <p style={{ fontSize: 12, color: "var(--color-brand-gray)" }}>Memória episódica — responda com situação específica</p>
+                </div>
+              </div>
+              <label style={{ fontSize: 14, fontWeight: 600, color: COR_DARK, fontFamily: "var(--font-body)" }}>
+                O que você comprou este mês que não estava planejado?
+              </label>
+              <textarea
+                value={compraImplanejada}
+                onChange={(e) => setCompraImplanejada(e.target.value)}
+                rows={3}
+                placeholder="Ex: Comprei um fone de ouvido de R$350 na sexta-feira depois de um dia estressante no trabalho. Também parcelei roupas no cartão no final de semana..."
+                className="w-full rounded-xl px-4 py-3 outline-none resize-none"
+                style={{ fontSize: 14, color: COR_DARK, background: "#fff", border: `1.5px solid ${compraImplanejada.trim() ? COR_YELLOW + "66" : "var(--color-brand-border)"}`, fontFamily: "var(--font-body)", lineHeight: 1.6 }}
+              />
+              {compraImplanejada.trim().length > 0 && (
+                <p style={{ fontSize: 11, color: "var(--color-brand-gray)", fontStyle: "italic" }}>
+                  Este padrão de compra emocional pode ser seu maior vazamento financeiro.
+                </p>
+              )}
+            </div>
           </div>
         )}
 
@@ -607,6 +668,26 @@ export default function DREPessoalPage() {
                 </div>
               )}
             </SecaoFinanceira>
+
+            {/* Maior vazamento financeiro */}
+            <div className="flex flex-col gap-3 rounded-2xl p-5"
+              style={{ background: `${COR_RED}07`, border: `1.5px solid ${COR_RED}28` }}>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center rounded-xl" style={{ width: 36, height: 36, background: `${COR_RED}18`, fontSize: 18 }}>🕳️</div>
+                <div>
+                  <p style={{ fontFamily: "var(--font-heading)", fontSize: 14, fontWeight: 700, color: COR_DARK }}>Maior vazamento financeiro do mês</p>
+                  <p style={{ fontSize: 12, color: "var(--color-brand-gray)" }}>O gasto que mais compromete seu saldo sem trazer valor real</p>
+                </div>
+              </div>
+              <textarea
+                value={vazamentoFinanceiro}
+                onChange={(e) => setVazamentoFinanceiro(e.target.value)}
+                rows={3}
+                placeholder="Ex: Delivery todo dia — gasto em torno de R$800/mês sem perceber. / Assinaturas esquecidas (academia + 3 apps) = R$290/mês que não uso. / Parcelamentos do cartão que se acumularam..."
+                className="w-full rounded-xl px-4 py-3 outline-none resize-none"
+                style={{ fontSize: 14, color: COR_DARK, background: "#fff", border: `1.5px solid ${vazamentoFinanceiro.trim() ? COR_RED + "55" : "var(--color-brand-border)"}`, fontFamily: "var(--font-body)", lineHeight: 1.6 }}
+              />
+            </div>
 
             {/* Mini resumo */}
             <div className="grid grid-cols-3 gap-3">

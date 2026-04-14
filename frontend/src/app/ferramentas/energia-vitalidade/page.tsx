@@ -331,8 +331,19 @@ export default function EnergiaVitalidadePage() {
     Array.from({ length: 7 }, () => ({ ...DIA_DEFAULT }))
   );
 
+  const [procrastinacao, setProcrastinacao] = useState('');
+  const [sentiuVivo, setSentiuVivo] = useState('');
+
   const { dados: dadosSalvos } = useCarregarRespostas("energia-vitalidade");
-  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).diag) setDiag((dadosSalvos as any).diag); if ((dadosSalvos as any).drenadores) setDrenadores((dadosSalvos as any).drenadores); if ((dadosSalvos as any).recarregadores) setRecarregadores((dadosSalvos as any).recarregadores); if ((dadosSalvos as any).rastreador) setRastreador((dadosSalvos as any).rastreador); }, [dadosSalvos]);
+  useEffect(() => {
+    if (!dadosSalvos) return;
+    if ((dadosSalvos as any).diag) setDiag((dadosSalvos as any).diag);
+    if ((dadosSalvos as any).drenadores) setDrenadores((dadosSalvos as any).drenadores);
+    if ((dadosSalvos as any).recarregadores) setRecarregadores((dadosSalvos as any).recarregadores);
+    if ((dadosSalvos as any).rastreador) setRastreador((dadosSalvos as any).rastreador);
+    if ((dadosSalvos as any).procrastinacao) setProcrastinacao((dadosSalvos as any).procrastinacao);
+    if ((dadosSalvos as any).sentiuVivo) setSentiuVivo((dadosSalvos as any).sentiuVivo);
+  }, [dadosSalvos]);
 
   // ─── Métricas ──────────────────────────────────────────────────────────────
 
@@ -630,6 +641,73 @@ export default function EnergiaVitalidadePage() {
         </p>
       </div>
 
+      {/* Energy Audit — perguntas de diagnóstico comportamental */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        {/* Procrastinação */}
+        <div style={{
+          background: 'rgba(220,38,38,0.04)', border: '1.5px solid rgba(220,38,38,0.18)',
+          borderRadius: 12, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 20 }}>😩</span>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, color: '#dc2626', margin: 0 }}>
+              Energy Audit
+            </p>
+          </div>
+          <label style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: COR_VERDE }}>
+            Qual atividade do seu dia você mais procrastina?
+          </label>
+          <textarea
+            value={procrastinacao}
+            onChange={e => setProcrastinacao(e.target.value)}
+            rows={3}
+            placeholder="Ex: Responder e-mails importantes — fico adiando até o final do dia quando já não tenho energia. / Preparar apresentações — sempre deixo para a última hora..."
+            style={{
+              border: `1px solid rgba(220,38,38,0.2)`,
+              borderRadius: 8, padding: '8px 12px', fontSize: 13,
+              fontFamily: 'var(--font-body)', color: '#1a2015',
+              outline: 'none', background: '#fff',
+              resize: 'vertical', lineHeight: 1.55,
+            }}
+          />
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'rgba(26,92,58,0.5)', margin: 0, fontStyle: 'italic' }}>
+            Procrastinação crônica é sinal de drenagem energética — não preguiça.
+          </p>
+        </div>
+
+        {/* Sentiu vivo */}
+        <div style={{
+          background: 'rgba(22,163,74,0.04)', border: '1.5px solid rgba(22,163,74,0.2)',
+          borderRadius: 12, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 20 }}>⚡</span>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, color: '#16a34a', margin: 0 }}>
+              Energy Audit
+            </p>
+          </div>
+          <label style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: COR_VERDE }}>
+            Após qual situação você se sente mais vivo?
+          </label>
+          <textarea
+            value={sentiuVivo}
+            onChange={e => setSentiuVivo(e.target.value)}
+            rows={3}
+            placeholder="Ex: Depois de uma conversa profunda sobre negócios com alguém que admiro. / Após uma corrida de 40 min de manhã — o restante do dia flui. / Quando apresento algo e vejo a reação do público..."
+            style={{
+              border: `1px solid rgba(22,163,74,0.2)`,
+              borderRadius: 8, padding: '8px 12px', fontSize: 13,
+              fontFamily: 'var(--font-body)', color: '#1a2015',
+              outline: 'none', background: '#fff',
+              resize: 'vertical', lineHeight: 1.55,
+            }}
+          />
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'rgba(26,92,58,0.5)', margin: 0, fontStyle: 'italic' }}>
+            Faça mais disso — essa é a sua fonte natural de recarga.
+          </p>
+        </div>
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         {/* Drenadores */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -640,7 +718,7 @@ export default function EnergiaVitalidadePage() {
             </h3>
           </div>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(26,92,58,0.6)', margin: 0 }}>
-            Pessoas, situações ou hábitos que consomem sua energia
+            O que te deixa exausto mesmo sem esforço físico?
           </p>
           {drenadores.map((item, idx) => (
             <div key={idx} style={{
@@ -662,7 +740,7 @@ export default function EnergiaVitalidadePage() {
                   type="text"
                   value={item.descricao}
                   onChange={e => setDren(idx, { descricao: e.target.value })}
-                  placeholder="Ex: Reuniões sem pauta definida…"
+                  placeholder="Ex: Conflito não resolvido com colega, reuniões longas sem conclusão..."
                   style={{
                     flex: 1, border: '1px solid rgba(220,38,38,0.15)',
                     borderRadius: 6, padding: '5px 10px', fontSize: 14,
@@ -701,7 +779,7 @@ export default function EnergiaVitalidadePage() {
             </h3>
           </div>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(26,92,58,0.6)', margin: 0 }}>
-            Atividades, pessoas ou hábitos que restauram sua vitalidade
+            O que te dá energia mesmo quando você está cansado?
           </p>
           {recarregadores.map((item, idx) => (
             <div key={idx} style={{
@@ -723,7 +801,7 @@ export default function EnergiaVitalidadePage() {
                   type="text"
                   value={item.descricao}
                   onChange={e => setRech(idx, { descricao: e.target.value })}
-                  placeholder="Ex: Caminhada matinal na natureza…"
+                  placeholder="Ex: Conversa com mentor, 30 min de leitura, música ao vivo..."
                   style={{
                     flex: 1, border: '1px solid rgba(22,163,74,0.15)',
                     borderRadius: 6, padding: '5px 10px', fontSize: 14,
@@ -849,7 +927,7 @@ export default function EnergiaVitalidadePage() {
       totalItens={totalItens}
       labelItens={labelItens}
       resumo={painelResumo}
-  respostas={{ diag, drenadores, recarregadores, rastreador }}
+  respostas={{ diag, drenadores, recarregadores, rastreador, procrastinacao, sentiuVivo }}
     >
       {steps[etapa]}
     </FerramentaLayout>
