@@ -107,6 +107,42 @@ export type DiarioKairos = {
 export type Database = {
   public: {
     Tables: {
+      subscriptions: {
+        Row: {
+          id:                     string;
+          user_id:                string;
+          status:                 string;
+          trial_ends_at:          string;
+          plan:                   string | null;
+          stripe_customer_id:     string | null;
+          stripe_subscription_id: string | null;
+          created_at:             string;
+          updated_at:             string;
+        };
+        Insert: {
+          id?:                     string;
+          user_id:                 string;
+          status?:                 string;
+          trial_ends_at:           string;
+          plan?:                   string | null;
+          stripe_customer_id?:     string | null;
+          stripe_subscription_id?: string | null;
+          created_at?:             string;
+          updated_at?:             string;
+        };
+        Update: {
+          id?:                     string;
+          user_id?:                string;
+          status?:                 string;
+          trial_ends_at?:          string;
+          plan?:                   string | null;
+          stripe_customer_id?:     string | null;
+          stripe_subscription_id?: string | null;
+          created_at?:             string;
+          updated_at?:             string;
+        };
+        Relationships: [];
+      };
       visao_ancora: {
         Row: VisaoAncora;
         Insert: {

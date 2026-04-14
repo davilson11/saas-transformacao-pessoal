@@ -8,9 +8,12 @@ import LifeWheel from "@/components/dashboard/LifeWheel";
 import NextActions from "@/components/dashboard/NextActions";
 import type { MomentoKairos } from "@/lib/database.types";
 import Onboarding from "@/components/dashboard/Onboarding";
+import TrialBanner from "@/components/dashboard/TrialBanner";
+import PaywallScreen from "@/components/dashboard/PaywallScreen";
 import { buscarVisaoAncora } from "@/lib/queries";
 import { useSupabaseClient } from "@/lib/useSupabaseClient";
 import { calcularStreakDias } from "@/lib/badges";
+import { useSubscription } from "@/hooks/useSubscription";
 
 // ─── Tokens ───────────────────────────────────────────────────────────────────
 
@@ -615,9 +618,10 @@ function CockpitFoco({ manchete }: { manchete: string | null }) {
 // ─── Página ───────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { user, isLoaded } = useUser();
-  const { getClient }      = useSupabaseClient();
-  const modoFoco           = useModoFoco();
+  const { user, isLoaded }                   = useUser();
+  const { getClient }                        = useSupabaseClient();
+  const modoFoco                             = useModoFoco();
+  const { hasAccess, loading: subLoading }   = useSubscription();
 
   const [manchete,    setManchete]    = useState<string | null>(null);
   const [declaracao,  setDeclaracao]  = useState<string | null>(null);
@@ -635,6 +639,15 @@ export default function DashboardPage() {
     })();
   }, [isLoaded, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Paywall: trial expirado ────────────────────────────────────────────────
+  if (!subLoading && !hasAccess) {
+    return (
+      <DashboardLayout>
+        <PaywallScreen />
+      </DashboardLayout>
+    );
+  }
+
   // ── Modo Foco: cockpit minimalista ──────────────────────────────────────────
   if (modoFoco) {
     return (
@@ -648,6 +661,7 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <Onboarding />
+      <TrialBanner />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1200 }}>
 
