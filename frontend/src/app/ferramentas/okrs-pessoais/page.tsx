@@ -66,12 +66,12 @@ const INSTRUCOES: Record<number, { titulo: string; itens: string[] }> = {
     ],
   },
   2: {
-    titulo: "Bons Objetivos",
+    titulo: "Objetivos com Especificidade Radical",
     itens: [
-      "São qualitativos e inspiradores, não numéricos.",
-      "Devem te tirar da zona de conforto.",
-      "3 objetivos é o máximo — foco é tudo.",
-      "Use verbos de ação: construir, lançar, transformar.",
+      "Estrutura: 'Até [data], quero [resultado com número] porque [motivo urgente].'",
+      "A data cria urgência real — sem ela o cérebro não prioriza.",
+      "O porquê emocional sustenta a motivação quando o caminho fica difícil.",
+      "3 objetivos máximo — foco total vale mais que muitas frentes abertas.",
     ],
   },
   3: {
@@ -129,6 +129,12 @@ function BarraProgresso({ pct, cor, altura = 6 }: { pct: number; cor: string; al
   );
 }
 
+const EXEMPLOS_OBJETIVO = [
+  "Ex: Até 30/06/2026, quero ter corrido minha primeira meia-maratona e chegado abaixo de 80kg, porque minha energia baixa está sabotando minha produtividade e presença com a família.",
+  "Ex: Até 31/03/2026, quero ter fechado meus 3 primeiros clientes pagantes no meu negócio de consultoria, porque continuar no emprego por segurança financeira está me custando minha realização.",
+  "Ex: Até 30/09/2026, quero ter publicado 20 artigos de profundidade e dado 2 palestras na minha área, porque quero ser reconhecido como referência antes de pedir promoção.",
+];
+
 function CardObjetivo({
   idx,
   obj,
@@ -139,7 +145,9 @@ function CardObjetivo({
   onChange: (o: Partial<Objetivo>) => void;
 }) {
   const cor = CORES_OBJETIVO[idx];
-  const filled = obj.texto.trim().length > 5;
+  const texto = obj.texto.trim();
+  const filled = texto.length > 20;
+  const mostrarDica = texto.length > 0 && texto.length < 20;
 
   return (
     <div
@@ -175,7 +183,7 @@ function CardObjetivo({
             Objetivo {idx + 1}
           </span>
           <p style={{ fontSize: 13, color: "var(--color-brand-gray)", marginTop: 1 }}>
-            Qualitativo e inspirador
+            Inclua data, número e o porquê — quanto mais específico, mais realizável.
           </p>
         </div>
         {filled && (
@@ -189,28 +197,57 @@ function CardObjetivo({
       </div>
 
       {/* Input */}
-      <div className="p-5">
+      <div className="flex flex-col gap-3 p-5">
+        {/* Estrutura guia */}
+        <div
+          className="flex items-start gap-2 rounded-xl p-3"
+          style={{ background: `${cor}08`, border: `1px solid ${cor}20` }}
+        >
+          <span style={{ color: cor, fontSize: 13, flexShrink: 0 }}>📐</span>
+          <p style={{ fontSize: 12, color: "var(--color-brand-gray)", lineHeight: 1.55, margin: 0 }}>
+            <strong style={{ color: COR_DARK }}>Complete: </strong>
+            &ldquo;Até <em>[data específica]</em>, quero <em>[resultado mensurável com número]</em> porque <em>[por que isso importa agora]</em>.&rdquo;
+          </p>
+        </div>
+
         <textarea
           value={obj.texto}
           onChange={(e) => onChange({ texto: e.target.value })}
-          placeholder={[
-            "Ex: Construir uma saúde física que me dê energia para viver plenamente",
-            "Ex: Lançar meu negócio próprio e conquistar os primeiros clientes",
-            "Ex: Me tornar referência na minha área de atuação",
-          ][idx]}
+          placeholder={EXEMPLOS_OBJETIVO[idx]}
           className="w-full resize-none rounded-xl p-4 outline-none transition-all duration-200"
           style={{
-            border: `1.5px solid ${cor}22`,
+            border: `1.5px solid ${mostrarDica ? "#E74C3C55" : cor + "22"}`,
             background: `${cor}05`,
             color: COR_DARK,
             fontFamily: "var(--font-heading)",
             fontSize: 15,
             lineHeight: 1.6,
-            minHeight: 80,
+            minHeight: 90,
           }}
           onFocus={(e) => { e.target.style.borderColor = cor; e.target.style.boxShadow = `0 0 0 3px ${cor}18`; }}
-          onBlur={(e) => { e.target.style.borderColor = `${cor}22`; e.target.style.boxShadow = "none"; }}
+          onBlur={(e) => { e.target.style.borderColor = mostrarDica ? "#E74C3C55" : `${cor}22`; e.target.style.boxShadow = "none"; }}
         />
+
+        {/* Dica de especificidade */}
+        {mostrarDica && (
+          <div
+            className="flex items-center gap-2 rounded-lg px-3 py-2"
+            style={{ background: "rgba(231,76,60,0.06)", border: "1px solid rgba(231,76,60,0.25)" }}
+          >
+            <span style={{ fontSize: 14, flexShrink: 0 }}>💡</span>
+            <p style={{ fontSize: 12, color: "#E74C3C", margin: 0, lineHeight: 1.45 }}>
+              <strong>Seja mais específico</strong> — inclua um número, uma data e o motivo. Objetivos vagos não geram comprometimento real.
+            </p>
+          </div>
+        )}
+
+        {/* Exemplo concreto */}
+        {!filled && texto.length === 0 && (
+          <p style={{ fontSize: 11, color: "var(--color-brand-gray)", lineHeight: 1.55, fontStyle: "italic", margin: 0 }}>
+            <strong style={{ color: COR_DARK, fontStyle: "normal" }}>Exemplo: </strong>
+            {EXEMPLOS_OBJETIVO[idx]}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -703,7 +740,7 @@ export default function OKRsPessoaisPage() {
     setSemanas((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...dados } : s)));
 
   // Cálculos gerais
-  const objPreenchidos = objetivos.filter((o) => o.texto.trim().length > 5).length;
+  const objPreenchidos = objetivos.filter((o) => o.texto.trim().length > 20).length;
   const krsComMeta = objetivos.flatMap((o) => o.krs).filter((kr) => kr.descricao.trim() && kr.meta.trim());
   const pctGeral =
     krsComMeta.length === 0

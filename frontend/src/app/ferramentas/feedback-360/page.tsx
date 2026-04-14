@@ -42,53 +42,53 @@ const FONTES_CONFIG: FonteTipo[] = [
     id: "colega",
     emoji: "🤝",
     titulo: "Colega de Trabalho",
-    perguntaSugerida: "Como você avalia minha capacidade de colaborar e entregar resultados em equipe?",
+    perguntaSugerida: "Em qual projeto ou entrega das últimas 8 semanas trabalhamos juntos? O que você observou no meu jeito de colaborar e entregar — nas suas próprias palavras?",
     cor: "#2980B9",
   },
   {
     id: "lideranca",
     emoji: "📊",
     titulo: "Liderança / Gestor",
-    perguntaSugerida: "Quais são meus principais pontos fortes e o que devo melhorar para crescer profissionalmente?",
+    perguntaSugerida: "Em qual situação específica das últimas 8 semanas você percebeu onde posso crescer mais? Descreva o que aconteceu e o que você notou no meu comportamento.",
     cor: "#8E44AD",
   },
   {
     id: "amigo",
     emoji: "😊",
     titulo: "Amigo Próximo",
-    perguntaSugerida: "Como você me descreveria para alguém que não me conhece? O que me diferencia?",
+    perguntaSugerida: "Lembre de uma situação recente (últimas 4 semanas) em que você me viu agir sob pressão ou tomar uma decisão difícil. O que você observou? O que eu poderia ter feito diferente?",
     cor: "#27AE60",
   },
   {
     id: "familiar",
     emoji: "🏠",
     titulo: "Familiar",
-    perguntaSugerida: "Como você percebe minha presença e equilíbrio entre vida pessoal e profissional?",
+    perguntaSugerida: "Lembre de uma situação recente onde você ficou desapontado comigo ou me viu no meu melhor. O que aconteceu exatamente? O que isso diz sobre quem eu sou?",
     cor: "#E67E22",
   },
   {
     id: "mentor",
     emoji: "🎓",
     titulo: "Mentor / Coach",
-    perguntaSugerida: "Que padrão comportamental você observa em mim que eu ainda não percebi?",
+    perguntaSugerida: "Qual padrão de comportamento você identificou em mim nas últimas sessões? Em qual situação específica esse padrão apareceu com mais clareza?",
     cor: "#C0392B",
   },
   {
     id: "outro",
     emoji: "💡",
     titulo: "Outra Fonte",
-    perguntaSugerida: "O que você vê em mim que eu poderia usar mais a meu favor?",
+    perguntaSugerida: "Descreva uma situação concreta das últimas 4 semanas em que você me observou agindo. O que eu fiz e o que isso revelou sobre mim — do ponto de vista de quem estava de fora?",
     cor: "#7F8C8D",
   },
 ];
 
 const ASPECTOS_INICIAIS: Aspecto[] = [
   { id: "ponto_forte",     label: "Ponto Forte Principal",  comoMeVejo: "", oQueDisseram: "", pontoCego: null },
-  { id: "area_melhoria",   label: "Área de Melhoria",       comoMeVejo: "", oQueDisseram: "", pontoCego: null },
+  { id: "area_melhoria",   label: "Maior Oportunidade",     comoMeVejo: "", oQueDisseram: "", pontoCego: null },
   { id: "comunicacao",     label: "Comunicação",             comoMeVejo: "", oQueDisseram: "", pontoCego: null },
-  { id: "lideranca",       label: "Liderança",               comoMeVejo: "", oQueDisseram: "", pontoCego: null },
+  { id: "lideranca",       label: "Influência / Liderança",  comoMeVejo: "", oQueDisseram: "", pontoCego: null },
   { id: "confiabilidade",  label: "Confiabilidade",          comoMeVejo: "", oQueDisseram: "", pontoCego: null },
-  { id: "criatividade",    label: "Criatividade",            comoMeVejo: "", oQueDisseram: "", pontoCego: null },
+  { id: "criatividade",    label: "Resolução de Problemas",  comoMeVejo: "", oQueDisseram: "", pontoCego: null },
   { id: "resiliencia",     label: "Resiliência",             comoMeVejo: "", oQueDisseram: "", pontoCego: null },
   { id: "relacionamentos", label: "Relacionamentos",         comoMeVejo: "", oQueDisseram: "", pontoCego: null },
 ];
@@ -115,30 +115,30 @@ const INSTRUCOES: Record<number, { titulo: string; itens: string[] }> = {
     ],
   },
   2: {
-    titulo: "Coletando Feedback",
+    titulo: "Coletando Feedback Episódico",
     itens: [
-      "Escolha pessoas que te conhecem em contextos diferentes.",
-      "Use a pergunta sugerida ou crie a sua própria.",
-      "Registre o feedback com fidelidade — sem editar.",
-      "Busque pelo menos 4 fontes para resultados confiáveis.",
+      "Peça que a pessoa lembre de uma situação específica, não avaliações gerais.",
+      "Âncoras temporais ativam memória concreta: 'nas últimas 8 semanas…'",
+      "Registre as palavras exatas delas — não seu resumo ou interpretação.",
+      "4+ fontes de contextos diferentes revelam padrões reais de comportamento.",
     ],
   },
   3: {
     titulo: "Analisando Discrepâncias",
     itens: [
-      "Compare como você se vê com o que as pessoas disseram.",
-      "Um ponto cego é quando os outros veem algo que você não vê.",
-      "Seja curioso, não defensivo — é informação valiosa.",
-      "Marque 'Sim' quando houver diferença significativa.",
+      "Para cada aspecto, cite uma situação concreta onde você agiu assim.",
+      "Discrepância = você se via de um jeito, eles viram diferente na prática.",
+      "Pontos cegos são os mais valiosos — resistência a eles é normal.",
+      "Pergunte: 'Em qual situação real isso apareceu?' antes de marcar.",
     ],
   },
   4: {
     titulo: "Transformando em Ação",
     itens: [
-      "Identifique o maior ponto cego revelado pelo processo.",
-      "Defina UMA ação concreta para os próximos 30 dias.",
-      "Fechar o loop = agradecer e compartilhar o progresso.",
-      "O feedback sem ação é apenas informação.",
+      "O compromisso deve ter data, comportamento observável e sinal de sucesso.",
+      "UMA mudança bem implementada vale mais que dez intenções vagas.",
+      "Fechar o loop reforça o relacionamento e cria accountability.",
+      "Feedback sem ação concreta e datada é apenas informação perecível.",
     ],
   },
 };
@@ -295,12 +295,12 @@ function FonteCard({
           {/* Feedback recebido */}
           <div className="flex flex-col gap-1">
             <label style={{ fontSize: 13, fontWeight: 600, color: "var(--color-brand-gray)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Feedback recebido
+              Feedback recebido (situação específica)
             </label>
             <textarea
               value={fonte.feedback}
               onChange={(e) => onUpdate({ feedback: e.target.value })}
-              placeholder="Escreva exatamente o que a pessoa disse, com as palavras dela..."
+              placeholder="Descreva a situação concreta que esta pessoa relatou — quando aconteceu, o que eu fiz ou disse, e o que ela observou. Use as palavras dela, não um resumo geral."
               className="resize-none rounded-xl p-3 text-sm outline-none transition-all duration-200"
               style={{
                 border: `1.5px solid ${config.cor}33`,
@@ -342,7 +342,7 @@ function TabelaDiscrepancias({
           borderBottom: "1px solid var(--color-brand-border)",
         }}
       >
-        {["Aspecto", "Como me vejo", "O que disseram", "Ponto Cego?"].map((h) => (
+        {["Aspecto", "Situação onde demonstrei isso (últimas 8 sem.)", "O que disseram (palavras deles)", "Ponto Cego?"].map((h) => (
           <p
             key={h}
             style={{
@@ -396,7 +396,7 @@ function TabelaDiscrepancias({
           <textarea
             value={a.comoMeVejo}
             onChange={(e) => onUpdate(a.id, { comoMeVejo: e.target.value })}
-            placeholder="Sua autopercepção..."
+            placeholder="Em qual situação específica (últimas 8 sem.) você demonstrou isso? O que fez exatamente?"
             className="resize-none rounded-lg p-2 text-xs outline-none transition-all duration-200 w-full"
             style={{
               border: "1.5px solid var(--color-brand-border)",
@@ -414,7 +414,7 @@ function TabelaDiscrepancias({
           <textarea
             value={a.oQueDisseram}
             onChange={(e) => onUpdate(a.id, { oQueDisseram: e.target.value })}
-            placeholder="O que o feedback revelou..."
+            placeholder="O que essa pessoa disse com as palavras dela sobre este aspecto? Citar a situação concreta que ela mencionou."
             className="resize-none rounded-lg p-2 text-xs outline-none transition-all duration-200 w-full"
             style={{
               border: "1.5px solid var(--color-brand-border)",
@@ -927,8 +927,8 @@ export default function Feedback360Page() {
                 Análise de Discrepâncias
               </h2>
               <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
-                Para cada aspecto, escreva <strong style={{ color: COR_DARK }}>como você se vê</strong> e{" "}
-                <strong style={{ color: COR_DARK }}>o que o feedback revelou</strong>. Marque se há ponto cego.
+                Para cada aspecto, descreva <strong style={{ color: COR_DARK }}>uma situação concreta</strong> onde você agiu assim e{" "}
+                <strong style={{ color: COR_DARK }}>o que as pessoas disseram</strong> com as palavras delas. Marque se há diferença (ponto cego).
               </p>
             </div>
 
@@ -975,15 +975,15 @@ export default function Feedback360Page() {
             <CampoInsight
               emoji="🔍"
               titulo="Maior ponto cego revelado"
-              placeholder="Qual foi a maior diferença entre como eu me via e o que as pessoas disseram? O que isso me revela sobre mim mesmo(a)?"
+              placeholder="Complete: 'Eu acreditava que era [X] em [situação específica], mas múltiplas pessoas disseram que na verdade eu [Y].' O que esta diferença revela sobre um padrão que eu repito?"
               valor={insights.maiorPontoCego}
               onChange={(v) => setInsights((p) => ({ ...p, maiorPontoCego: v }))}
               cor="#8E44AD"
             />
             <CampoInsight
               emoji="🎯"
-              titulo="O que vou trabalhar nos próximos 30 dias"
-              placeholder="Com base nos pontos cegos e feedbacks, qual é UMA mudança específica que vou implementar nos próximos 30 dias?"
+              titulo="Compromisso nos próximos 30 dias"
+              placeholder="Complete: 'Até [data exata], vou [ação comportamental específica e observável] para trabalhar [ponto cego identificado]. Vou saber que funcionou quando [sinal concreto]."
               valor={insights.trabalharEm30Dias}
               onChange={(v) => setInsights((p) => ({ ...p, trabalharEm30Dias: v }))}
               cor={COR_DARK}
@@ -991,7 +991,7 @@ export default function Feedback360Page() {
             <CampoInsight
               emoji="🤝"
               titulo="Como vou fechar o loop"
-              placeholder="Como vou agradecer às pessoas que me deram feedback e compartilhar meu plano de ação com elas?"
+              placeholder="Quem, especificamente, vou contatar? Quando (data)? O que vou compartilhar sobre o que aprendi e o que mudei como resultado do feedback delas?"
               valor={insights.fecharLoop}
               onChange={(v) => setInsights((p) => ({ ...p, fecharLoop: v }))}
               cor={COR_GOLD}
