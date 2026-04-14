@@ -257,40 +257,48 @@ export default function MomentoPage() {
   async function salvarDiario() {
     if (!user?.id) return;
     setSalvando(true);
-    const client = await getClient();
-    await client.from('diario_kairos').upsert({
-      user_id: user?.id, data: hoje,
-      qualidade_sono: diario.qualidade_sono ?? null,
-      emocao: diario.emocao ?? null,
-      preocupacao: diario.preocupacao ?? null,
-      gratidao: diario.gratidao ?? null,
-      missao_cumprida: diario.missao_cumprida ?? false,
-    }, { onConflict: 'user_id,data' });
-    setSalvando(false); setSalvo(true);
-    setTimeout(() => setSalvo(false), 3000);
+    try {
+      const client = await getClient();
+      const { error } = await client.from('diario_kairos').upsert({
+        user_id: user.id, data: hoje,
+        qualidade_sono: diario.qualidade_sono ?? null,
+        emocao: diario.emocao ?? null,
+        preocupacao: diario.preocupacao ?? null,
+        gratidao: diario.gratidao ?? null,
+        missao_cumprida: diario.missao_cumprida ?? false,
+      }, { onConflict: 'user_id,data' });
+      if (error) throw error;
+      setSalvo(true);
+      setTimeout(() => setSalvo(false), 3000);
+    } catch (e) {
+      console.error('[salvarDiario]', e);
+    } finally {
+      setSalvando(false);
+    }
   }
 
 
-    async function salvarReflexaoNoite() {
+  async function salvarReflexaoNoite() {
     if (!user?.id) return;
     setSalvandoNoite(true);
-    const client = await getClient();
-    
-    // Usamos 'as any' para evitar o erro de tipagem chato do TS
-    const dadosParaSalvar: any = {
-      user_id: user.id,
-      data: hoje,
-      conquista: diario.conquista ?? null,
-      aprendizado: diario.aprendizado ?? null,
-      energia_fim: diario.energia_fim ?? null,
-      nota_dia: diario.nota_dia ?? null,
-    };
-
-    await client.from('diario_kairos').upsert(dadosParaSalvar, { onConflict: 'user_id,data' });
-    
-    setSalvandoNoite(false); 
-    setSalvoNoite(true);
-    setTimeout(() => setSalvoNoite(false), 3000);
+    try {
+      const client = await getClient();
+      const { error } = await client.from('diario_kairos').upsert({
+        user_id:     user.id,
+        data:        hoje,
+        conquista:   diario.conquista   ?? null,
+        aprendizado: diario.aprendizado ?? null,
+        energia_fim: diario.energia_fim ?? null,
+        nota_dia:    diario.nota_dia    ?? null,
+      }, { onConflict: 'user_id,data' });
+      if (error) throw error;
+      setSalvoNoite(true);
+      setTimeout(() => setSalvoNoite(false), 3000);
+    } catch (e) {
+      console.error('[salvarReflexaoNoite]', e);
+    } finally {
+      setSalvandoNoite(false);
+    }
   }
 
 

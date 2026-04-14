@@ -253,6 +253,10 @@ export type Database = {
           gratidao?:         string | null;
           missao_cumprida?:  boolean;
           missao_execucao?:  string | null;
+          conquista?:        string | null;
+          aprendizado?:      string | null;
+          energia_fim?:      number | null;
+          nota_dia?:         number | null;
           created_at?:       string;
           updated_at?:       string;
         };
@@ -266,6 +270,10 @@ export type Database = {
           gratidao?:         string | null;
           missao_cumprida?:  boolean;
           missao_execucao?:  string | null;
+          conquista?:        string | null;
+          aprendizado?:      string | null;
+          energia_fim?:      number | null;
+          nota_dia?:         number | null;
           updated_at?:       string;
         };
         Relationships: [];
