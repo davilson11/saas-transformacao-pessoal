@@ -62,18 +62,19 @@ export default function TrialBanner() {
       background:   variant.bg,
       border:       `1px solid ${variant.border}`,
       borderRadius: 12,
-      padding:      '12px 16px',
+      padding:      '10px 14px',
       display:      'flex',
       alignItems:   'center',
-      gap:          12,
+      gap:          10,
       marginBottom: 4,
       flexWrap:     'wrap',
+      overflow:     'hidden',
     }}>
       {/* Ícone */}
       <span style={{ fontSize: 18, flexShrink: 0 }}>{variant.icon}</span>
 
       {/* Mensagem */}
-      <p style={{ flex: 1, fontSize: 13, fontWeight: 600, color: variant.msgColor, margin: 0, minWidth: 180 }}>
+      <p style={{ flex: 1, fontSize: 13, fontWeight: 600, color: variant.msgColor, margin: 0, minWidth: 0, wordBreak: 'break-word' }}>
         {variant.msg}
       </p>
 

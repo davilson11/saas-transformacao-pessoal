@@ -503,7 +503,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           }}>
 
             {/* ── Esquerda: logo + saudação ── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, minWidth: 0, overflow: 'hidden' }}>
               {modoFoco && (
                 <span style={{
                   fontFamily: "'Playfair Display', Georgia, serif",
@@ -559,7 +559,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
             {/* ── Centro: busca ── */}
             {!modoFoco && (
-              <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+              <div className="dl-search-wrap" style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
                 <SearchBar />
               </div>
             )}
@@ -570,7 +570,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
               {/* Streak */}
               {!modoFoco && (
-                <span style={{
+                <span className="dl-streak" style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
                   fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700,
                   color: streakDiario > 0 ? '#C8A030' : 'rgba(245,240,232,0.3)',
@@ -601,7 +601,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 }}
               >
                 <IconFoco active={modoFoco} />
-                {modoFoco ? 'Sair do Foco' : 'Modo Foco'}
+                <span className="dl-foco-label">{modoFoco ? 'Sair do Foco' : 'Modo Foco'}</span>
               </button>
 
               <UserButton appearance={{ elements: { avatarBox: { width: 30, height: 30 } } }} />
@@ -610,6 +610,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* ── CONTENT ──────────────────────────────── */}
           <main
+            className="dl-main"
             style={{
               flex: 1, overflowY: 'auto',
               padding: modoFoco ? '0' : '24px',
@@ -626,6 +627,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         @keyframes dl-pulse {
           0%, 100% { opacity: 0.4 }
           50%       { opacity: 0.8 }
+        }
+        @media (max-width: 640px) {
+          .dl-search-wrap { display: none !important; }
+          .dl-streak { display: none !important; }
+          .dl-foco-label { display: none !important; }
+          .dl-main { padding: 12px !important; }
+        }
+        @media (max-width: 400px) {
+          .dl-main { padding: 8px !important; }
         }
       `}</style>
     </ModoFocoContext.Provider>

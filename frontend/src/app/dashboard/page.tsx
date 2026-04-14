@@ -57,7 +57,7 @@ function CardMomentoCompacto() {
 
   return (
     <Link href="/momento" style={{ textDecoration: 'none', display: 'block' }}>
-      <div style={{
+      <div className="dash-compacto" style={{
         background: G,
         borderRadius: 14,
         padding: '16px 20px',
@@ -290,7 +290,7 @@ function CardHoje() {
         </div>
 
         {/* ── Bloco streak ── */}
-        <div style={{
+        <div className="dash-hoje-streak" style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           gap: 10, padding: '20px 28px', flexShrink: 0,
           borderLeft: '1px solid rgba(255,255,255,0.07)',
@@ -413,7 +413,7 @@ function FasesProgresso() {
               {/* Nome */}
               <span style={{
                 fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 500,
-                color: '#2a2a2a', flex: '0 0 160px', minWidth: 0,
+                color: '#2a2a2a', flex: '1 1 100px', minWidth: 0,
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               }}>
                 {fase.nome}
@@ -433,7 +433,7 @@ function FasesProgresso() {
               </div>
 
               {/* Percentual */}
-              <span style={{
+              <span className="dash-fase-pct" style={{
                 fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700,
                 color: fase.pct >= 50 ? fase.cor : 'var(--color-brand-gray)',
                 flexShrink: 0, minWidth: 32, textAlign: 'right' as const,
@@ -660,6 +660,13 @@ export default function DashboardPage() {
   // ── Layout normal ──────────────────────────────────────────────────────────
   return (
     <DashboardLayout>
+      <style>{`
+        @media (max-width: 640px) {
+          .dash-hoje-streak { display: none !important; }
+          .dash-fase-pct { display: none !important; }
+          .dash-compacto { flex-direction: column !important; gap: 10px !important; }
+        }
+      `}</style>
       <Onboarding />
       <TrialBanner />
 

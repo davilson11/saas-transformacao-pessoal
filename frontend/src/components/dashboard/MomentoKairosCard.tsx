@@ -165,6 +165,14 @@ export default function MomentoKairosCard() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .mkc-header { padding: 14px 16px !important; flex-wrap: wrap !important; gap: 12px !important; }
+          .mkc-grid { grid-template-columns: 1fr !important; }
+          .mkc-section { padding: 16px !important; }
+          .mkc-voz { padding: 16px !important; }
+        }
+      `}</style>
 
       {/* ── 0. Banner contextual por horário ────────────────────────────── */}
       <div style={{
@@ -190,7 +198,7 @@ export default function MomentoKairosCard() {
       </div>
 
       {/* ── 1. Topo: saudação + data ─────────────────────────────────────── */}
-      <div style={{
+      <div className="mkc-header" style={{
         background: DARK,
         borderRadius: 16,
         padding: '20px 24px',
@@ -219,7 +227,7 @@ export default function MomentoKairosCard() {
       </div>
 
       {/* ── 2. Voz do dia ───────────────────────────────────────────────── */}
-      <div style={{
+      <div className="mkc-voz" style={{
         background: '#1A1A1A',
         borderRadius: 14,
         padding: '22px 24px',
@@ -236,7 +244,7 @@ export default function MomentoKairosCard() {
       </div>
 
       {/* ── 3. Missão do dia (PRINCIPAL) ─────────────────────────────────── */}
-      <div style={{
+      <div className="mkc-section" style={{
         background: `linear-gradient(135deg, #2A1800 0%, #1A1000 100%)`,
         borderRadius: 16,
         padding: '22px 24px',
@@ -265,7 +273,7 @@ export default function MomentoKairosCard() {
       </div>
 
       {/* ── 4. Streak + Versículo lado a lado ──────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="mkc-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
 
         {/* Streak card */}
         <div style={{
