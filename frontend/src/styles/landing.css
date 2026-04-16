@@ -58,13 +58,15 @@ html:has(.landing-root) { scroll-behavior: smooth; background: #0E0E0E; }
 }
 .nav-links a:hover { color: var(--gold-light); }
 .nav-cta {
-  background: var(--gold); color: #0E0E0E;
+  background: #C8A030; color: #0E0E0E;
   padding: .5rem 1.25rem; border-radius: 2px;
   font-size: .85rem; font-weight: 600;
   text-decoration: none; letter-spacing: .06em;
   transition: background .2s;
 }
-.nav-cta:hover { background: var(--gold-light); }
+/* Override .nav-links a specificity (0,1,1) with (0,2,1) */
+.nav-links a.nav-cta { color: #0E0E0E !important; }
+.nav-links a.nav-cta:hover { background: #DDB95A; color: #0E0E0E !important; }
 
 /* =====================
    HERO

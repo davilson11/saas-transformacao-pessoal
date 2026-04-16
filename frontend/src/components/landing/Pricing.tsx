@@ -12,6 +12,7 @@ const planos = [
     periodo:  'para sempre',
     destaque: false,
     tag:      null,
+    badge:    null as string | null,
     plano:    null as Plano | null,
     features: [
       { texto: '3 ferramentas desbloqueadas',                    ativo: true  },
@@ -21,16 +22,17 @@ const planos = [
       { texto: 'Dashboard de evolução',                          ativo: false },
       { texto: 'Histórico e progresso salvo',                    ativo: false },
     ],
-    cta:  'Criar conta grátis',
+    cta:  'Começar grátis — 7 dias',
     href: '/sign-up',
   },
   {
     nome:     'Pro Mensal',
     sub:      'Acesso completo, sem compromisso longo',
-    preco:    '29',
+    preco:    '19',
     periodo:  '/mês · cancele quando quiser',
     destaque: false,
     tag:      null,
+    badge:    '7 dias grátis' as string | null,
     plano:    'mensal' as Plano,
     features: [
       { texto: 'Todas as 16 ferramentas',   ativo: true },
@@ -40,26 +42,27 @@ const planos = [
       { texto: 'Suporte por e-mail',        ativo: true },
       { texto: 'Atualizações inclusas',     ativo: true },
     ],
-    cta:  'Assinar Pro — R$29/mês',
+    cta:  'Assinar Pro — R$19/mês',
     href: null,
   },
   {
     nome:     'Pro Anual',
-    sub:      'Melhor valor — equivale a R$16/mês',
-    preco:    '197',
-    periodo:  '/ano · você economiza R$151',
+    sub:      'Melhor valor — equivale a R$12/mês',
+    preco:    '147',
+    periodo:  '/ano · você economiza R$81',
     destaque: true,
     tag:      'Mais popular',
+    badge:    '7 dias grátis' as string | null,
     plano:    'anual' as Plano,
     features: [
       { texto: 'Tudo do Pro Mensal',              ativo: true },
-      { texto: 'Economia de R$151 vs mensal',     ativo: true },
+      { texto: 'Economia de R$81 vs mensal',      ativo: true },
       { texto: 'Acesso antecipado a novidades',   ativo: true },
       { texto: 'Comunidade exclusiva',            ativo: true },
       { texto: 'Sessão de onboarding',            ativo: true },
       { texto: 'Garantia de 7 dias',              ativo: true },
     ],
-    cta:  'Quero o Pro Anual — R$197/ano',
+    cta:  'Quero o Pro Anual — R$147/ano',
     href: null,
   },
 ] as const;
@@ -143,6 +146,20 @@ export function Pricing() {
               {p.tag && <div className="pricing-tag">{p.tag}</div>}
               <div className="pricing-name">{p.nome}</div>
               <div className="pricing-sub">{p.sub}</div>
+              {p.badge && (
+                <div style={{
+                  display: 'inline-block',
+                  background: 'rgba(34,197,94,0.15)',
+                  border: '1px solid rgba(34,197,94,0.4)',
+                  color: '#22c55e',
+                  fontSize: '.68rem', fontWeight: 700,
+                  letterSpacing: '.1em', textTransform: 'uppercase',
+                  padding: '.22rem .75rem', borderRadius: 99,
+                  marginBottom: '1.25rem',
+                }}>
+                  ✦ {p.badge}
+                </div>
+              )}
               <div className="pricing-val">
                 <span className="curr">{p.preco !== '0' ? 'R$' : ''}</span>
                 <span className="num">{p.preco === '0' ? 'Grátis' : p.preco}</span>
