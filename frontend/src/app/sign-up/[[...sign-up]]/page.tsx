@@ -43,25 +43,14 @@ export default function SignUpPage() {
       <SignUp
         appearance={{
           variables: {
-            colorPrimary: "#B5840A",
-            colorBackground: "#111111",
-            colorText: "#F5F0E8",
-            colorTextSecondary: "rgba(245,240,232,0.55)",
-            colorInputBackground: "rgba(255,255,255,0.05)",
-            colorInputText: "#F5F0E8",
-            borderRadius: "12px",
-            fontFamily: '"Inter", system-ui, sans-serif',
-          },
-          elements: {
-            card: {
-              border: "1px solid rgba(255,255,255,0.08)",
-              boxShadow: "0 8px 40px rgba(0,0,0,0.55)",
-            },
-            headerTitle: {
-              fontFamily: "Georgia, serif",
-              fontWeight: 400,
-              letterSpacing: "0.08em",
-            },
+            colorPrimary: '#C8A030',
+            colorBackground: '#141414',
+            colorText: '#F5F0E8',
+            colorTextSecondary: 'rgba(245,240,232,0.6)',
+            colorInputBackground: '#1e1e1e',
+            colorInputText: '#F5F0E8',
+            colorNeutral: '#F5F0E8',
+            borderRadius: '10px',
           },
         }}
       />
