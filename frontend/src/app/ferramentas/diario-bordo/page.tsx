@@ -1,951 +1,822 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
-import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
-import AnaliseIA from '@/components/dashboard/AnaliseIA';
+/*
+  MIGRAÇÃO SUPABASE — execute no SQL Editor antes de usar:
+
+  ALTER TABLE diario_kairos
+    ADD COLUMN IF NOT EXISTS tipo_entrada TEXT NOT NULL DEFAULT 'livre',
+    ADD COLUMN IF NOT EXISTS texto_livre  TEXT;
+*/
+
+import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
-import { buscarRodaVida } from '@/lib/queries';
-import type { RodaVida } from '@/lib/database.types';
+import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import type { DiarioKairos } from '@/lib/database.types';
 
-// ─── Tipos ────────────────────────────────────────────────────────────────────
+// ─── Alias ────────────────────────────────────────────────────────────────────
 
-type EntradaDiaria = {
-  data:           string;
-  espacoSagrado:  string;  // escrita expressiva Pennebaker
-  emoji:          string;
-  nota:           number;
-  promptResposta: string;
-  significativo:  string;
-};
+type Entrada = DiarioKairos;
+type TipoEntrada = 'livre' | 'diario' | 'legado';
+
+function getTipo(e: Entrada): TipoEntrada {
+  if (e.tipo_entrada === 'diario') return 'diario';
+  if (e.tipo_entrada === 'livre')  return 'livre';
+  return 'legado';
+}
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
-const COR_VERDE  = '#1a5c3a';
-const COR_GOLD   = '#b5840a';
-const COR_BORDER = 'rgba(26,92,58,0.12)';
+const EMOJIS = ['😣', '😔', '😐', '🙂', '😊', '😄', '🤩'] as const;
 
-const ETAPAS = [
-  { label: 'Bem-vindo', descricao: 'Como funciona'    },
-  { label: 'Registro',  descricao: '3 minutos por dia' },
-];
+const STOPWORDS = new Set([
+  'de','a','o','que','e','do','da','em','um','para','com','uma','os','no','se',
+  'na','por','mais','as','dos','como','mas','ao','ele','das','seu','sua',
+  'ou','quando','muito','nos','já','eu','também','só','pelo','pela','até','isso',
+  'ela','entre','depois','sem','mesmo','seus','quem','nas','me','esse',
+  'eles','você','essa','num','nem','suas','meu','minha','numa','pelos',
+  'elas','seja','qual','será','nós','tenho','lhe','essas','esses',
+  'pelas','este','fosse','dele','tu','te','vocês','vos','lhes','meus','minhas',
+  'teu','tua','teus','tuas','nosso','nossa','nossos','nossas','dela','delas',
+  'esta','estes','estas','aquele','aquela','aqueles','aquelas','isto','aquilo',
+  'foi','é','são','fui','ser','ter','há','não','sim','então','hoje','dia',
+  'anos','ano','vez','coisa','coisas','fazer','feito','ainda','assim','muito',
+]);
 
-const EMOJIS_HUMOR = [
-  { emoji: '😣', label: 'Muito mal'    },
-  { emoji: '😔', label: 'Mal'          },
-  { emoji: '😐', label: 'Ok'           },
-  { emoji: '🙂', label: 'Bem'          },
-  { emoji: '😊', label: 'Muito bem'    },
-  { emoji: '😄', label: 'Ótimo'        },
-  { emoji: '🤩', label: 'Incrível'     },
-];
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const ENTRADA_DEFAULT: EntradaDiaria = {
-  data:           '',
-  espacoSagrado:  '',
-  emoji:          '',
-  nota:           0,
-  promptResposta: '',
-  significativo:  '',
-};
-
-// ─── Área da Roda da Vida ─────────────────────────────────────────────────────
-
-type RodaAreaKey = keyof Omit<RodaVida, 'id' | 'user_id' | 'created_at'>;
-
-const RODA_PERGUNTAS: Record<RodaAreaKey, string> = {
-  saude:           'Sua saúde está com atenção. O que você fez — ou poderia ter feito — por ela hoje?',
-  carreira:        'Sua carreira pede foco. Que passo concreto você deu na direção certa hoje?',
-  financas:        'Suas finanças merecem atenção. Que decisão financeira você tomou ou evitou hoje?',
-  relacionamentos: 'Seus relacionamentos pedem cuidado. Quem você nutriu hoje — e como?',
-  crescimento:     'Seu crescimento pessoal clama por ação. O que você aprendeu ou praticou hoje?',
-  lazer:           'Lazer e descanso estão em falta. O que renovou sua energia hoje?',
-  familia:         'Família merece presença. Como você esteve presente com quem ama hoje?',
-  espiritualidade: 'Sua espiritualidade pede cuidado. O que te conectou a algo maior hoje?',
-};
-
-const PERGUNTA_PADRAO =
-  'O que você fez hoje que te deixa orgulhoso, mesmo que pequeno?';
-
-function gerarPergunta(rodaVida: RodaVida | null): string {
-  if (!rodaVida) return PERGUNTA_PADRAO;
-  const keys: RodaAreaKey[] = [
-    'saude', 'carreira', 'financas', 'relacionamentos',
-    'crescimento', 'lazer', 'familia', 'espiritualidade',
-  ];
-  const menor = keys.reduce((m, k) =>
-    (rodaVida[k] as number) < (rodaVida[m] as number) ? k : m
-  );
-  return RODA_PERGUNTAS[menor];
+function dataHoje(): string {
+  return new Date()
+    .toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    .split('/')
+    .reverse()
+    .join('-');
 }
 
-// ─── Confetti dourado ─────────────────────────────────────────────────────────
-
-type Particle = {
-  id:    number;
-  x:     number; // vw offset from center
-  y:     number; // vh offset from center
-  size:  number;
-  color: string;
-  delay: number;
-  shape: 'circle' | 'square';
-};
-
-function gerarParticles(n = 28): Particle[] {
-  const colors = ['#C8A030', '#e8c76a', '#f0d890', '#1a5c3a', '#4dbb7a', '#fff'];
-  return Array.from({ length: n }, (_, i) => ({
-    id:    i,
-    x:     (Math.random() - 0.5) * 60,
-    y:     (Math.random() - 0.5) * 60,
-    size:  4 + Math.random() * 8,
-    color: colors[Math.floor(Math.random() * colors.length)],
-    delay: Math.random() * 0.4,
-    shape: Math.random() > 0.5 ? 'circle' : 'square',
-  }));
+function formatarHora(ts: string): string {
+  return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-function Confetti({ visivel }: { visivel: boolean }) {
-  const [particles] = useState<Particle[]>(() => gerarParticles());
-  if (!visivel) return null;
+function formatarData(data: string): string {
+  const hoje  = dataHoje();
+  const ontem = new Date(Date.now() - 86_400_000)
+    .toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    .split('/').reverse().join('-');
+  if (data === hoje)  return 'Hoje';
+  if (data === ontem) return 'Ontem';
+  const [, mes, dia] = data.split('-');
+  const MESES = ['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  return `${dia} ${MESES[parseInt(mes, 10)] ?? mes}`;
+}
+
+function palavraFrequente(entradas: Entrada[]): string {
+  const freq: Record<string, number> = {};
+  for (const e of entradas) {
+    const txt = e.tipo_entrada === 'livre' ? e.texto_livre : null;
+    if (!txt) continue;
+    txt
+      .toLowerCase()
+      .replace(/[^a-záéíóúãõâêîôûçàü\s]/g, ' ')
+      .split(/\s+/)
+      .filter(p => p.length > 3 && !STOPWORDS.has(p))
+      .forEach(p => { freq[p] = (freq[p] ?? 0) + 1; });
+  }
+  return Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+}
+
+function humorDominante(entradas: Entrada[]): string {
+  const freq: Record<string, number> = {};
+  for (const e of entradas.slice(0, 7)) {
+    if (!e.emocao) continue;
+    freq[e.emocao] = (freq[e.emocao] ?? 0) + 1;
+  }
+  return Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+}
+
+function gerarInsight(palavra: string, humor: string): string {
+  if (palavra && humor) {
+    return `A palavra "${palavra}" aparece com frequência nas suas entradas — e seu humor predominante foi ${humor}. Pode ser um tema importante a explorar.`;
+  }
+  if (palavra) {
+    return `"${palavra}" surge repetidamente. Pode ser algo que a sua mente está processando.`;
+  }
+  if (humor) {
+    return `Seu humor dominante desta semana foi ${humor}. Como você se sente em relação a isso?`;
+  }
+  return 'Continue escrevendo — padrões mais profundos emergirão com o tempo.';
+}
+
+// ─── Estilos base ─────────────────────────────────────────────────────────────
+
+const INPUT_STYLE: React.CSSProperties = {
+  background:  'rgba(245,240,232,0.04)',
+  border:      '1px solid rgba(245,240,232,0.1)',
+  borderRadius: 8,
+  padding:     '10px 14px',
+  color:       '#F5F0E8',
+  fontSize:    14,
+  width:       '100%',
+  boxSizing:   'border-box',
+  outline:     'none',
+  fontFamily:  'inherit',
+  resize:      'none',
+  lineHeight:  1.65,
+};
+
+// ─── Camada 1 — Modal de Entrada Livre ────────────────────────────────────────
+
+function ModalEntradaLivre({
+  onFechar,
+  onSalvar,
+}: {
+  onFechar: () => void;
+  onSalvar: (texto: string, emoji: string) => Promise<void>;
+}) {
+  const [texto,    setTexto]    = useState('');
+  const [emoji,    setEmoji]    = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => { textareaRef.current?.focus(); }, []);
+
+  async function salvar() {
+    if (!texto.trim() || salvando) return;
+    setSalvando(true);
+    try {
+      await onSalvar(texto.trim(), emoji);
+      onFechar();
+    } catch {
+      setSalvando(false);
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Escape') { onFechar(); return; }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { salvar(); }
+  }
+
+  const podeAvancar = texto.trim().length > 0 && !salvando;
+
   return (
-    <>
-      <style>{`
-        @keyframes confetti-fly {
-          0%   { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
-          80%  { opacity: 0.6; }
-          100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.3) rotate(360deg); }
-        }
-        .conf-particle {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          pointer-events: none;
-          z-index: 500;
-          animation: confetti-fly 1.1s ease-out forwards;
-        }
-      `}</style>
-      {particles.map((p) => (
-        <div
-          key={p.id}
-          className="conf-particle"
+    <div
+      style={{
+        position: 'fixed', inset: 0,
+        background: 'rgba(0,0,0,0.8)',
+        backdropFilter: 'blur(8px)',
+        zIndex: 1000,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '24px',
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onFechar(); }}
+    >
+      <div style={{
+        background: '#141414',
+        border: '1px solid rgba(200,160,48,0.2)',
+        borderRadius: 20,
+        width: '100%', maxWidth: 560,
+        padding: '28px 28px 24px',
+        display: 'flex', flexDirection: 'column', gap: 20,
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <div style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
+              color: '#C8A030', textTransform: 'uppercase', marginBottom: 4,
+            }}>
+              Entrada livre
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(245,240,232,0.3)' }}>
+              {new Date().toLocaleString('pt-BR', {
+                weekday: 'long', hour: '2-digit', minute: '2-digit',
+                timeZone: 'America/Sao_Paulo',
+              })}
+            </div>
+          </div>
+          <button
+            onClick={onFechar}
+            style={{
+              background: 'rgba(245,240,232,0.06)', border: 'none',
+              borderRadius: 8, padding: '6px 12px', cursor: 'pointer',
+              color: 'rgba(245,240,232,0.4)', fontSize: 14, flexShrink: 0,
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Textarea */}
+        <textarea
+          ref={textareaRef}
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="O que está na sua mente agora? Escreva sem filtro, sem julgamento..."
+          rows={8}
           style={{
-            width:  p.size,
-            height: p.size,
-            borderRadius: p.shape === 'circle' ? '50%' : '2px',
-            background: p.color,
-            marginLeft: -p.size / 2,
-            marginTop:  -p.size / 2,
-            animationDelay: `${p.delay}s`,
-            // CSS custom properties for the fly direction
-            ['--tx' as string]: `${p.x}vw`,
-            ['--ty' as string]: `${p.y}vh`,
+            ...INPUT_STYLE,
+            fontFamily: "Georgia, 'Times New Roman', serif",
+            fontSize: 15,
+            lineHeight: 1.75,
+            border: '1px solid rgba(245,240,232,0.12)',
+            borderRadius: 12,
+            padding: '16px',
           }}
         />
-      ))}
-    </>
+
+        {/* Emoji (opcional) */}
+        <div>
+          <div style={{
+            fontSize: 10, color: 'rgba(245,240,232,0.3)',
+            marginBottom: 8, letterSpacing: '0.1em', textTransform: 'uppercase',
+          }}>
+            Como você está agora? <span style={{ opacity: 0.6 }}>(opcional)</span>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {EMOJIS.map((e) => (
+              <button
+                key={e}
+                onClick={() => setEmoji(emoji === e ? '' : e)}
+                style={{
+                  fontSize: 22,
+                  background: emoji === e ? 'rgba(200,160,48,0.15)' : 'transparent',
+                  border: emoji === e
+                    ? '1.5px solid rgba(200,160,48,0.45)'
+                    : '1.5px solid transparent',
+                  borderRadius: 8,
+                  padding: '4px 5px',
+                  cursor: 'pointer',
+                  transition: 'all 0.12s',
+                }}
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Ações */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: 'rgba(245,240,232,0.2)' }}>⌘ Enter para salvar</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={onFechar}
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(245,240,232,0.12)',
+                borderRadius: 8, padding: '8px 16px', cursor: 'pointer',
+                color: 'rgba(245,240,232,0.45)', fontSize: 13,
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={salvar}
+              disabled={!podeAvancar}
+              style={{
+                background: podeAvancar ? '#C8A030' : 'rgba(200,160,48,0.15)',
+                border: 'none', borderRadius: 8,
+                padding: '8px 22px',
+                cursor: podeAvancar ? 'pointer' : 'not-allowed',
+                color: podeAvancar ? '#0E0E0E' : 'rgba(200,160,48,0.35)',
+                fontSize: 13, fontWeight: 700,
+                transition: 'all 0.15s',
+              }}
+            >
+              {salvando ? 'Salvando…' : 'Salvar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
-// ─── GoldPulse — anel dourado de celebração ───────────────────────────────────
+// ─── Camada 2 — Registro Diário ───────────────────────────────────────────────
 
-function GoldPulse({ visivel }: { visivel: boolean }) {
-  if (!visivel) return null;
-  return (
-    <>
-      <style>{`
-        @keyframes goldRing {
-          0%   { transform: translate(-50%,-50%) scale(0.5); opacity: 0.9; }
-          100% { transform: translate(-50%,-50%) scale(3);   opacity: 0; }
-        }
-        .gold-pulse {
-          position: fixed;
-          top: 50%; left: 50%;
-          width: 120px; height: 120px;
-          border-radius: 50%;
-          border: 3px solid #C8A030;
-          pointer-events: none;
-          z-index: 499;
-          animation: goldRing 0.9s ease-out forwards;
-        }
-        .gold-pulse-2 {
-          animation-delay: 0.18s;
-        }
-        .gold-pulse-3 {
-          animation-delay: 0.36s;
-        }
-      `}</style>
-      <div className="gold-pulse" />
-      <div className="gold-pulse gold-pulse-2" />
-      <div className="gold-pulse gold-pulse-3" />
-    </>
-  );
-}
+function CardDiario({
+  onSalvar,
+}: {
+  onSalvar: (d: { conquista: string; preocupacao: string; gratidao: string }) => Promise<void>;
+}) {
+  const [conquista,   setConquista]   = useState('');
+  const [preocupacao, setPreocupacao] = useState('');
+  const [gratidao,    setGratidao]    = useState('');
+  const [salvando,    setSalvando]    = useState(false);
+  const [salvo,       setSalvo]       = useState(false);
 
-// ─── EspacoSagrado — escrita expressiva (Pennebaker) ─────────────────────────
-
-const TIMER_TOTAL = 120; // 2 minutos em segundos
-
-function EspacoSagrado({ valor, onChange }: { valor: string; onChange: (v: string) => void }) {
-  const [timerAtivo,    setTimerAtivo]    = useState(false);
-  const [segundos,      setSegundos]      = useState(TIMER_TOTAL);
-  const [timerCompleto, setTimerCompleto] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const limparInterval = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, []);
-
-  function iniciarTimer() {
-    limparInterval();
-    setSegundos(TIMER_TOTAL);
-    setTimerCompleto(false);
-    setTimerAtivo(true);
-  }
-
-  function pararTimer() {
-    limparInterval();
-    setTimerAtivo(false);
-  }
-
-  useEffect(() => {
-    if (!timerAtivo) return;
-    intervalRef.current = setInterval(() => {
-      setSegundos((s) => {
-        if (s <= 1) {
-          setTimerAtivo(false);
-          setTimerCompleto(true);
-          limparInterval();
-          return 0;
-        }
-        return s - 1;
+  async function salvar() {
+    if (salvando || (!conquista.trim() && !preocupacao.trim() && !gratidao.trim())) return;
+    setSalvando(true);
+    try {
+      await onSalvar({
+        conquista:   conquista.trim(),
+        preocupacao: preocupacao.trim(),
+        gratidao:    gratidao.trim(),
       });
-    }, 1000);
-    return limparInterval;
-  }, [timerAtivo, limparInterval]);
+      setSalvo(true);
+    } catch {
+      setSalvando(false);
+    }
+  }
 
-  const mins    = Math.floor(segundos / 60);
-  const secs    = segundos % 60;
-  const pct     = ((TIMER_TOTAL - segundos) / TIMER_TOTAL) * 100;
-  const temTexto = valor.trim().length > 20;
+  if (salvo) return null;
 
-  // ── SVG ring ──
-  const R        = 22;
-  const circum   = 2 * Math.PI * R;
-  const offset   = circum * (1 - pct / 100);
+  const algumPreenchido = conquista.trim() || preocupacao.trim() || gratidao.trim();
 
   return (
     <div style={{
-      borderRadius: 16, overflow: 'hidden',
-      border: `1.5px solid ${temTexto ? 'rgba(109,40,217,0.28)' : 'rgba(109,40,217,0.14)'}`,
-      background: '#fff',
-      transition: 'border-color 0.3s',
+      background: 'rgba(200,160,48,0.04)',
+      border: '1px solid rgba(200,160,48,0.15)',
+      borderRadius: 16,
+      padding: '22px 22px 20px',
+      display: 'flex', flexDirection: 'column', gap: 18,
     }}>
-      {/* Barra de cor no topo */}
-      <div style={{
-        height: 3,
-        background: 'linear-gradient(90deg, #7c3aed 0%, #a78bfa 60%, transparent 100%)',
-      }} />
-
-      {/* Header */}
-      <div style={{
-        padding: '18px 22px 14px',
-        background: 'rgba(109,40,217,0.04)',
-        borderBottom: '1px solid rgba(109,40,217,0.10)',
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16,
-      }}>
+      {/* Cabeçalho */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ width: 3, height: 32, background: '#C8A030', borderRadius: 99, flexShrink: 0 }} />
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <span style={{ fontSize: 18 }}>🕯</span>
-            <h3 style={{
-              fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
-              color: '#5b21b6', margin: 0,
-            }}>
-              Espaço Sagrado
-            </h3>
-            <span style={{
-              fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
-              color: 'rgba(109,40,217,0.55)', background: 'rgba(109,40,217,0.08)',
-              border: '1px solid rgba(109,40,217,0.18)',
-              borderRadius: 99, padding: '2px 8px', letterSpacing: '0.08em',
-              textTransform: 'uppercase' as const,
-            }}>
-              Opcional
-            </span>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#C8A030', marginBottom: 2 }}>
+            Registro do dia
           </div>
-          <p style={{
-            fontFamily: 'var(--font-body)', fontSize: 12,
-            color: 'rgba(109,40,217,0.55)', margin: 0, lineHeight: 1.4,
-          }}>
-            Técnica de escrita expressiva — Dr. James Pennebaker, Univ. do Texas
-          </p>
-        </div>
-
-        {/* Timer circular */}
-        <div style={{ flexShrink: 0 }}>
-          {timerAtivo ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-              <svg width={56} height={56} viewBox="0 0 56 56">
-                {/* Track */}
-                <circle cx={28} cy={28} r={R} fill="none"
-                  stroke="rgba(109,40,217,0.10)" strokeWidth={4} />
-                {/* Fill */}
-                <circle cx={28} cy={28} r={R} fill="none"
-                  stroke="#7c3aed" strokeWidth={4}
-                  strokeLinecap="round"
-                  strokeDasharray={circum}
-                  strokeDashoffset={offset}
-                  transform="rotate(-90 28 28)"
-                  style={{ transition: 'stroke-dashoffset 0.9s linear' }}
-                />
-                <text x={28} y={33} textAnchor="middle"
-                  style={{
-                    fontSize: 12, fontWeight: 700, fill: '#7c3aed',
-                    fontFamily: 'monospace',
-                  }}>
-                  {mins}:{secs.toString().padStart(2, '0')}
-                </text>
-              </svg>
-              <button
-                onClick={pararTimer}
-                style={{
-                  fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600,
-                  color: 'rgba(109,40,217,0.6)', background: 'transparent',
-                  border: '1px solid rgba(109,40,217,0.25)',
-                  borderRadius: 6, padding: '3px 10px', cursor: 'pointer',
-                }}
-              >
-                Parar
-              </button>
-            </div>
-          ) : timerCompleto ? (
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-              background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.25)',
-              borderRadius: 10, padding: '8px 12px',
-            }}>
-              <span style={{ fontSize: 18 }}>✓</span>
-              <span style={{
-                fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
-                color: '#16a34a', letterSpacing: '0.06em',
-              }}>
-                2 MIN
-              </span>
-            </div>
-          ) : (
-            <button
-              onClick={iniciarTimer}
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                background: 'rgba(109,40,217,0.06)',
-                border: '1.5px solid rgba(109,40,217,0.20)',
-                borderRadius: 10, padding: '10px 14px', cursor: 'pointer',
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(109,40,217,0.12)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(109,40,217,0.06)'; }}
-            >
-              <span style={{ fontSize: 18 }}>⏱</span>
-              <span style={{
-                fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
-                color: '#7c3aed', letterSpacing: '0.05em', whiteSpace: 'nowrap' as const,
-              }}>
-                2 MIN
-              </span>
-            </button>
-          )}
+          <div style={{ fontSize: 11, color: 'rgba(245,240,232,0.3)' }}>
+            3 perguntas · responda no seu ritmo
+          </div>
         </div>
       </div>
 
-      {/* Instrução */}
-      <div style={{
-        padding: '14px 22px 10px',
-        borderBottom: '1px solid rgba(109,40,217,0.07)',
-      }}>
-        <p style={{
-          fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 500,
-          color: '#2d1b69', lineHeight: 1.65, margin: 0,
-        }}>
-          Escreva o que está no seu coração agora.{' '}
-          <span style={{ color: '#7c3aed', fontWeight: 700 }}>Ninguém vai ler.</span>
-          {' '}Sem julgamento, sem filtro. Deixe fluir por pelo menos 2 minutos.
-        </p>
-      </div>
-
-      {/* Textarea */}
-      <div style={{ padding: '14px 22px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <textarea
-          value={valor}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Escreva livremente… pensamentos, emoções, medos, desejos, o que vier primeiro. Sem editar."
-          rows={6}
-          style={{
-            border: `1.5px solid ${timerAtivo
-              ? '#7c3aed'
-              : valor.trim().length > 0
-                ? 'rgba(109,40,217,0.35)'
-                : 'rgba(109,40,217,0.14)'}`,
-            borderRadius: 10,
-            padding: '12px 16px',
-            fontSize: 15,
-            fontFamily: 'var(--font-body)',
-            color: '#1e0a3c',
-            background: timerAtivo ? 'rgba(109,40,217,0.02)' : '#fff',
-            outline: 'none',
-            resize: 'vertical',
-            lineHeight: 1.7,
-            transition: 'border-color 0.2s, background 0.2s',
-            boxShadow: timerAtivo ? '0 0 0 3px rgba(124,58,237,0.10)' : 'none',
-          }}
-          onFocus={(e) => {
-            if (!timerAtivo) {
-              e.target.style.borderColor = 'rgba(109,40,217,0.40)';
-              e.target.style.boxShadow   = '0 0 0 3px rgba(124,58,237,0.08)';
-            }
-          }}
-          onBlur={(e) => {
-            if (!timerAtivo) {
-              e.target.style.borderColor = valor.trim().length > 0
-                ? 'rgba(109,40,217,0.35)' : 'rgba(109,40,217,0.14)';
-              e.target.style.boxShadow   = 'none';
-            }
-          }}
-        />
-
-        {/* Mensagem de conclusão — aparece ao escrever */}
-        {temTexto && (
-          <div style={{
-            display: 'flex', alignItems: 'flex-start', gap: 10,
-            background: 'rgba(109,40,217,0.05)',
-            border: '1px solid rgba(109,40,217,0.15)',
-            borderRadius: 10, padding: '10px 14px',
-          }}>
-            <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>🔒</span>
-            <p style={{
-              fontFamily: 'var(--font-body)', fontSize: 13,
-              color: 'rgba(45,27,105,0.70)', lineHeight: 1.6, margin: 0,
-              fontStyle: 'italic',
+      {/* Perguntas */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {(
+          [
+            { label: '🌟 O que foi mais significativo hoje?', value: conquista,   set: setConquista,   ph: 'Qualquer coisa, pequena ou grande…' },
+            { label: '💭 O que está pesando?',                value: preocupacao, set: setPreocupacao, ph: 'Pode ser algo concreto ou uma sensação…' },
+            { label: '🙏 Pelo que sou grato?',               value: gratidao,    set: setGratidao,    ph: 'Uma pessoa, momento, sensação…' },
+          ] as const
+        ).map(({ label, value, set, ph }) => (
+          <div key={label}>
+            <label style={{
+              fontSize: 12, color: 'rgba(245,240,232,0.5)',
+              display: 'block', marginBottom: 6,
             }}>
-              Isso que você escreveu ficará guardado apenas para você.
-              A honestidade com si mesmo é o primeiro passo da transformação.
-            </p>
+              {label}
+            </label>
+            <textarea
+              value={value}
+              onChange={(e) => set(e.target.value)}
+              rows={2}
+              placeholder={ph}
+              style={INPUT_STYLE}
+            />
           </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── EmojiPicker ──────────────────────────────────────────────────────────────
-
-function EmojiPicker({ valor, onChange }: { valor: string; onChange: (e: string) => void }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <label style={{
-        fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: COR_VERDE,
-      }}>
-        Como você está se sentindo agora?
-      </label>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {EMOJIS_HUMOR.map(({ emoji, label }) => (
-          <button
-            key={emoji}
-            title={label}
-            onClick={() => onChange(valor === emoji ? '' : emoji)}
-            style={{
-              width: 48, height: 48,
-              borderRadius: 12,
-              border: `2px solid ${valor === emoji ? COR_GOLD + 'aa' : COR_BORDER}`,
-              background: valor === emoji ? `${COR_GOLD}15` : '#fff',
-              fontSize: 24,
-              cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'all 0.15s',
-              transform: valor === emoji ? 'scale(1.18)' : 'scale(1)',
-              boxShadow: valor === emoji ? `0 0 0 3px ${COR_GOLD}30` : 'none',
-            }}
-          >
-            {emoji}
-          </button>
         ))}
       </div>
-      {valor && (
-        <p style={{
-          fontFamily: 'var(--font-body)', fontSize: 13,
-          color: COR_GOLD, fontStyle: 'italic', margin: 0,
-        }}>
-          {EMOJIS_HUMOR.find((e) => e.emoji === valor)?.label ?? ''}
-        </p>
-      )}
+
+      {/* Botão salvar */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          onClick={salvar}
+          disabled={!algumPreenchido || salvando}
+          style={{
+            background: algumPreenchido ? '#C8A030' : 'rgba(200,160,48,0.15)',
+            border: 'none', borderRadius: 8,
+            padding: '9px 24px', cursor: algumPreenchido ? 'pointer' : 'not-allowed',
+            color: algumPreenchido ? '#0E0E0E' : 'rgba(200,160,48,0.35)',
+            fontSize: 13, fontWeight: 700,
+            transition: 'all 0.15s',
+          }}
+        >
+          {salvando ? 'Salvando…' : 'Salvar registro'}
+        </button>
+      </div>
     </div>
   );
 }
 
-// ─── NotaPicker ──────────────────────────────────────────────────────────────
+// ─── Camada 3 — Padrões Revelados ────────────────────────────────────────────
 
-function NotaPicker({ valor, onChange }: { valor: number; onChange: (n: number) => void }) {
-  function cor(n: number): string {
-    if (n >= 8) return '#16a34a';
-    if (n >= 6) return COR_GOLD;
-    if (n >= 4) return '#d97706';
-    return '#ef4444';
+function CardPadroes({ entradas }: { entradas: Entrada[] }) {
+  const palavra = palavraFrequente(entradas);
+  const humor   = humorDominante(entradas);
+  const insight = gerarInsight(palavra, humor);
+
+  return (
+    <div style={{
+      background: 'rgba(109,40,217,0.05)',
+      border: '1px solid rgba(109,40,217,0.18)',
+      borderRadius: 16,
+      padding: '22px 22px 20px',
+      display: 'flex', flexDirection: 'column', gap: 16,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 22 }}>🔮</span>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#a78bfa' }}>Padrões revelados</div>
+          <div style={{ fontSize: 11, color: 'rgba(245,240,232,0.3)', marginTop: 2 }}>
+            Baseado nas suas últimas {entradas.length} entradas
+          </div>
+        </div>
+      </div>
+
+      {(palavra || humor) && (
+        <div style={{ display: 'flex', gap: 10 }}>
+          {palavra && (
+            <div style={{
+              flex: 1,
+              background: 'rgba(109,40,217,0.08)',
+              border: '1px solid rgba(109,40,217,0.15)',
+              borderRadius: 10, padding: '14px',
+            }}>
+              <div style={{
+                fontSize: 9, color: 'rgba(167,139,250,0.55)',
+                letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6,
+              }}>
+                Palavra-chave
+              </div>
+              <div style={{
+                fontSize: 17, fontWeight: 700, color: '#a78bfa',
+                fontFamily: "Georgia, serif",
+              }}>
+                "{palavra}"
+              </div>
+            </div>
+          )}
+          {humor && (
+            <div style={{
+              flex: 1,
+              background: 'rgba(109,40,217,0.08)',
+              border: '1px solid rgba(109,40,217,0.15)',
+              borderRadius: 10, padding: '14px',
+            }}>
+              <div style={{
+                fontSize: 9, color: 'rgba(167,139,250,0.55)',
+                letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6,
+              }}>
+                Humor dominante
+              </div>
+              <div style={{ fontSize: 30, lineHeight: 1 }}>{humor}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{
+        background: 'rgba(245,240,232,0.03)',
+        borderRadius: 8, padding: '13px 15px',
+        fontSize: 13, color: 'rgba(245,240,232,0.6)',
+        lineHeight: 1.65, fontStyle: 'italic',
+      }}>
+        💡 {insight}
+      </div>
+    </div>
+  );
+}
+
+// ─── Card de Entrada na Timeline ──────────────────────────────────────────────
+
+function CardEntrada({ entrada }: { entrada: Entrada }) {
+  const tipo = getTipo(entrada);
+  const hora = formatarHora(entrada.created_at);
+
+  if (tipo === 'livre') {
+    return (
+      <div style={{
+        background: 'rgba(245,240,232,0.025)',
+        border: '1px solid rgba(245,240,232,0.07)',
+        borderRadius: 12,
+        padding: '16px 18px',
+        display: 'flex', flexDirection: 'column', gap: 10,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {entrada.emocao && (
+            <span style={{ fontSize: 18, lineHeight: 1 }}>{entrada.emocao}</span>
+          )}
+          <span style={{
+            fontSize: 11, color: 'rgba(245,240,232,0.25)',
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+            {hora}
+          </span>
+          <span style={{
+            marginLeft: 'auto',
+            fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase',
+            color: 'rgba(200,160,48,0.45)',
+            background: 'rgba(200,160,48,0.06)',
+            border: '1px solid rgba(200,160,48,0.12)',
+            borderRadius: 99, padding: '2px 7px',
+          }}>
+            livre
+          </span>
+        </div>
+        {entrada.texto_livre && (
+          <p style={{
+            color: 'rgba(245,240,232,0.78)',
+            fontSize: 14, lineHeight: 1.75, margin: 0,
+            fontFamily: "Georgia, 'Times New Roman', serif",
+            whiteSpace: 'pre-wrap',
+          }}>
+            {entrada.texto_livre}
+          </p>
+        )}
+      </div>
+    );
   }
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <label style={{
-          fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: COR_VERDE,
-        }}>
-          Nota do dia
-        </label>
-        {valor > 0 && (
+  if (tipo === 'diario') {
+    return (
+      <div style={{
+        background: 'rgba(200,160,48,0.03)',
+        border: '1px solid rgba(200,160,48,0.1)',
+        borderRadius: 12,
+        padding: '16px 18px',
+        display: 'flex', flexDirection: 'column', gap: 12,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: 'rgba(245,240,232,0.25)' }}>{hora}</span>
           <span style={{
-            fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700,
-            color: cor(valor), transition: 'color 0.2s',
+            marginLeft: 'auto',
+            fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase',
+            color: 'rgba(200,160,48,0.65)',
+            background: 'rgba(200,160,48,0.08)',
+            border: '1px solid rgba(200,160,48,0.2)',
+            borderRadius: 99, padding: '2px 8px',
           }}>
-            {valor}/10
+            registro
           </span>
-        )}
-      </div>
-      <div style={{ display: 'flex', gap: 6 }}>
-        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-          <button
-            key={n}
-            onClick={() => onChange(valor === n ? 0 : n)}
-            title={`${n}/10`}
-            style={{
-              flex: 1,
-              height: 40,
-              borderRadius: 8,
-              border: 'none',
-              background: valor >= n ? cor(valor) : 'rgba(26,92,58,0.08)',
-              color: valor >= n ? '#fff' : 'rgba(26,92,58,0.35)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 13, fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'background 0.12s, transform 0.1s',
-              transform: valor === n ? 'scale(1.1)' : 'scale(1)',
-            }}
-          >
-            {n}
-          </button>
+        </div>
+        {[
+          { icon: '🌟', label: 'Significativo', value: entrada.conquista },
+          { icon: '💭', label: 'Pesando',       value: entrada.preocupacao },
+          { icon: '🙏', label: 'Gratidão',      value: entrada.gratidao },
+        ].filter(item => item.value).map(({ icon, label, value }) => (
+          <div key={label}>
+            <div style={{
+              fontSize: 10, color: 'rgba(245,240,232,0.3)',
+              marginBottom: 3,
+            }}>
+              {icon} {label}
+            </div>
+            <p style={{
+              color: 'rgba(245,240,232,0.72)',
+              fontSize: 13, lineHeight: 1.65, margin: 0,
+            }}>
+              {value}
+            </p>
+          </div>
         ))}
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-// ─── Painel direito ───────────────────────────────────────────────────────────
-
-function PainelResumo({ entrada }: { entrada: EntradaDiaria }) {
-  const temDados = entrada.emoji || entrada.nota > 0 || entrada.significativo;
+  // Legado — entradas antigas do formato anterior
+  const textoLegado = entrada.missao_execucao ?? entrada.aprendizado ?? entrada.gratidao;
+  if (!textoLegado && !entrada.emocao) return null;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-      {/* Snapshot do dia */}
-      {temDados ? (
-        <div style={{
-          background: `${COR_VERDE}07`,
-          border: `1px solid ${COR_VERDE}18`,
-          borderRadius: 12, padding: '14px 16px',
-          display: 'flex', flexDirection: 'column', gap: 10,
-        }}>
-          <p style={{
-            fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700,
-            color: 'rgba(26,92,58,0.45)', textTransform: 'uppercase',
-            letterSpacing: '0.08em', margin: 0,
-          }}>
-            Hoje
-          </p>
-
-          {entrada.emoji && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 28 }}>{entrada.emoji}</span>
-              <span style={{
-                fontFamily: 'var(--font-body)', fontSize: 13,
-                color: COR_GOLD, fontStyle: 'italic',
-              }}>
-                {EMOJIS_HUMOR.find((e) => e.emoji === entrada.emoji)?.label}
-              </span>
-            </div>
-          )}
-
-          {entrada.nota > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(26,92,58,0.6)' }}>
-                Nota:
-              </span>
-              <span style={{
-                fontFamily: 'var(--font-mono)', fontSize: 18, fontWeight: 700,
-                color: entrada.nota >= 8 ? '#16a34a' : entrada.nota >= 6 ? COR_GOLD : '#ef4444',
-              }}>
-                {entrada.nota}/10
-              </span>
-            </div>
-          )}
-
-          {entrada.significativo && (
-            <p style={{
-              fontFamily: 'var(--font-body)', fontSize: 13, fontStyle: 'italic',
-              color: 'rgba(26,92,58,0.65)', lineHeight: 1.5,
-              borderLeft: `2px solid ${COR_GOLD}55`,
-              paddingLeft: 10, margin: 0,
-              overflow: 'hidden',
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-            }}>
-              {entrada.significativo}
-            </p>
-          )}
-        </div>
-      ) : (
-        <div style={{
-          textAlign: 'center', padding: '20px 0',
-          color: 'rgba(26,92,58,0.3)',
-          fontFamily: 'var(--font-body)', fontSize: 13,
-        }}>
-          Preencha o registro para ver o resumo.
-        </div>
-      )}
-
-      {/* Análise IA */}
-      <div style={{ borderTop: `1px solid ${COR_BORDER}`, paddingTop: 16 }}>
-        <AnaliseIA />
+    <div style={{
+      background: 'rgba(245,240,232,0.02)',
+      border: '1px solid rgba(245,240,232,0.05)',
+      borderRadius: 12,
+      padding: '14px 16px',
+      display: 'flex', flexDirection: 'column', gap: 8,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {entrada.emocao && <span style={{ fontSize: 18 }}>{entrada.emocao}</span>}
+        <span style={{ fontSize: 11, color: 'rgba(245,240,232,0.2)' }}>{hora}</span>
       </div>
+      {textoLegado && (
+        <p style={{
+          color: 'rgba(245,240,232,0.5)', fontSize: 13,
+          lineHeight: 1.65, margin: 0, fontStyle: 'italic',
+        }}>
+          {textoLegado}
+        </p>
+      )}
     </div>
   );
 }
 
-// ─── Componente Principal ─────────────────────────────────────────────────────
+// ─── Botão Flutuante ──────────────────────────────────────────────────────────
+
+function BotaoFlutuante({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title="Nova entrada"
+      style={{
+        position: 'fixed',
+        bottom: 32, right: 32,
+        width: 56, height: 56,
+        borderRadius: '50%',
+        background: '#C8A030',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: 30, lineHeight: 1,
+        color: '#0E0E0E',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 4px 20px rgba(200,160,48,0.45)',
+        zIndex: 200,
+        transition: 'transform 0.15s, box-shadow 0.15s',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform  = 'scale(1.1)';
+        e.currentTarget.style.boxShadow = '0 8px 32px rgba(200,160,48,0.65)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform  = 'scale(1)';
+        e.currentTarget.style.boxShadow = '0 4px 20px rgba(200,160,48,0.45)';
+      }}
+    >
+      +
+    </button>
+  );
+}
+
+// ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function DiarioBordoPage() {
-  const [etapa, setEtapa] = useState(0);
-  const [entrada, setEntrada] = useState<EntradaDiaria>(() => ({
-    ...ENTRADA_DEFAULT,
-    data: new Date().toISOString().slice(0, 10),
-  }));
-  const [celebrando, setCelebrando] = useState(false);
-  const celebrandoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { user }       = useUser();
+  const { getClient }  = useSupabaseClient();
 
-  // ── Carregar respostas salvas ──────────────────────────────────────────────
-  const { dados: dadosSalvos } = useCarregarRespostas('diario-bordo');
+  const [entradas,    setEntradas]    = useState<Entrada[]>([]);
+  const [carregando,  setCarregando]  = useState(true);
+  const [modalAberto, setModalAberto] = useState(false);
+
+  // ── Carregar entradas ──────────────────────────────────────────────────────
   useEffect(() => {
-    if (!dadosSalvos) return;
-    const d = dadosSalvos as Record<string, unknown>;
-    if (d.entrada && typeof d.entrada === 'object') {
-      setEntrada((prev) => ({ ...prev, ...(d.entrada as Partial<EntradaDiaria>) }));
-    }
-  }, [dadosSalvos]);
-
-  // ── Pergunta adaptativa ───────────────────────────────────────────────────
-  const { user } = useUser();
-  const { getClient } = useSupabaseClient();
-  const [pergunta, setPergunta] = useState(PERGUNTA_PADRAO);
-  const [perguntaLoading, setPerguntaLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user?.id) { setPerguntaLoading(false); return; }
+    if (!user?.id) return;
+    let cancelado = false;
     (async () => {
       const client = await getClient();
-      const rodaVida = await buscarRodaVida(user.id, client);
-      setPergunta(gerarPergunta(rodaVida));
-      setPerguntaLoading(false);
+      const { data } = await client
+        .from('diario_kairos')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (!cancelado) {
+        setEntradas((data ?? []) as Entrada[]);
+        setCarregando(false);
+      }
     })();
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => { cancelado = true; };
+  }, [user?.id, getClient]);
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
-  const setEnt = (p: Partial<EntradaDiaria>) => setEntrada((prev) => ({ ...prev, ...p }));
+  // ── Estado derivado ────────────────────────────────────────────────────────
+  const hoje          = dataHoje();
+  const temDiarioHoje = entradas.some(e => e.data === hoje && e.tipo_entrada === 'diario');
+  const mostrarPadroes = entradas.length >= 7;
 
-  // ── Progresso ─────────────────────────────────────────────────────────────
-  const camposFilled = [
-    entrada.emoji ? 1 : 0,
-    entrada.nota > 0 ? 1 : 0,
-    entrada.significativo.trim().length > 0 ? 1 : 0,
-  ].reduce((a, b) => a + b, 0);
-
-  const progresso =
-    etapa === 0 ? 0
-    : Math.min(99, Math.round((camposFilled / 3) * 100));
-
-  const podeAvancar =
-    etapa === 0
-      ? true
-      : entrada.emoji.length > 0 && entrada.nota > 0 && entrada.significativo.trim().length > 0;
-
-  // ── Celebração ────────────────────────────────────────────────────────────
-  function dispararCelebracao() {
-    if (celebrandoRef.current) clearTimeout(celebrandoRef.current);
-    setCelebrando(true);
-    celebrandoRef.current = setTimeout(() => setCelebrando(false), 1400);
-  }
-
-  // ── Avançar ────────────────────────────────────────────────────────────────
-  function handleAvancar() {
-    if (etapa === 1) {
-      // Última etapa: salva e celebra
-      dispararCelebracao();
-    }
-    setEtapa((e) => Math.min(e + 1, ETAPAS.length - 1));
-  }
-
-  // ── Respostas para auto-save ───────────────────────────────────────────────
-  const respostas = { entrada };
-
-  // ── Painel direito ─────────────────────────────────────────────────────────
-  const painelResumo = <PainelResumo entrada={entrada} />;
-
-  // ── Etapa 0: Boas-vindas ──────────────────────────────────────────────────
-  const step0 = (
-    <div style={{ maxWidth: 580, display: 'flex', flexDirection: 'column', gap: 32 }}>
-
-      <div>
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: `${COR_GOLD}15`, border: `1px solid ${COR_GOLD}30`,
-          borderRadius: 99, padding: '4px 14px', marginBottom: 18,
-        }}>
-          <span style={{ fontSize: 14 }}>📔</span>
-          <span style={{
-            fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: COR_GOLD,
-          }}>
-            F15 · Diário de Bordo
-          </span>
-        </div>
-
-        <h1 style={{ color: COR_VERDE, marginBottom: 12 }}>
-          3 minutos que mudam tudo
-        </h1>
-        <p style={{ color: '#4a5568', maxWidth: 500, lineHeight: 1.65 }}>
-          O diário é o hábito central do Kairos. Três perguntas, três minutos,
-          todo dia. Simples o suficiente para não parar. Poderoso o suficiente
-          para transformar.
-        </p>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {[
-          {
-            n: '00', emoji: '🕯',
-            titulo: 'Espaço Sagrado',
-            desc:   'Escrita livre sem filtro por 2 minutos — só para você. Com timer opcional.',
-            extra:  true,
-          },
-          {
-            n: '01', emoji: '😊',
-            titulo: 'Como você está',
-            desc:   'Escolha um emoji e dê uma nota ao seu dia — 10 segundos.',
-          },
-          {
-            n: '02', emoji: '💡',
-            titulo: 'Pergunta do dia',
-            desc:   'Uma pergunta personalizada com base na sua área mais fraca na Roda da Vida.',
-          },
-          {
-            n: '03', emoji: '⭐',
-            titulo: 'O mais significativo',
-            desc:   'Uma frase sobre o que mais importou hoje — o que vai ficar.',
-          },
-        ].map((item) => (
-          <div
-            key={item.n}
-            style={{
-              display: 'flex', gap: 16, alignItems: 'flex-start',
-              background: 'extra' in item ? 'rgba(109,40,217,0.03)' : '#fff',
-              border: `1px solid ${'extra' in item ? 'rgba(109,40,217,0.14)' : COR_BORDER}`,
-              borderRadius: 12, padding: '16px 20px',
-            }}
-          >
-            <div style={{
-              width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-              background: 'extra' in item ? 'rgba(109,40,217,0.10)' : `${COR_VERDE}12`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700,
-              color: 'extra' in item ? '#7c3aed' : COR_VERDE,
-            }}>
-              {item.n}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 700,
-                color: 'extra' in item ? '#5b21b6' : COR_VERDE, marginBottom: 4,
-              }}>
-                {item.emoji} {item.titulo}
-                {'extra' in item && (
-                  <span style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
-                    color: 'rgba(109,40,217,0.55)', background: 'rgba(109,40,217,0.08)',
-                    borderRadius: 99, padding: '2px 7px', letterSpacing: '0.06em',
-                  }}>
-                    OPCIONAL
-                  </span>
-                )}
-              </div>
-              <div style={{
-                fontFamily: 'var(--font-body)', fontSize: 13,
-                color: 'extra' in item ? 'rgba(109,40,217,0.60)' : 'rgba(26,92,58,0.6)',
-                lineHeight: 1.5,
-              }}>
-                {item.desc}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-    </div>
+  // Agrupa por data (já vêm ordenados por created_at desc)
+  const grupos = Object.entries(
+    entradas.reduce<Record<string, Entrada[]>>((acc, e) => {
+      (acc[e.data] ??= []).push(e);
+      return acc;
+    }, {})
   );
 
-  // ── Etapa 1: O Registro ────────────────────────────────────────────────────
-  const step1 = (
-    <div style={{ maxWidth: 580, display: 'flex', flexDirection: 'column', gap: 36 }}>
+  // ── Salvar entrada livre ───────────────────────────────────────────────────
+  async function salvarLivre(texto: string, emoji: string) {
+    if (!user?.id) return;
+    const client = await getClient();
+    const { data, error } = await client
+      .from('diario_kairos')
+      .insert({
+        user_id:      user.id,
+        data:         hoje,
+        tipo_entrada: 'livre',
+        texto_livre:  texto,
+        emocao:       emoji || null,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    if (data) setEntradas(prev => [data as Entrada, ...prev]);
+  }
 
-      {/* Campo 0: Espaço Sagrado (Pennebaker) */}
-      <EspacoSagrado
-        valor={entrada.espacoSagrado}
-        onChange={(v) => setEnt({ espacoSagrado: v })}
-      />
+  // ── Salvar registro diário ─────────────────────────────────────────────────
+  async function salvarDiario(dados: { conquista: string; preocupacao: string; gratidao: string }) {
+    if (!user?.id) return;
+    const client = await getClient();
+    const { data, error } = await client
+      .from('diario_kairos')
+      .insert({
+        user_id:      user.id,
+        data:         hoje,
+        tipo_entrada: 'diario',
+        conquista:    dados.conquista  || null,
+        preocupacao:  dados.preocupacao || null,
+        gratidao:     dados.gratidao   || null,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    if (data) setEntradas(prev => [data as Entrada, ...prev]);
+  }
 
-      {/* Campo 1: Humor + Nota */}
-      <div style={{
-        background: '#fff', border: `1px solid ${COR_BORDER}`,
-        borderRadius: 14, padding: '24px 28px',
-        display: 'flex', flexDirection: 'column', gap: 24,
-      }}>
-        <EmojiPicker valor={entrada.emoji} onChange={(e) => setEnt({ emoji: e })} />
-        <div style={{ borderTop: `1px solid ${COR_BORDER}`, paddingTop: 20 }}>
-          <NotaPicker valor={entrada.nota} onChange={(n) => setEnt({ nota: n })} />
-        </div>
-      </div>
-
-      {/* Campo 2: Pergunta adaptativa */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {/* Balão da pergunta */}
-        <div style={{
-          background: 'rgba(181,132,10,0.07)',
-          border: `1px solid ${COR_GOLD}35`,
-          borderRadius: 12, padding: '16px 20px',
-          display: 'flex', alignItems: 'flex-start', gap: 12,
-        }}>
-          <span style={{ fontSize: 20, flexShrink: 0, marginTop: 2 }}>💡</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{
-              fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600,
-              color: COR_GOLD, textTransform: 'uppercase', letterSpacing: '0.08em',
-              marginBottom: 6,
-            }}>
-              Pergunta do dia · personalizada
-            </p>
-            {perguntaLoading ? (
-              <div style={{
-                height: 14, width: '85%', borderRadius: 4,
-                background: `${COR_GOLD}25`,
-                animation: 'promptPulse 1.5s ease-in-out infinite',
-              }} />
-            ) : (
-              <p style={{
-                fontFamily: 'var(--font-body)', fontSize: 15,
-                color: '#5c4a00', lineHeight: 1.55, fontWeight: 500, margin: 0,
-              }}>
-                {pergunta}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <textarea
-          value={entrada.promptResposta}
-          onChange={(e) => setEnt({ promptResposta: e.target.value })}
-          placeholder="Escreva sua reflexão aqui…"
-          rows={4}
-          disabled={perguntaLoading}
-          style={{
-            border: `1px solid ${entrada.promptResposta ? COR_GOLD + '55' : COR_BORDER}`,
-            borderRadius: 10, padding: '12px 16px', fontSize: 15,
-            fontFamily: 'var(--font-body)', color: '#1a2015',
-            outline: 'none',
-            background: entrada.promptResposta ? 'rgba(181,132,10,0.02)' : '#fff',
-            resize: 'vertical', lineHeight: 1.6,
-            transition: 'border-color 0.15s',
-            opacity: perguntaLoading ? 0.5 : 1,
-          }}
-        />
-      </div>
-
-      {/* Campo 3: O mais significativo */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <label style={{
-          fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: COR_VERDE,
-        }}>
-          ⭐ O que foi mais significativo hoje?
-          <span style={{
-            display: 'block',
-            fontSize: 13, fontWeight: 400, color: 'rgba(26,92,58,0.5)',
-            marginTop: 2,
-          }}>
-            Uma frase, uma emoção, uma conquista — o que vai ficar.
-          </span>
-        </label>
-        <textarea
-          value={entrada.significativo}
-          onChange={(e) => setEnt({ significativo: e.target.value })}
-          placeholder="Ex: Finalizei o projeto que estava travado há semanas. Senti que voltei…"
-          rows={4}
-          style={{
-            border: `1px solid ${entrada.significativo ? COR_VERDE + '55' : COR_BORDER}`,
-            borderRadius: 10, padding: '12px 16px', fontSize: 15,
-            fontFamily: 'var(--font-body)', color: '#1a2015',
-            outline: 'none',
-            background: entrada.significativo ? `${COR_VERDE}03` : '#fff',
-            resize: 'vertical', lineHeight: 1.6,
-            transition: 'border-color 0.15s',
-          }}
-        />
-      </div>
-
-      <style>{`
-        @keyframes promptPulse {
-          0%, 100% { opacity: 0.4 }
-          50%       { opacity: 0.9 }
-        }
-      `}</style>
-    </div>
-  );
-
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <>
-      {/* Animação celebratória */}
-      <GoldPulse  visivel={celebrando} />
-      <Confetti   visivel={celebrando} />
+    <DashboardLayout>
+      <div style={{
+        minHeight: '100vh',
+        background: '#0E0E0E',
+        padding: '32px 24px 120px',
+      }}>
+        <div style={{ maxWidth: 640, margin: '0 auto' }}>
 
-      <FerramentaLayout
-        codigo="F15"
-        nome="Diário de Bordo"
-        descricao="Registro diário de 3 minutos — humor, reflexão e o que mais importou hoje."
-        etapas={ETAPAS}
-        etapaAtual={etapa}
-        progresso={progresso}
-        onAvancar={handleAvancar}
-        onVoltar={etapa > 0 ? () => setEtapa((e) => e - 1) : undefined}
-        podeAvancar={podeAvancar}
-        labelAvancar={
-          etapa === 0
-            ? 'Começar →'
-            : 'Salvar Diário ✓'
-        }
-        totalItens={etapa === 1 ? camposFilled : undefined}
-        labelItens="de 3 campos"
-        respostas={respostas}
-        resumo={painelResumo}
-      >
-        {etapa === 0 && step0}
-        {etapa === 1 && step1}
-      </FerramentaLayout>
-    </>
+          {/* Header */}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
+              color: '#C8A030', textTransform: 'uppercase', marginBottom: 8,
+            }}>
+              F15 · Diário de Bordo
+            </div>
+            <h1 style={{
+              fontSize: 26, fontWeight: 300, color: '#F5F0E8', margin: 0,
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              letterSpacing: '-0.01em',
+            }}>
+              Seu espaço secreto
+            </h1>
+            <div style={{ fontSize: 12, color: 'rgba(245,240,232,0.28)', marginTop: 6 }}>
+              {carregando
+                ? 'Carregando…'
+                : `${entradas.length} ${entradas.length === 1 ? 'entrada' : 'entradas'} · só você pode ver isso`}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+            {/* CAMADA 3 — Padrões (≥ 7 entradas) */}
+            {mostrarPadroes && <CardPadroes entradas={entradas} />}
+
+            {/* CAMADA 2 — Registro diário (uma vez por dia) */}
+            {!carregando && !temDiarioHoje && (
+              <CardDiario onSalvar={salvarDiario} />
+            )}
+
+            {/* Timeline */}
+            {carregando ? (
+              <div style={{
+                textAlign: 'center', padding: '64px 0',
+                color: 'rgba(245,240,232,0.2)', fontSize: 14,
+              }}>
+                Carregando entradas…
+              </div>
+            ) : entradas.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '80px 0' }}>
+                <div style={{ fontSize: 52, marginBottom: 16 }}>📖</div>
+                <div style={{ fontSize: 15, color: 'rgba(245,240,232,0.4)', marginBottom: 8 }}>
+                  Seu diário está em branco.
+                </div>
+                <div style={{ fontSize: 13, color: 'rgba(245,240,232,0.22)' }}>
+                  Toque em{' '}
+                  <span style={{ color: '#C8A030', fontWeight: 700, fontSize: 18 }}>+</span>
+                  {' '}para começar.
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {grupos.map(([data, grupo]) => (
+                  <div key={data} style={{ marginBottom: 20 }}>
+                    {/* Separador de data */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      marginBottom: 10,
+                    }}>
+                      <div style={{ flex: 1, height: 1, background: 'rgba(245,240,232,0.06)' }} />
+                      <span style={{
+                        fontSize: 11, color: 'rgba(245,240,232,0.28)',
+                        fontWeight: 600, letterSpacing: '0.06em',
+                      }}>
+                        {formatarData(data)}
+                      </span>
+                      <div style={{ flex: 1, height: 1, background: 'rgba(245,240,232,0.06)' }} />
+                    </div>
+
+                    {/* Entradas do dia */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {grupo.map(e => <CardEntrada key={e.id} entrada={e} />)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+          </div>
+        </div>
+      </div>
+
+      {/* CAMADA 1 — Modal de entrada livre */}
+      {modalAberto && (
+        <ModalEntradaLivre
+          onFechar={() => setModalAberto(false)}
+          onSalvar={salvarLivre}
+        />
+      )}
+
+      {/* Botão flutuante '+' */}
+      <BotaoFlutuante onClick={() => setModalAberto(true)} />
+    </DashboardLayout>
   );
 }

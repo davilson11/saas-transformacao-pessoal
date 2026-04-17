@@ -86,6 +86,8 @@ export type DiarioKairos = {
   id:               string;
   user_id:          string;
   data:             string;
+  tipo_entrada:     string | null;  // 'livre' | 'diario' — null em entradas legadas
+  texto_livre:      string | null;  // texto da entrada rápida (Camada 1)
   qualidade_sono:   number | null;
   emocao:           string | null;
   preocupacao:      string | null;
@@ -247,6 +249,8 @@ export type Database = {
           id?:               string;
           user_id:           string;
           data:              string;
+          tipo_entrada?:     string | null;
+          texto_livre?:      string | null;
           qualidade_sono?:   number | null;
           emocao?:           string | null;
           preocupacao?:      string | null;
@@ -264,6 +268,8 @@ export type Database = {
           id?:               string;
           user_id?:          string;
           data?:             string;
+          tipo_entrada?:     string | null;
+          texto_livre?:      string | null;
           qualidade_sono?:   number | null;
           emocao?:           string | null;
           preocupacao?:      string | null;
