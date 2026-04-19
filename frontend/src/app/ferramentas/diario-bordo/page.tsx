@@ -675,18 +675,23 @@ export default function DiarioBordoPage() {
   );
 
   // ── Salvar entrada livre ───────────────────────────────────────────────────
+  // Upsert por user_id+data: atualiza apenas texto_livre e emocao; colunas como
+  // conquista/preocupacao/gratidao não constam no payload e permanecem intactas.
   async function salvarLivre(texto: string, emoji: string) {
     if (!user?.id) return;
     const client = await getClient();
     const { data, error } = await client
       .from('diario_kairos')
-      .insert({
-        user_id:      user.id,
-        data:         hoje,
-        tipo_entrada: 'livre',
-        texto_livre:  texto,
-        emocao:       emoji || null,
-      })
+      .upsert(
+        {
+          user_id:      user.id,
+          data:         hoje,
+          tipo_entrada: 'livre',
+          texto_livre:  texto,
+          emocao:       emoji || null,
+        },
+        { onConflict: 'user_id,data' }
+      )
       .select()
       .single();
     if (error) throw error;
@@ -694,19 +699,24 @@ export default function DiarioBordoPage() {
   }
 
   // ── Salvar registro diário ─────────────────────────────────────────────────
+  // Upsert por user_id+data: atualiza apenas conquista, preocupacao e gratidao;
+  // texto_livre e emocao não constam no payload e permanecem intactos.
   async function salvarDiario(dados: { conquista: string; preocupacao: string; gratidao: string }) {
     if (!user?.id) return;
     const client = await getClient();
     const { data, error } = await client
       .from('diario_kairos')
-      .insert({
-        user_id:      user.id,
-        data:         hoje,
-        tipo_entrada: 'diario',
-        conquista:    dados.conquista  || null,
-        preocupacao:  dados.preocupacao || null,
-        gratidao:     dados.gratidao   || null,
-      })
+      .upsert(
+        {
+          user_id:      user.id,
+          data:         hoje,
+          tipo_entrada: 'diario',
+          conquista:    dados.conquista   || null,
+          preocupacao:  dados.preocupacao || null,
+          gratidao:     dados.gratidao    || null,
+        },
+        { onConflict: 'user_id,data' }
+      )
       .select()
       .single();
     if (error) throw error;
