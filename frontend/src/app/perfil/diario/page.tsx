@@ -23,14 +23,46 @@ function mesLabel(ym: string): string {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
+// ─── Helpers de renderização ──────────────────────────────────────────────────
+
+const LABEL: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: '#C8A030',
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  marginBottom: 5,
+  display: 'block',
+};
+
+const TEXTO: React.CSSProperties = {
+  fontSize: 14,
+  color: 'rgba(245,240,232,0.8)',
+  margin: 0,
+  lineHeight: 1.7,
+  whiteSpace: 'pre-wrap',
+};
+
+function Campo({ label, valor }: { label: string; valor: string }) {
+  return (
+    <div style={{
+      background: 'rgba(245,240,232,0.03)',
+      border: '1px solid rgba(245,240,232,0.06)',
+      borderRadius: 8,
+      padding: '10px 12px',
+    }}>
+      <span style={LABEL}>{label}</span>
+      <p style={TEXTO}>{valor}</p>
+    </div>
+  );
+}
+
 // ─── Card individual do diário ────────────────────────────────────────────────
 
 function CardDiario({ entrada }: { entrada: DiarioKairos }) {
   const nota    = entrada.nota_dia;
   const notaPct = nota !== null ? (nota / 10) * 100 : 0;
-
-  const textoLivre = entrada.tipo_entrada === 'livre' ? entrada.texto_livre : null;
-  const textoEstruturado = entrada.tipo_entrada !== 'livre';
+  const tipo    = entrada.tipo_entrada ?? 'legado';
 
   return (
     <div style={{
@@ -70,7 +102,7 @@ function CardDiario({ entrada }: { entrada: DiarioKairos }) {
       {nota !== null && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <span style={{ fontSize: 11, color: 'rgba(245,240,232,0.35)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: 11, color: '#C8A030', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Nota do dia
             </span>
             <span style={{ fontSize: 13, fontWeight: 700, color: '#C8A030' }}>{nota}/10</span>
@@ -85,52 +117,40 @@ function CardDiario({ entrada }: { entrada: DiarioKairos }) {
         </div>
       )}
 
-      {/* Texto livre (Camada 1) */}
-      {textoLivre && (
-        <div>
-          <div style={{ fontSize: 10, color: 'rgba(245,240,232,0.25)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>
-            Entrada livre
-          </div>
-          <p style={{ fontSize: 13, color: 'rgba(245,240,232,0.72)', margin: 0, lineHeight: 1.7, fontFamily: "Georgia, serif", whiteSpace: 'pre-wrap' }}>
-            {textoLivre}
+      {/* ── CAMADA 1: entrada livre ── */}
+      {tipo === 'livre' && entrada.texto_livre && (
+        <div style={{
+          background: 'rgba(245,240,232,0.03)',
+          border: '1px solid rgba(245,240,232,0.06)',
+          borderRadius: 8,
+          padding: '10px 12px',
+        }}>
+          <span style={LABEL}>Entrada livre</span>
+          <p style={{ ...TEXTO, fontFamily: "Georgia, 'Times New Roman', serif" }}>
+            {entrada.texto_livre}
           </p>
         </div>
       )}
 
-      {/* Campos estruturados (Camada 2 / legado) */}
-      {textoEstruturado && (
-        <>
-          {entrada.preocupacao && (
-            <div>
-              <div style={{ fontSize: 10, color: 'rgba(245,240,232,0.25)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>
-                💭 O que pesava
-              </div>
-              <p style={{ fontSize: 13, color: 'rgba(245,240,232,0.72)', margin: 0, lineHeight: 1.6 }}>
-                {entrada.preocupacao}
-              </p>
-            </div>
-          )}
-          {entrada.conquista && (
-            <div>
-              <div style={{ fontSize: 10, color: 'rgba(245,240,232,0.25)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>
-                🌟 Conquista do dia
-              </div>
-              <p style={{ fontSize: 13, color: 'rgba(245,240,232,0.72)', margin: 0, lineHeight: 1.6 }}>
-                {entrada.conquista}
-              </p>
-            </div>
-          )}
-          {entrada.gratidao && (
-            <div>
-              <div style={{ fontSize: 10, color: 'rgba(245,240,232,0.25)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>
-                🙏 Gratidão
-              </div>
-              <p style={{ fontSize: 13, color: 'rgba(245,240,232,0.72)', margin: 0, lineHeight: 1.6 }}>
-                {entrada.gratidao}
-              </p>
-            </div>
-          )}
-        </>
+      {/* ── CAMADA 2: registro diário estruturado ── */}
+      {tipo === 'diario' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {entrada.conquista   && <Campo label="🌟 Mais significativo" valor={entrada.conquista} />}
+          {entrada.preocupacao && <Campo label="💭 O que pesava"       valor={entrada.preocupacao} />}
+          {entrada.gratidao    && <Campo label="🙏 Gratidão"           valor={entrada.gratidao} />}
+        </div>
+      )}
+
+      {/* ── LEGADO / outros tipos: todos os campos não nulos ── */}
+      {tipo !== 'livre' && tipo !== 'diario' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {entrada.texto_livre   && <Campo label="Texto"              valor={entrada.texto_livre} />}
+          {entrada.conquista     && <Campo label="🌟 Conquista"       valor={entrada.conquista} />}
+          {entrada.preocupacao   && <Campo label="💭 O que pesava"    valor={entrada.preocupacao} />}
+          {entrada.gratidao      && <Campo label="🙏 Gratidão"        valor={entrada.gratidao} />}
+          {entrada.aprendizado   && <Campo label="📚 Aprendizado"     valor={entrada.aprendizado} />}
+          {entrada.missao_execucao && <Campo label="🎯 Missão"        valor={entrada.missao_execucao} />}
+        </div>
       )}
     </div>
   );
