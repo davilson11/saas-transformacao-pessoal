@@ -14,14 +14,28 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
 /**
- * Cria um client autenticado com o JWT do Clerk.
+ * Cache de instâncias autenticadas por token.
+ * Evita criar múltiplos GoTrueClient para o mesmo JWT, eliminando o aviso
+ * "Multiple GoTrueClient instances detected in the same browser context".
+ */
+const authClientCache = new Map<string, ReturnType<typeof createClient<Database>>>();
+
+/**
+ * Retorna um client autenticado com o JWT do Clerk.
+ * Reutiliza a instância se o mesmo token já foi usado antes.
  * Necessário para que o Supabase RLS reconheça o usuário via auth.jwt() ->> 'sub'.
  * Obtenha o token com: await getToken({ template: 'supabase' }) do useAuth() do Clerk.
  */
-export function createAuthClient(token: string) {
-  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+export function createAuthClient(token: string): ReturnType<typeof createClient<Database>> {
+  const cached = authClientCache.get(token);
+  if (cached) return cached;
+
+  const client = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     global: {
       headers: { Authorization: `Bearer ${token}` },
     },
   });
+
+  authClientCache.set(token, client);
+  return client;
 }
