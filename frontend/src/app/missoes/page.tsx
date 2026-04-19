@@ -171,8 +171,8 @@ function ItemHistorico({ item }: { item: HistItem }) {
 
       {/* Texto da missão — sempre visível, sem truncamento */}
       <p style={{
-        fontFamily: 'var(--font-body)', fontSize: 13, color: C.text,
-        lineHeight: 1.65, margin: 0, opacity: 0.85,
+        fontFamily: 'var(--font-body)', fontSize: 13, color: '#F5F0E8',
+        lineHeight: 1.65, margin: 0,
       }}>
         <span style={{ color: C.gold, fontWeight: 600 }}>Missão: </span>
         {item.missao}
@@ -193,8 +193,8 @@ function ItemHistorico({ item }: { item: HistItem }) {
             Como executei
           </p>
           <p style={{
-            fontFamily: 'var(--font-body)', fontSize: 13, color: C.text,
-            lineHeight: 1.65, margin: 0, opacity: 0.8, fontStyle: 'italic',
+            fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(245,240,232,0.8)',
+            lineHeight: 1.65, margin: 0, fontStyle: 'italic',
           }}>
             {item.missao_execucao}
           </p>
