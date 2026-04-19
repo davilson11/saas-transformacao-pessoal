@@ -554,10 +554,11 @@ export default function PerfilPage() {
   const [respostas,    setRespostas]    = useState<FerramentasRespostas[]>([]);
   const [visao,        setVisao]        = useState<VisaoAncora | null>(null);
   const [roda,         setRoda]         = useState<RodaVida | null>(null);
-  const [diarioCount,  setDiarioCount]  = useState(0);
-  const [streakDiario, setStreakDiario] = useState(0);
-  const [notaMedia,    setNotaMedia]    = useState<number | null>(null);
-  const [loading,      setLoading]      = useState(true);
+  const [diarioCount,        setDiarioCount]        = useState(0);
+  const [missaoCumpridaCount, setMissaoCumpridaCount] = useState(0);
+  const [streakDiario,       setStreakDiario]        = useState(0);
+  const [notaMedia,          setNotaMedia]           = useState<number | null>(null);
+  const [loading,            setLoading]             = useState(true);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -570,10 +571,10 @@ export default function PerfilPage() {
         buscarRodaVida(user.id, client),
         client
           .from('diario_kairos')
-          .select('data, nota_dia')
+          .select('data, nota_dia, missao_cumprida')
           .eq('user_id', user.id)
           .order('data', { ascending: false })
-          .limit(60),
+          .limit(500),
       ]);
       setRespostas(r);
       setVisao(v);
@@ -581,6 +582,7 @@ export default function PerfilPage() {
       const diarioRows = diario.data ?? [];
       const datas = diarioRows.map((d) => d.data as string);
       setDiarioCount(datas.length);
+      setMissaoCumpridaCount(diarioRows.filter((d) => d.missao_cumprida).length);
       setStreakDiario(calcularStreakDias(datas));
       const notas = diarioRows
         .map((d) => d.nota_dia as number | null)
@@ -1481,6 +1483,106 @@ export default function PerfilPage() {
               totalConcluidas={concluidas.length}
             />
           </Card>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════
+            MEUS REGISTROS
+        ══════════════════════════════════════════════════════════════ */}
+        {!loading && (
+          <div>
+            <p style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 10, fontWeight: 600,
+              color: "rgba(200,160,48,0.6)",
+              textTransform: "uppercase", letterSpacing: "0.12em",
+              margin: "0 0 12px",
+            }}>
+              Meus Registros
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+
+              {/* Card Diário */}
+              <Link href="/perfil/diario" style={{ textDecoration: "none" }}>
+                <div
+                  style={{
+                    background: "#1A1A1A",
+                    border: "1px solid rgba(200,160,48,0.18)",
+                    borderRadius: 14,
+                    padding: "20px",
+                    display: "flex", flexDirection: "column", gap: 10,
+                    cursor: "pointer",
+                    transition: "border-color 0.15s, transform 0.15s",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(200,160,48,0.45)";
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-1px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(200,160,48,0.18)";
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+                  }}
+                >
+                  <span style={{ fontSize: 28 }}>📔</span>
+                  <div>
+                    <div style={{ fontFamily: "var(--font-heading)", fontStyle: "italic", fontSize: 16, fontWeight: 400, color: "#F5F0E8", marginBottom: 3 }}>
+                      Diário
+                    </div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "#C8A030" }}>
+                      {diarioCount} {diarioCount === 1 ? "registro" : "registros"}
+                    </div>
+                  </div>
+                  <span style={{
+                    alignSelf: "flex-start",
+                    fontFamily: "var(--font-body)",
+                    fontSize: 12, fontWeight: 600, color: "#C8A030",
+                  }}>
+                    Ver tudo →
+                  </span>
+                </div>
+              </Link>
+
+              {/* Card Missões */}
+              <Link href="/perfil/missoes" style={{ textDecoration: "none" }}>
+                <div
+                  style={{
+                    background: "#1A1A1A",
+                    border: "1px solid rgba(200,160,48,0.18)",
+                    borderRadius: 14,
+                    padding: "20px",
+                    display: "flex", flexDirection: "column", gap: 10,
+                    cursor: "pointer",
+                    transition: "border-color 0.15s, transform 0.15s",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(200,160,48,0.45)";
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-1px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(200,160,48,0.18)";
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+                  }}
+                >
+                  <span style={{ fontSize: 28 }}>🎯</span>
+                  <div>
+                    <div style={{ fontFamily: "var(--font-heading)", fontStyle: "italic", fontSize: 16, fontWeight: 400, color: "#F5F0E8", marginBottom: 3 }}>
+                      Missões
+                    </div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "#C8A030" }}>
+                      {missaoCumpridaCount} {missaoCumpridaCount === 1 ? "cumprida" : "cumpridas"}
+                    </div>
+                  </div>
+                  <span style={{
+                    alignSelf: "flex-start",
+                    fontFamily: "var(--font-body)",
+                    fontSize: 12, fontWeight: 600, color: "#C8A030",
+                  }}>
+                    Ver tudo →
+                  </span>
+                </div>
+              </Link>
+
+            </div>
+          </div>
         )}
 
       </div>
