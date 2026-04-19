@@ -127,25 +127,16 @@ function CartaoMissaoHoje({
 // ─── Sub-componente: ItemHistorico ────────────────────────────────────────────
 
 function ItemHistorico({ item }: { item: HistItem }) {
-  const [aberto, setAberto] = useState(false);
-
   return (
     <div style={{
       background: C.card,
       border: `1px solid ${item.missao_cumprida ? C.greenBrd : C.border}`,
       borderRadius: 14,
-      overflow: 'hidden',
-      transition: 'border-color 0.2s',
+      padding: '14px 18px',
+      display: 'flex', flexDirection: 'column', gap: 10,
     }}>
-      {/* Linha principal (sempre visível) */}
-      <button
-        onClick={() => setAberto(v => !v)}
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-          padding: '14px 18px', background: 'none', border: 'none', cursor: 'pointer',
-          textAlign: 'left',
-        }}
-      >
+      {/* Cabeçalho: ícone + data + badge */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {/* Ícone cumprida */}
         <div style={{
           width: 28, height: 28, borderRadius: 8, flexShrink: 0,
@@ -161,23 +152,12 @@ function ItemHistorico({ item }: { item: HistItem }) {
         <span style={{
           fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600,
           color: item.missao_cumprida ? C.green : C.muted,
-          flexShrink: 0, minWidth: 90,
-          textTransform: 'capitalize',
+          textTransform: 'capitalize', flex: 1,
         }}>
           {fmtDataCurta(item.data)}
         </span>
 
-        {/* Missão (truncada) */}
-        <span style={{
-          fontFamily: 'var(--font-body)', fontSize: 13, color: C.text,
-          flex: 1, minWidth: 0,
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          opacity: 0.75,
-        }}>
-          {item.missao}
-        </span>
-
-        {/* Indicador de execução */}
+        {/* Badge registrado */}
         {item.missao_execucao && (
           <span style={{
             fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
@@ -187,49 +167,37 @@ function ItemHistorico({ item }: { item: HistItem }) {
             REGISTRADO
           </span>
         )}
+      </div>
 
-        {/* Chevron */}
-        <span style={{
-          fontSize: 11, color: C.muted, flexShrink: 0,
-          transform: aberto ? 'rotate(180deg)' : 'rotate(0deg)',
-          transition: 'transform 0.2s',
-        }}>
-          ▾
-        </span>
-      </button>
+      {/* Texto da missão — sempre visível, sem truncamento */}
+      <p style={{
+        fontFamily: 'var(--font-body)', fontSize: 13, color: C.text,
+        lineHeight: 1.65, margin: 0, opacity: 0.85,
+      }}>
+        <span style={{ color: C.gold, fontWeight: 600 }}>Missão: </span>
+        {item.missao}
+      </p>
 
-      {/* Expansão */}
-      {aberto && (
+      {/* Como executei — sempre visível se preenchido */}
+      {item.missao_execucao && (
         <div style={{
-          padding: '0 18px 16px 58px',
-          display: 'flex', flexDirection: 'column', gap: 10,
-          borderTop: `1px solid rgba(255,255,255,0.05)`,
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: 10, padding: '10px 14px',
         }}>
           <p style={{
-            fontFamily: 'var(--font-body)', fontSize: 13, color: C.text,
-            lineHeight: 1.6, marginTop: 12, opacity: 0.8,
+            fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700,
+            color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em',
+            margin: '0 0 6px',
           }}>
-            <span style={{ color: C.gold, fontWeight: 600 }}>Missão: </span>
-            {item.missao}
+            Como executei
           </p>
-          {item.missao_execucao ? (
-            <div style={{
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: 10, padding: '10px 14px',
-            }}>
-              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: C.gold, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
-                Como executei
-              </p>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: C.text, lineHeight: 1.6, opacity: 0.75, fontStyle: 'italic' }}>
-                {item.missao_execucao}
-              </p>
-            </div>
-          ) : (
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: C.muted, fontStyle: 'italic' }}>
-              Nenhum registro de execução neste dia.
-            </p>
-          )}
+          <p style={{
+            fontFamily: 'var(--font-body)', fontSize: 13, color: C.text,
+            lineHeight: 1.65, margin: 0, opacity: 0.8, fontStyle: 'italic',
+          }}>
+            {item.missao_execucao}
+          </p>
         </div>
       )}
     </div>
