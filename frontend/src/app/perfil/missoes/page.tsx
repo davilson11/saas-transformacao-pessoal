@@ -9,9 +9,10 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 type DiaComMissao = {
-  data:     string;
-  missao:   string;
-  cumprida: boolean;
+  data:            string;
+  missao:          string;
+  cumprida:        boolean;
+  missaoExecucao:  string | null;
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -69,6 +70,28 @@ function CardMissao({ dia }: { dia: DiaComMissao }) {
         }}>
           {dia.missao}
         </p>
+
+        {dia.missaoExecucao && (
+          <div style={{ marginTop: 10 }}>
+            <span style={{
+              display: 'block',
+              fontSize: 11, fontWeight: 700,
+              color: '#C8A030',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              marginBottom: 4,
+            }}>
+              Como executei:
+            </span>
+            <p style={{
+              fontSize: 14, color: 'rgba(245,240,232,0.8)',
+              margin: 0, lineHeight: 1.65,
+              whiteSpace: 'pre-wrap',
+            }}>
+              {dia.missaoExecucao}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Badge */}
@@ -109,18 +132,28 @@ export default function MissoesPerfilPage() {
       // 1. Registros do usuário (data + missao_cumprida)
       const { data: diarioData } = await client
         .from('diario_kairos')
-        .select('data, missao_cumprida')
+        .select('data, missao_cumprida, missao_execucao')
         .eq('user_id', user.id)
         .order('data', { ascending: false });
 
-      const diarioRows = (diarioData ?? []) as { data: string; missao_cumprida: boolean }[];
+      const diarioRows = (diarioData ?? []) as {
+        data:            string;
+        missao_cumprida: boolean;
+        missao_execucao: string | null;
+      }[];
 
-      // Mapa data → cumprida (prioriza cumprida=true se houver múltiplas entradas no dia)
-      const diarioMap = new Map<string, boolean>();
+      // Mapa data → { cumprida, execucao }
+      // Prioriza cumprida=true; mantém execucao do primeiro registro não-nulo
+      const diarioMap = new Map<string, { cumprida: boolean; execucao: string | null }>();
       for (const row of diarioRows) {
         const prev = diarioMap.get(row.data);
-        if (prev === undefined || (!prev && row.missao_cumprida)) {
-          diarioMap.set(row.data, row.missao_cumprida);
+        if (prev === undefined) {
+          diarioMap.set(row.data, { cumprida: row.missao_cumprida, execucao: row.missao_execucao });
+        } else {
+          diarioMap.set(row.data, {
+            cumprida: prev.cumprida || row.missao_cumprida,
+            execucao: prev.execucao ?? row.missao_execucao,
+          });
         }
       }
 
@@ -140,11 +173,15 @@ export default function MissoesPerfilPage() {
 
         resultado = momentoRows
           .filter(m => m.data && m.missao)
-          .map(m => ({
-            data:     m.data,
-            missao:   m.missao,
-            cumprida: diarioMap.get(m.data) ?? false,
-          }));
+          .map(m => {
+            const entry = diarioMap.get(m.data);
+            return {
+              data:           m.data,
+              missao:         m.missao,
+              cumprida:       entry?.cumprida ?? false,
+              missaoExecucao: entry?.execucao ?? null,
+            };
+          });
       }
 
       if (!cancelado) {
