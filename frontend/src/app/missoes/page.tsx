@@ -356,10 +356,32 @@ export default function MissoesPage() {
     setSalvandoCumprida(true);
     const client = await getClient();
     const hoje   = hojeISO();
-    await client.from('diario_kairos').upsert(
-      { user_id: user.id, data: hoje, missao_cumprida: novaCumprida, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id,data' }
-    );
+
+    // Ao marcar como cumprida, persiste também missao_execucao no mesmo upsert
+    // para garantir que o texto não seja perdido caso o debounce ainda não tenha disparado.
+    if (novaCumprida) {
+      await client.from('diario_kairos').upsert(
+        {
+          user_id:         user.id,
+          data:            hoje,
+          missao_cumprida: true,
+          missao_execucao: execucao.trim() || null,
+          updated_at:      new Date().toISOString(),
+        },
+        { onConflict: 'user_id,data' }
+      );
+    } else {
+      await client.from('diario_kairos').upsert(
+        {
+          user_id:         user.id,
+          data:            hoje,
+          missao_cumprida: false,
+          updated_at:      new Date().toISOString(),
+        },
+        { onConflict: 'user_id,data' }
+      );
+    }
+
     setSalvandoCumprida(false);
   }
 
