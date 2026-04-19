@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // ─── Configuração VAPID ───────────────────────────────────────────────────────
 //
@@ -27,13 +27,6 @@ function initWebPush() {
     throw new Error('VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY não definidas.');
   }
   webpush.setVapidDetails(mail, pub, priv);
-}
-
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error('Supabase admin env vars ausentes.');
-  return createClient(url, key, { auth: { persistSession: false } });
 }
 
 // ─── Mensagem padrão ──────────────────────────────────────────────────────────
@@ -63,7 +56,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Subscription inválida.' }, { status: 400 });
     }
 
-    const supabase = getSupabaseAdmin();
+    const supabase = supabaseAdmin;
 
     // Upsert: um registro por usuário (userId pode ser null para usuários não autenticados)
     const { error } = await supabase
@@ -107,7 +100,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   try {
     initWebPush();
-    const supabase = getSupabaseAdmin();
+    const supabase = supabaseAdmin;
 
     const hoje = new Date().toISOString().split('T')[0];
 

@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function POST(req: NextRequest) {
-  const { userId, subscription } = await req.json();
+  const { userId, subscription } = await req.json() as { userId?: string; subscription?: unknown };
   if (!userId || !subscription) {
     return NextResponse.json({ error: 'Missing data' }, { status: 400 });
   }
-  await supabase.from('push_subscriptions').upsert(
+  await supabaseAdmin.from('push_subscriptions').upsert(
     { user_id: userId, subscription },
     { onConflict: 'user_id' }
   );
