@@ -12,6 +12,8 @@ import PaywallScreen from "@/components/dashboard/PaywallScreen";
 import { buscarVisaoAncora } from "@/lib/queries";
 import { useSupabaseClient } from "@/lib/useSupabaseClient";
 import { useSubscription } from "@/hooks/useSubscription";
+import RevisaoSemanal from "@/components/dashboard/RevisaoSemanal";
+import CelebracaoFase from "@/components/dashboard/CelebracaoFase";
 
 // ─── Tokens ───────────────────────────────────────────────────────────────────
 
@@ -501,25 +503,61 @@ function CockpitFoco({ manchete }: { manchete: string | null }) {
 
 // ─── Página ───────────────────────────────────────────────────────────────────
 
+// ─── Mapa de slugs por fase ───────────────────────────────────────────────────
+
+const FASES_SLUGS: Record<number, string[]> = {
+  1: ['raio-x', 'bussola-valores', 'swot-pessoal', 'feedback-360'],
+  2: ['okrs-pessoais', 'design-vida', 'dre-pessoal', 'rotina-ideal'],
+  3: ['auditoria-tempo', 'arquiteto-rotinas', 'sprint-aprendizado', 'energia-vitalidade'],
+  4: ['desconstrutor-crencas', 'crm-relacionamentos', 'diario-bordo', 'prevencao-recaida'],
+};
+
+// ─── Página ───────────────────────────────────────────────────────────────────
+
 export default function DashboardPage() {
   const { user, isLoaded }                   = useUser();
   const { getClient }                        = useSupabaseClient();
   const modoFoco                             = useModoFoco();
   const { hasAccess, loading: subLoading }   = useSubscription();
 
-  const [manchete,    setManchete]    = useState<string | null>(null);
-  const [declaracao,  setDeclaracao]  = useState<string | null>(null);
-  const [heroLoading, setHeroLoading] = useState(true);
+  const [manchete,      setManchete]      = useState<string | null>(null);
+  const [declaracao,    setDeclaracao]    = useState<string | null>(null);
+  const [heroLoading,   setHeroLoading]   = useState(true);
+  const [faseConcluida, setFaseConcluida] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isLoaded) return;
     if (!user?.id) { setHeroLoading(false); return; }
     (async () => {
       const client = await getClient();
-      const data   = await buscarVisaoAncora(user.id, client);
-      setManchete(data?.manchete   ?? null);
-      setDeclaracao(data?.declaracao ?? null);
+
+      // Visão Âncora
+      const visao = await buscarVisaoAncora(user.id, client);
+      setManchete(visao?.manchete   ?? null);
+      setDeclaracao(visao?.declaracao ?? null);
       setHeroLoading(false);
+
+      // Detecção de fase concluída (não celebrada ainda)
+      const { data: respostas } = await client
+        .from('ferramentas_respostas')
+        .select('ferramenta_slug, concluida')
+        .eq('user_id', user.id);
+
+      if (respostas && respostas.length > 0) {
+        const concluidas = new Set(
+          respostas
+            .filter((r: { concluida: boolean }) => r.concluida)
+            .map((r: { ferramenta_slug: string }) => r.ferramenta_slug)
+        );
+        for (const [fase, slugs] of Object.entries(FASES_SLUGS)) {
+          const faseNum = Number(fase);
+          const key = `kairos_fase_${faseNum}_celebrada`;
+          if (slugs.every(s => concluidas.has(s)) && !localStorage.getItem(key)) {
+            setFaseConcluida(faseNum);
+            break;
+          }
+        }
+      }
     })();
   }, [isLoaded, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -549,6 +587,8 @@ export default function DashboardPage() {
           .dash-fase-pct { display: none !important; }
         }
       `}</style>
+      <RevisaoSemanal />
+      <CelebracaoFase faseConcluida={faseConcluida} onFechar={() => setFaseConcluida(null)} />
       <Onboarding />
       <TrialBanner />
 
