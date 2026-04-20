@@ -6,13 +6,11 @@ import { useUser } from "@clerk/nextjs";
 import DashboardLayout, { useModoFoco } from "@/components/dashboard/DashboardLayout";
 import LifeWheel from "@/components/dashboard/LifeWheel";
 import NextActions from "@/components/dashboard/NextActions";
-import type { MomentoKairos } from "@/lib/database.types";
 import Onboarding from "@/components/dashboard/Onboarding";
 import TrialBanner from "@/components/dashboard/TrialBanner";
 import PaywallScreen from "@/components/dashboard/PaywallScreen";
 import { buscarVisaoAncora } from "@/lib/queries";
 import { useSupabaseClient } from "@/lib/useSupabaseClient";
-import { calcularStreakDias } from "@/lib/badges";
 import { useSubscription } from "@/hooks/useSubscription";
 
 // ─── Tokens ───────────────────────────────────────────────────────────────────
@@ -21,85 +19,205 @@ const G       = '#0E0E0E';
 const GOLD    = '#C8A030';
 const CREAM   = '#F5F2EC';
 
-// ─── Card compacto — Momento Kairos ──────────────────────────────────────────
+// ─── Ferramentas ordenadas ────────────────────────────────────────────────────
 
-function CardMomentoCompacto() {
-  const { user }       = useUser();
-  const { getClient }  = useSupabaseClient();
-  const [voz, setVoz]  = useState<string | null>(null);
+const TODAS_FERRAMENTAS = [
+  { nome: 'Raio-X 360°',             slug: 'raio-x' },
+  { nome: 'Bússola de Valores',       slug: 'bussola-valores' },
+  { nome: 'SWOT Pessoal',             slug: 'swot-pessoal' },
+  { nome: 'Feedback 360°',            slug: 'feedback-360' },
+  { nome: 'OKRs Pessoais',            slug: 'okrs-pessoais' },
+  { nome: 'Design de Vida',           slug: 'design-vida' },
+  { nome: 'DRE Pessoal',              slug: 'dre-pessoal' },
+  { nome: 'Rotina Ideal',             slug: 'rotina-ideal' },
+  { nome: 'Auditoria de Tempo',       slug: 'auditoria-tempo' },
+  { nome: 'Arquiteto de Rotinas',     slug: 'arquiteto-rotinas' },
+  { nome: 'Sprint de Aprendizado',    slug: 'sprint-aprendizado' },
+  { nome: 'Energia e Vitalidade',     slug: 'energia-vitalidade' },
+  { nome: 'Desconstrutor de Crenças', slug: 'desconstrutor-crencas' },
+  { nome: 'CRM de Relacionamentos',   slug: 'crm-relacionamentos' },
+  { nome: 'Diário de Bordo',          slug: 'diario-bordo' },
+  { nome: 'Prevenção de Recaída',     slug: 'prevencao-recaida' },
+];
+
+// ─── Card único "Próximo Passo" ───────────────────────────────────────────────
+
+type EstadoDia = 'sem-momento' | 'sem-diario' | 'completo';
+
+function CardProximoPasso() {
+  const { user }      = useUser();
+  const { getClient } = useSupabaseClient();
 
   const hoje = new Date().toLocaleDateString('pt-BR', {
     timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
   }).split('/').reverse().join('-');
 
-  const hora         = new Date().getHours();
-  const saudacaoStr  = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
-  const dataLabel    = new Date().toLocaleDateString('pt-BR', {
-    timeZone: 'America/Sao_Paulo', weekday: 'long', day: 'numeric', month: 'long',
-  });
+  const [loading,           setLoading]           = useState(true);
+  const [estado,            setEstado]            = useState<EstadoDia>('sem-momento');
+  const [proximaFerramenta, setProximaFerramenta] = useState<{ nome: string; slug: string } | null>(null);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) { setLoading(false); return; }
     (async () => {
       const client = await getClient();
-      const { data } = await client
-        .from('momento_kairos')
-        .select('voz_texto')
+
+      // Verifica se o usuário tem registro no diário hoje
+      const { data: diario } = await client
+        .from('diario_kairos')
+        .select('texto_livre, conquista, tipo_entrada')
+        .eq('user_id', user.id)
         .eq('data', hoje)
         .maybeSingle();
-      if (data) setVoz((data as Pick<MomentoKairos, 'voz_texto'>).voz_texto);
+
+      if (!diario) {
+        // Sem nenhum registro hoje → sugerir abrir o Momento
+        setEstado('sem-momento');
+        setLoading(false);
+        return;
+      }
+
+      // Tem registro, mas sem conteúdo do diário → sugerir registrar o dia
+      const temConteudoDiario = !!(diario.texto_livre || diario.conquista);
+      if (!temConteudoDiario) {
+        setEstado('sem-diario');
+        setLoading(false);
+        return;
+      }
+
+      // Tudo feito hoje → buscar próxima ferramenta incompleta
+      setEstado('completo');
+      const { data: respostas } = await client
+        .from('ferramentas_respostas')
+        .select('ferramenta_slug, concluida')
+        .eq('user_id', user.id);
+
+      const concluidas = new Set(
+        (respostas ?? [])
+          .filter((r: { concluida: boolean }) => r.concluida)
+          .map((r: { ferramenta_slug: string }) => r.ferramenta_slug)
+      );
+      const proxima = TODAS_FERRAMENTAS.find(t => !concluidas.has(t.slug));
+      setProximaFerramenta(proxima ?? null);
+      setLoading(false);
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const trecho = voz
-    ? (voz.length > 100 ? voz.slice(0, 100).trimEnd() + '…' : voz)
-    : null;
+  const configs: Record<EstadoDia, {
+    emoji: string; label: string; titulo: string; subtitulo: string; btnText: string; btnHref: string;
+  }> = {
+    'sem-momento': {
+      emoji:    '🌅',
+      label:    'Comece o dia',
+      titulo:   'Abra seu Momento Kairos',
+      subtitulo:'Sua palavra do dia e missão te esperam.',
+      btnText:  'Abrir Momento Kairos →',
+      btnHref:  '/momento',
+    },
+    'sem-diario': {
+      emoji:    '📔',
+      label:    'Próximo passo',
+      titulo:   'Registre seu dia',
+      subtitulo:'Reserve 5 minutos para refletir e anotar.',
+      btnText:  'Registrar meu dia →',
+      btnHref:  '/ferramentas/diario-bordo',
+    },
+    'completo': {
+      emoji:    '🧭',
+      label:    'Continue evoluindo',
+      titulo:   proximaFerramenta ? `Próxima: ${proximaFerramenta.nome}` : 'Explorar ferramentas',
+      subtitulo:proximaFerramenta
+        ? 'Continue sua jornada de transformação.'
+        : 'Você completou todas as ferramentas!',
+      btnText:  proximaFerramenta ? 'Abrir ferramenta →' : 'Ver ferramentas →',
+      btnHref:  proximaFerramenta ? `/ferramentas/${proximaFerramenta.slug}` : '/ferramentas',
+    },
+  };
+
+  if (loading) {
+    return (
+      <div style={{
+        background: 'linear-gradient(135deg, #1A1200 0%, #0E0E0E 100%)',
+        border: '1.5px solid rgba(200,160,48,0.18)',
+        borderRadius: 20, padding: '24px 28px',
+        display: 'flex', alignItems: 'center', gap: 24,
+        animation: 'cardPulse 1.5s ease-in-out infinite',
+      }}>
+        <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(255,255,255,0.06)' }} />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ height: 10, width: 80, background: 'rgba(200,160,48,0.15)', borderRadius: 4 }} />
+          <div style={{ height: 20, width: 220, background: 'rgba(255,255,255,0.07)', borderRadius: 6 }} />
+          <div style={{ height: 13, width: 160, background: 'rgba(255,255,255,0.04)', borderRadius: 4 }} />
+        </div>
+        <div style={{ width: 180, height: 44, borderRadius: 12, background: 'rgba(200,160,48,0.15)', flexShrink: 0 }} />
+        <style>{`@keyframes cardPulse { 0%,100%{opacity:0.5} 50%{opacity:1} }`}</style>
+      </div>
+    );
+  }
+
+  const cfg = configs[estado];
 
   return (
-    <Link href="/momento" style={{ textDecoration: 'none', display: 'block' }}>
-      <div className="dash-compacto" style={{
-        background: G,
-        borderRadius: 14,
-        padding: '16px 20px',
-        border: `1px solid rgba(200,160,48,0.22)`,
-        display: 'flex', alignItems: 'center', gap: 16,
-        minHeight: 0,
-        transition: 'border-color 0.2s',
-      }}
-        onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(200,160,48,0.5)')}
-        onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(200,160,48,0.22)')}
+    <Link href={cfg.btnHref} style={{ textDecoration: 'none', display: 'block' }}>
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #1A1200 0%, #0E0E0E 100%)',
+          border: '1.5px solid rgba(200,160,48,0.32)',
+          borderRadius: 20, padding: '22px 28px',
+          display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
+          boxShadow: '0 4px 32px rgba(200,160,48,0.08)',
+          transition: 'border-color 0.2s, box-shadow 0.2s',
+        }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(200,160,48,0.55)';
+          (e.currentTarget as HTMLDivElement).style.boxShadow  = '0 6px 40px rgba(200,160,48,0.16)';
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(200,160,48,0.32)';
+          (e.currentTarget as HTMLDivElement).style.boxShadow  = '0 4px 32px rgba(200,160,48,0.08)';
+        }}
       >
-        {/* Left: saudação + voz */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: GOLD, textTransform: 'uppercase', letterSpacing: '0.16em' }}>
-              Momento Kairos
-            </span>
-            <span style={{ fontSize: 11, color: 'rgba(245,240,232,0.35)', textTransform: 'capitalize' }}>
-              · {dataLabel}
-            </span>
+        {/* Ícone */}
+        <div style={{
+          width: 56, height: 56, borderRadius: 16, flexShrink: 0,
+          background: 'rgba(200,160,48,0.12)',
+          border: '1px solid rgba(200,160,48,0.28)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 26,
+        }}>
+          {cfg.emoji}
+        </div>
+
+        {/* Texto */}
+        <div style={{ flex: 1, minWidth: 180 }}>
+          <div style={{
+            fontSize: 10, fontWeight: 700, color: GOLD,
+            textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 5,
+          }}>
+            ⚡ {cfg.label}
           </div>
-          <p style={{ fontSize: 13, color: '#F5F0E8', margin: 0, lineHeight: 1.5 }}>
-            <span style={{ fontWeight: 600 }}>{saudacaoStr}.</span>
-            {trecho ? (
-              <span style={{ color: 'rgba(245,240,232,0.65)', marginLeft: 6, fontStyle: 'italic' }}>
-                &ldquo;{trecho}&rdquo;
-              </span>
-            ) : (
-              <span style={{ color: 'rgba(245,240,232,0.4)', marginLeft: 6 }}>
-                Seu momento do dia te espera.
-              </span>
-            )}
+          <h2 style={{
+            fontFamily: 'var(--font-heading)',
+            fontSize: 'clamp(16px, 2vw, 20px)', fontWeight: 700,
+            color: '#F5F0E8', margin: '0 0 4px', lineHeight: 1.2,
+          }}>
+            {cfg.titulo}
+          </h2>
+          <p style={{ fontSize: 13, color: 'rgba(245,240,232,0.5)', margin: 0 }}>
+            {cfg.subtitulo}
           </p>
         </div>
 
-        {/* Right: CTA */}
+        {/* CTA */}
         <span style={{
-          flexShrink: 0, fontSize: 12, fontWeight: 700, color: GOLD,
-          background: 'rgba(200,160,48,0.1)', border: `1px solid rgba(200,160,48,0.3)`,
-          borderRadius: 8, padding: '7px 14px', whiteSpace: 'nowrap',
+          flexShrink: 0,
+          display: 'inline-flex', alignItems: 'center',
+          fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14,
+          color: G, background: GOLD,
+          padding: '12px 26px', borderRadius: 12,
+          whiteSpace: 'nowrap',
+          boxShadow: '0 4px 20px rgba(200,160,48,0.35)',
         }}>
-          Abrir →
+          {cfg.btnText}
         </span>
       </div>
     </Link>
@@ -115,241 +233,7 @@ const FASES = [
   { num: '04', nome: 'Mentalidade',          slugs: ['desconstrutor-crencas','crm-relacionamentos','diario-bordo','prevencao-recaida'], cor: '#9b6baf', pct: 5, tools: 4 },
 ];
 
-// ─── Zone 1 — Card "Hoje" ─────────────────────────────────────────────────────
-
-function CardHoje() {
-  const { user }       = useUser();
-  const { getClient }  = useSupabaseClient();
-
-  const [loading,         setLoading]         = useState(true);
-  const [registradoHoje,  setRegistradoHoje]  = useState(false);
-  const [streak,          setStreak]          = useState(0);
-  const [notaHoje,        setNotaHoje]        = useState<number | null>(null);
-  const [emocaoHoje,      setEmocaoHoje]      = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!user?.id) { setLoading(false); return; }
-    (async () => {
-      const client  = await getClient();
-      const hoje    = new Date().toISOString().split('T')[0];
-      const { data } = await client
-        .from('diario_kairos')
-        .select('data, nota_dia, emocao')
-        .eq('user_id', user.id)
-        .order('data', { ascending: false })
-        .limit(60);
-
-      if (data?.length) {
-        const datas = data.map((d) => d.data as string);
-        setStreak(calcularStreakDias(datas));
-        const entrada = data.find((d) => d.data === hoje);
-        if (entrada) {
-          setRegistradoHoje(true);
-          setNotaHoje(entrada.nota_dia as number | null);
-          setEmocaoHoje(entrada.emocao as string | null);
-        }
-      }
-      setLoading(false);
-    })();
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const hora = new Date().getHours();
-  const emoji = hora < 12 ? '🌅' : hora < 18 ? '☀️' : '🌙';
-
-  function notaCor(n: number): string {
-    if (n >= 8) return '#22c55e';
-    if (n >= 6) return GOLD;
-    return '#ef4444';
-  }
-
-  return (
-    <div
-      style={{
-        background: G,
-        border: `1px solid ${registradoHoje ? 'rgba(34,197,94,0.22)' : `rgba(200,160,48,0.28)`}`,
-        borderRadius: 20,
-        overflow: 'hidden',
-        position: 'relative',
-        transition: 'transform 0.2s, box-shadow 0.2s',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = `0 12px 40px rgba(0,0,0,0.3)`;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = 'none';
-      }}
-    >
-      {/* Linha superior colorida */}
-      <div style={{
-        height: 3,
-        background: registradoHoje
-          ? 'linear-gradient(90deg, #22c55e, #16a34a)'
-          : `linear-gradient(90deg, ${GOLD}, #e8c76a)`,
-      }} />
-
-      <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 0 }}>
-
-        {/* ── Bloco principal ── */}
-        <div style={{ flex: 1, minWidth: 220, display: 'flex', flexDirection: 'column', gap: 16, padding: '20px 24px' }}>
-
-          {/* Eyebrow */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{
-              fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600,
-              letterSpacing: '0.1em', textTransform: 'uppercase' as const,
-              color: 'rgba(200,160,48,0.70)',
-            }}>
-              {emoji} Hoje · Diário de Bordo
-            </span>
-          </div>
-
-          {/* Skeleton */}
-          {loading && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[200, 130].map((w) => (
-                <div key={w} style={{ height: 16, width: w, maxWidth: '100%', borderRadius: 6, background: 'rgba(255,255,255,0.08)', animation: 'cardPulse 1.5s ease-in-out infinite' }} />
-              ))}
-            </div>
-          )}
-
-          {/* Não registrou hoje */}
-          {!loading && !registradoHoje && (
-            <>
-              <div>
-                <h2 style={{
-                  fontFamily: 'var(--font-heading)', fontStyle: 'italic',
-                  fontSize: 'clamp(18px,2.5vw,24px)', fontWeight: 400,
-                  color: '#f5f4f0', lineHeight: 1.25, margin: 0,
-                }}>
-                  Como foi seu dia até agora?
-                </h2>
-                <p style={{ fontSize: 13, color: 'rgba(245,244,240,0.48)', lineHeight: 1.6, marginTop: 6, maxWidth: 380 }}>
-                  Reserve 5 minutos para registrar suas vitórias e o que aprendeu hoje.
-                </p>
-              </div>
-              <div>
-                <Link
-                  href="/ferramentas/diario-bordo"
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                    fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700,
-                    color: G, background: GOLD,
-                    padding: '11px 24px', borderRadius: 12,
-                    textDecoration: 'none', whiteSpace: 'nowrap',
-                    boxShadow: `0 4px 20px rgba(200,160,48,0.35)`,
-                    transition: 'opacity 0.2s, transform 0.2s',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                >
-                  Registrar agora →
-                </Link>
-              </div>
-            </>
-          )}
-
-          {/* Registrou hoje */}
-          {!loading && registradoHoje && (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700,
-                  color: '#22c55e', background: 'rgba(34,197,94,0.12)',
-                  border: '1px solid rgba(34,197,94,0.25)', padding: '5px 12px', borderRadius: 99,
-                }}>
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                    <path d="M1.5 5.5l3 3 5-5.5" stroke="#22c55e" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  Registrado hoje
-                </span>
-                {notaHoje !== null && (
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700, color: notaCor(notaHoje) }}>
-                    {notaHoje}/10
-                  </span>
-                )}
-                {emocaoHoje && (
-                  <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontStyle: 'italic', color: 'rgba(245,244,240,0.50)' }}>
-                    · {emocaoHoje}
-                  </span>
-                )}
-              </div>
-              <p style={{ fontSize: 13, color: 'rgba(245,244,240,0.42)', lineHeight: 1.55, margin: 0 }}>
-                Ótimo! Registro salvo. Continue sua jornada nas ferramentas.
-              </p>
-              <Link href="/ferramentas/diario-bordo"
-                style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: GOLD, textDecoration: 'none', transition: 'opacity 0.2s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.75'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}>
-                Editar registro →
-              </Link>
-            </>
-          )}
-        </div>
-
-        {/* ── Bloco streak ── */}
-        <div className="dash-hoje-streak" style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          gap: 10, padding: '20px 28px', flexShrink: 0,
-          borderLeft: '1px solid rgba(255,255,255,0.07)',
-          minWidth: 120,
-        }}>
-          {loading ? (
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', animation: 'cardPulse 1.5s ease-in-out infinite' }} />
-          ) : (
-            <>
-              <div style={{
-                width: 70, height: 70, borderRadius: '50%',
-                background: streak > 0
-                  ? 'linear-gradient(135deg, rgba(200,160,48,0.22), rgba(200,160,48,0.08))'
-                  : 'rgba(255,255,255,0.04)',
-                border: `2px solid ${streak > 0 ? 'rgba(200,160,48,0.40)' : 'rgba(255,255,255,0.08)'}`,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1,
-              }}>
-                <span style={{ fontSize: streak > 0 ? 18 : 15 }}>{streak > 0 ? '🔥' : '📔'}</span>
-                <span style={{
-                  fontFamily: 'var(--font-mono)', fontSize: streak >= 10 ? 17 : 20, fontWeight: 700,
-                  color: streak > 0 ? GOLD : 'rgba(245,244,240,0.28)', lineHeight: 1,
-                }}>
-                  {streak}
-                </span>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <p style={{
-                  fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 600,
-                  color: streak > 0 ? 'rgba(245,244,240,0.65)' : 'rgba(245,244,240,0.28)',
-                  margin: 0, lineHeight: 1.3,
-                }}>
-                  {streak === 1 ? 'dia seguido' : 'dias seguidos'}
-                </p>
-                {streak === 0 && (
-                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: 'rgba(245,244,240,0.22)', margin: '3px 0 0' }}>
-                    Comece hoje!
-                  </p>
-                )}
-                {streak >= 7 && (
-                  <p style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 8, fontWeight: 700, color: GOLD,
-                    margin: '3px 0 0', letterSpacing: '0.06em', textTransform: 'uppercase' as const,
-                  }}>
-                    🏆 Top semana
-                  </p>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-      </div>
-
-      <style>{`@keyframes cardPulse { 0%,100%{opacity:0.4} 50%{opacity:0.85} }`}</style>
-    </div>
-  );
-}
-
-// ─── Zone 2 — Progresso das Fases ────────────────────────────────────────────
+// ─── Progresso das Fases ──────────────────────────────────────────────────────
 
 function FasesProgresso() {
   return (
@@ -662,9 +546,7 @@ export default function DashboardPage() {
     <DashboardLayout>
       <style>{`
         @media (max-width: 640px) {
-          .dash-hoje-streak { display: none !important; }
           .dash-fase-pct { display: none !important; }
-          .dash-compacto { flex-direction: column !important; gap: 10px !important; }
         }
       `}</style>
       <Onboarding />
@@ -673,21 +555,14 @@ export default function DashboardPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1200 }}>
 
         {/* ════════════════════════════════════════════════════
-            ZONA 1 — Momento Kairos (compacto)
+            ZONA 1 — Próximo Passo
         ════════════════════════════════════════════════════ */}
         <section>
-          <CardMomentoCompacto />
+          <CardProximoPasso />
         </section>
 
         {/* ════════════════════════════════════════════════════
-            ZONA 2 — Hoje (Diário de Bordo)
-        ════════════════════════════════════════════════════ */}
-        <section>
-          <CardHoje />
-        </section>
-
-        {/* ════════════════════════════════════════════════════
-            ZONA 3 — Progresso das 4 Fases (horizontal)
+            ZONA 2 — Progresso das 4 Fases (horizontal)
         ════════════════════════════════════════════════════ */}
         <section>
           <FasesProgresso />

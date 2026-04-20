@@ -147,17 +147,17 @@ function getSaudacao(hora: number): string {
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
 const PRIMARY_NAV = [
-  { label: 'Dashboard',   href: '/dashboard',                  icon: <IconDashboard />,  exact: true  },
-  { label: 'Ferramentas', href: '/ferramentas',                icon: <IconFerramentas />, exact: false },
-  { label: 'Missões',     href: '/missoes',                    icon: <IconMissoes />,    exact: true  },
-  { label: 'Diário',      href: '/ferramentas/diario-bordo',   icon: <IconDiario />,     exact: false },
-  { label: 'Progresso',   href: '/progresso',                  icon: <IconProgresso />,  exact: true  },
+  { label: 'Início',   href: '/dashboard',                icon: <IconDashboard />,  exact: true,  destaque: false },
+  { label: 'Momento',  href: '/momento',                  icon: <IconMomento />,    exact: true,  destaque: false },
+  { label: 'Missões',  href: '/missoes',                  icon: <IconMissoes />,    exact: true,  destaque: false },
+  { label: 'Diário',   href: '/ferramentas/diario-bordo', icon: <IconDiario />,     exact: false, destaque: true  },
 ];
 
 const SECONDARY_NAV = [
-  { label: 'Perfil',    href: '/perfil',    icon: <IconPerfil />,    exact: true },
-  { label: 'Momento',   href: '/momento',   icon: <IconMomento />,   exact: true },
-  { label: 'Registros', href: '/registros', icon: <IconRegistros />, exact: true },
+  { label: 'Ferramentas', href: '/ferramentas', icon: <IconFerramentas />, exact: false },
+  { label: 'Progresso',   href: '/progresso',   icon: <IconProgresso />,   exact: true  },
+  { label: 'Registros',   href: '/registros',   icon: <IconRegistros />,   exact: true  },
+  { label: 'Perfil',      href: '/perfil',       icon: <IconPerfil />,      exact: true  },
 ];
 
 // ─── Search bar ───────────────────────────────────────────────────────────────
@@ -335,7 +335,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // ── NavItem ────────────────────────────────────────────────────────────────
 
   function NavItem({
-    label, href, icon, exact, badgeCount, badgeRed,
+    label, href, icon, exact, badgeCount, badgeRed, isDestaque,
   }: {
     label: string;
     href: string;
@@ -343,6 +343,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     exact?: boolean;
     badgeCount?: number | null;
     badgeRed?: boolean;
+    isDestaque?: boolean;
   }) {
     const isActive = exact ? pathname === href : pathname.startsWith(href);
 
@@ -362,9 +363,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           padding: '8px 0',
           borderRadius: 0,
           textDecoration: 'none',
-          color: isActive ? '#C8A030' : 'rgba(245,240,232,0.38)',
-          background: isActive ? 'rgba(200,160,48,0.12)' : 'transparent',
-          borderLeft: isActive ? '2.5px solid #C8A030' : '2.5px solid transparent',
+          color: isActive ? '#C8A030' : isDestaque ? 'rgba(200,160,48,0.75)' : 'rgba(245,240,232,0.38)',
+          background: isActive ? 'rgba(200,160,48,0.12)' : isDestaque ? 'rgba(200,160,48,0.05)' : 'transparent',
+          borderLeft: isActive ? '2.5px solid #C8A030' : isDestaque ? '2.5px solid rgba(200,160,48,0.35)' : '2.5px solid transparent',
           transition: 'all 0.2s',
           cursor: 'pointer',
         }}
@@ -466,8 +467,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 href={item.href}
                 icon={item.icon}
                 exact={item.exact}
-                badgeCount={item.label === 'Ferramentas' ? pendingCount : null}
                 badgeRed={item.label === 'Diário' && diarioHoje === false}
+                isDestaque={item.destaque}
               />
             ))}
           </nav>
@@ -478,7 +479,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Nav secundária */}
           <nav style={{ width: '100%' }}>
             {SECONDARY_NAV.map((item) => (
-              <NavItem key={item.label} label={item.label} href={item.href} icon={item.icon} exact={item.exact} />
+              <NavItem
+                key={item.label}
+                label={item.label}
+                href={item.href}
+                icon={item.icon}
+                exact={item.exact}
+                badgeCount={item.label === 'Ferramentas' ? pendingCount : null}
+              />
             ))}
           </nav>
 
