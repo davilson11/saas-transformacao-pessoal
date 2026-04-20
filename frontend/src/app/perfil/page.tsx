@@ -1502,7 +1502,7 @@ export default function PerfilPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
 
               {/* Card Diário */}
-              <Link href="/perfil/diario" style={{ textDecoration: "none" }}>
+              <Link href="/registros" style={{ textDecoration: "none" }}>
                 <div
                   style={{
                     background: "#1A1A1A",
@@ -1542,7 +1542,7 @@ export default function PerfilPage() {
               </Link>
 
               {/* Card Missões */}
-              <Link href="/perfil/missoes" style={{ textDecoration: "none" }}>
+              <Link href="/missoes" style={{ textDecoration: "none" }}>
                 <div
                   style={{
                     background: "#1A1A1A",
