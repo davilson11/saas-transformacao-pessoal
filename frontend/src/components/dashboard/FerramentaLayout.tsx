@@ -101,6 +101,27 @@ function getMensagem(codigo: string): string {
   return MENSAGENS_MOTIVACIONAIS[codigo.toUpperCase()] ?? MENSAGEM_GENERICA;
 }
 
+// ─── Conteúdo "Aprenda em 2 minutos" ─────────────────────────────────────────
+
+const CONTEUDO_APRENDER: Record<string, string> = {
+  F01: "A neurociência chama isso de 'autoconhecimento afetivo': quando você mede sua satisfação em cada área da vida, ativa o córtex pré-frontal medial — a região responsável por decisões alinhadas com seus valores reais. Pesquisas do Harvard Business Review mostram que pessoas que avaliam regularmente suas áreas de vida têm 3× mais chances de fazer mudanças duradouras. O Raio-X não é uma lista — é um espelho neurológico.",
+  F02: "Seus valores são os filtros inconscientes que processam 11 milhões de bits de informação por segundo que chegam ao seu cérebro. Quando você age contrário aos seus valores, o sistema límbico gera um sinal de estresse crônico — a chamada dissonância de valores. Clarificar seus valores reduz esse ruído interno e libera energia cognitiva para o que realmente importa na sua vida.",
+  F03: "O modelo SWOT aplicado à vida pessoal ativa o que psicólogos chamam de 'avaliação cognitiva aprimorada': sua mente para de reagir a ameaças no modo automático (amígdala) e começa a analisá-las conscientemente (neocórtex). Pessoas que fazem análise SWOT pessoal anual relatam 40% menos ansiedade sobre o futuro, segundo estudos de psicologia positiva.",
+  F04: "O maior ponto cego da mente humana é a percepção que os outros têm de nós. A pesquisadora Tasha Eurich descobriu que apenas 10–15% das pessoas possuem verdadeiro autoconhecimento externo. O Feedback 360° ativa o 'eu desconhecido' da Janela de Johari — revelando forças que você nem sabe que tem e pontos cegos que limitam seu crescimento de forma invisível.",
+  F05: "Designers de Stanford criaram o 'Design Thinking para a Vida' após descobrir que a maioria das pessoas planeja o futuro com base no medo do fracasso, não na visão do sucesso. Quando você protótipa versões do seu futuro, o cérebro ativa o sistema de recompensa (dopamina) sem o custo do compromisso prematuro — criando motivação genuína para explorar possibilidades reais.",
+  F06: "John Doerr, que levou os OKRs ao Google, baseia o método na pesquisa de Edwin Locke sobre goal setting theory: metas específicas e desafiadoras aumentam a performance em até 90% comparado a metas vagas. O segredo é separar o 'O quê' (objetivo inspirador) do 'Como medir' (resultado-chave) — dando ao cérebro tanto direção quanto feedback contínuo.",
+  F07: "Gerir a vida financeira sem um DRE pessoal é como dirigir à noite sem faróis. A psicologia financeira mostra que 'consciência financeira' — saber para onde o dinheiro vai — reduz a ansiedade sobre dinheiro em até 60%, independente do quanto você ganha. Não é sobre ganhar mais; é sobre criar clareza que libera energia mental para crescer.",
+  F08: "O neurocientista Andrew Huberman explica que as primeiras 2 horas do dia determinam o 'set point' cortisol-dopamina para as próximas 12 horas. Uma rotina intencional não é disciplina — é engenharia do estado mental. Ao estruturar sua rotina ideal, você para de gastar willpower em decisões triviais (o ego depletion de Baumeister) e reserva energia cognitiva para o que realmente importa.",
+  F09: "Um estudo da McKinsey descobriu que gestores passam apenas 9% do tempo em atividades de alto valor. A auditoria do tempo expõe a diferença entre o que você acha que faz e o que realmente faz — ativando o que psicólogos chamam de accountability metacognitiva. Quando você vê onde as horas realmente vão, seu cérebro começa a otimizar instintivamente.",
+  F10: "James Clear, autor de Hábitos Atômicos, descreve que cada hábito cria um loop neuronal — gatilho → rotina → recompensa. O Arquiteto de Rotinas usa o habit stacking: ancorar um novo comportamento a um hábito existente triplica a chance de persistência nos primeiros 66 dias críticos de formação do hábito.",
+  F11: "A técnica de aprendizado espaçado (spaced repetition) de Hermann Ebbinghaus mostra que revisar informação em intervalos crescentes aumenta a retenção de 20% para 90%+. O Sprint de Aprendizado aplica essa ciência: ao invés de estudar muito de uma vez, você cria um sistema de aquisição intencional que faz seu cérebro reter e aplicar conhecimento de forma permanente.",
+  F12: "Tony Schwartz e Jim Loehr, consultores de performance de atletas olímpicos, descobriram que o recurso mais escasso não é o tempo — é a energia. Eles identificam 4 dimensões: física, emocional, mental e espiritual. Quando você audita e otimiza cada uma, sua capacidade de realizar aumenta exponencialmente sem adicionar uma hora a mais no dia.",
+  F13: "Aaron Beck, fundador da Terapia Cognitivo-Comportamental, descobriu que 60–80% dos pensamentos automáticos das pessoas são negativos e distorcidos. Essas crenças limitantes não são 'a verdade' — são hábitos neurais criados na infância. Quando você descobre, questiona e reescreve essas histórias internas, você literalmente reconecta circuitos neurais (neuroplasticidade em ação).",
+  F14: "Robin Dunbar descobriu que o cérebro humano consegue manter relações significativas com apenas 150 pessoas. Mas qualidade importa mais que quantidade: o Harvard Study of Adult Development (80 anos de pesquisa) provou que a variável mais preditora de felicidade e longevidade é a qualidade dos relacionamentos. O CRM pessoal é como você gerencia esse ativo mais valioso.",
+  F15: "James Pennebaker, psicólogo da UT Austin, provou em décadas de pesquisa que escrever sobre experiências e emoções melhora saúde física, reduz ansiedade e aumenta clareza nas decisões. Isso acontece porque a escrita reflexiva força o córtex pré-frontal a processar experiências ainda 'presas' no sistema límbico — liberando energia emocional que estava bloqueada.",
+  F16: "Alan Marlatt, pioneiro na pesquisa de mudança de comportamento, descobriu que o maior inimigo de qualquer transformação é o 'efeito de violação de abstinência': a crença de que um deslize significa fracasso total. Um plano de prevenção de recaída ativa a auto-compaixão intencional — que estudos mostram dobrar a taxa de manutenção de hábitos a longo prazo.",
+};
+
 // ─── Tokens ───────────────────────────────────────────────────────────────────
 
 const G        = "#0E0E0E";
@@ -137,6 +158,9 @@ export default function FerramentaLayout({
   const [toastMsg, setToastMsg] = useState("");
   const [bannerMsg, setBannerMsg] = useState<string | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [aprenderAberto, setAprenderAberto] = useState(false);
+  const [aprenderLido, setAprenderLido] = useState(false);
+  const aprenderContentRef = useRef<HTMLDivElement>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
 
@@ -152,6 +176,12 @@ export default function FerramentaLayout({
   useEffect(() => { respostasRef.current = respostas; }, [respostas]);
   useEffect(() => { progressoRef.current = progresso; }, [progresso]);
   useEffect(() => { resolvedSlugRef.current = resolvedSlug; }, [resolvedSlug]);
+
+  // Carrega estado "já leu" do localStorage
+  useEffect(() => {
+    const lido = localStorage.getItem(`kairos_aprender_${codigo}`) === '1';
+    setAprenderLido(lido);
+  }, [codigo]);
 
   // Auto-save a cada 30 segundos
   useEffect(() => {
@@ -728,6 +758,85 @@ export default function FerramentaLayout({
           pointer-events: none;
         }
         .fl-autosave.visible { opacity: 1; }
+
+        /* CARD APRENDA EM 2 MINUTOS */
+        .fl-aprenda {
+          margin-bottom: 24px;
+          border-radius: 12px;
+          border: 1px solid rgba(200,160,48,0.25);
+          background: #111111;
+          overflow: hidden;
+          transition: opacity 0.3s ease;
+        }
+        .fl-aprenda.lido {
+          opacity: 0.45;
+        }
+        .fl-aprenda.lido:hover {
+          opacity: 0.75;
+        }
+        .fl-aprenda-toggle {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 16px;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          text-align: left;
+          transition: background 0.15s;
+        }
+        .fl-aprenda-toggle:hover {
+          background: rgba(200,160,48,0.06);
+        }
+        .fl-aprenda-icon {
+          font-size: 16px;
+          flex-shrink: 0;
+        }
+        .fl-aprenda-label {
+          flex: 1;
+          font-size: 13px;
+          font-weight: 600;
+          color: rgba(200,160,48,0.85);
+          letter-spacing: 0.01em;
+        }
+        .fl-aprenda-chevron {
+          font-size: 11px;
+          color: rgba(200,160,48,0.5);
+          flex-shrink: 0;
+          transition: transform 0.25s ease;
+          display: inline-block;
+        }
+        .fl-aprenda-chevron.aberto {
+          transform: rotate(180deg);
+        }
+        .fl-aprenda-body {
+          overflow: hidden;
+          max-height: 0;
+          transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .fl-aprenda-body.aberto {
+          max-height: 400px;
+        }
+        .fl-aprenda-inner {
+          padding: 0 16px 16px;
+          font-size: 13.5px;
+          color: rgba(245,240,232,0.72);
+          line-height: 1.7;
+          border-top: 1px solid rgba(200,160,48,0.12);
+          padding-top: 14px;
+        }
+        .fl-aprenda-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 10px;
+          font-weight: 700;
+          color: rgba(200,160,48,0.6);
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          margin-bottom: 8px;
+        }
       `}</style>
 
       {/* ── Toast motivacional ── */}
@@ -919,6 +1028,40 @@ export default function FerramentaLayout({
 
           {/* ── Área central ── */}
           <main className="fl-main">
+
+            {/* Card Aprenda em 2 minutos */}
+            {CONTEUDO_APRENDER[codigo.toUpperCase()] && (
+              <div className={`fl-aprenda${aprenderLido ? ' lido' : ''}`}>
+                <button
+                  className="fl-aprenda-toggle"
+                  onClick={() => {
+                    const novoEstado = !aprenderAberto;
+                    setAprenderAberto(novoEstado);
+                    if (novoEstado && !aprenderLido) {
+                      localStorage.setItem(`kairos_aprender_${codigo}`, '1');
+                      setAprenderLido(true);
+                    }
+                  }}
+                  aria-expanded={aprenderAberto}
+                >
+                  <span className="fl-aprenda-icon">📚</span>
+                  <span className="fl-aprenda-label">
+                    Por que essa ferramenta transforma? (2 min)
+                  </span>
+                  <span className={`fl-aprenda-chevron${aprenderAberto ? ' aberto' : ''}`}>▼</span>
+                </button>
+                <div
+                  ref={aprenderContentRef}
+                  className={`fl-aprenda-body${aprenderAberto ? ' aberto' : ''}`}
+                >
+                  <div className="fl-aprenda-inner">
+                    <div className="fl-aprenda-badge">✦ Neurociência por trás do método</div>
+                    <p style={{ margin: 0 }}>{CONTEUDO_APRENDER[codigo.toUpperCase()]}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {bannerMsg && !bannerDismissed && (
               <div className="fl-banner">
                 <span className="fl-banner-text">{bannerMsg}</span>
