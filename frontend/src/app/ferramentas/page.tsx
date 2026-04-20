@@ -310,6 +310,116 @@ function Skeleton() {
   );
 }
 
+// ─── Próxima ferramenta recomendada ──────────────────────────────────────────
+
+type ProximaRec = {
+  ferramenta: Ferramenta;
+  fase:       FaseDef;
+};
+
+function getProximaFerramenta(concluidas: Set<string>): ProximaRec | null {
+  for (let i = 0; i < FASES.length; i++) {
+    const fase = FASES[i];
+    const desbloqueada = isFaseDesbloqueada(i, concluidas);
+    if (!desbloqueada) {
+      // fase bloqueada — mostra a primeira ferramenta dela como próximo objetivo
+      return { ferramenta: fase.ferramentas[0], fase };
+    }
+    const proxima = fase.ferramentas.find(f => !concluidas.has(f.codigo));
+    if (proxima) return { ferramenta: proxima, fase };
+  }
+  return null; // todas concluídas
+}
+
+function CardProximaFerramenta({ rec, concluidas }: { rec: ProximaRec; concluidas: Set<string> }) {
+  const { ferramenta: f, fase } = rec;
+  const bloqueada = !isFaseDesbloqueada(FASES.indexOf(fase), concluidas);
+
+  return (
+    <div style={{
+      background: "linear-gradient(135deg, #111 0%, #1A1A0E 100%)",
+      border: "1px solid rgba(200,160,48,0.30)",
+      borderRadius: 16,
+      padding: "24px 28px",
+      display: "flex",
+      alignItems: "center",
+      gap: 24,
+      flexWrap: "wrap" as const,
+      boxShadow: "0 4px 32px rgba(200,160,48,0.08)",
+      position: "relative" as const,
+      overflow: "hidden",
+    }}>
+      {/* linha de acento superior */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, height: 3,
+        background: `linear-gradient(90deg, ${fase.cor} 0%, ${fase.cor}44 100%)`,
+      }} />
+
+      {/* Emoji */}
+      <div style={{
+        width: 56, height: 56, borderRadius: 14, flexShrink: 0,
+        background: "rgba(200,160,48,0.10)",
+        border: "1px solid rgba(200,160,48,0.22)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 28,
+      }}>
+        {f.emoji}
+      </div>
+
+      {/* Texto */}
+      <div style={{ flex: 1, minWidth: 180 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" as const }}>
+          <span style={{
+            fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600,
+            color: "#C8A030", background: "rgba(200,160,48,0.12)",
+            padding: "2px 8px", borderRadius: 99,
+          }}>
+            {f.codigo}
+          </span>
+          <span style={{
+            fontFamily: "var(--font-mono)", fontSize: 10,
+            color: "rgba(245,240,232,0.40)",
+          }}>
+            Fase {fase.numero} · {fase.titulo}
+          </span>
+        </div>
+        <h3 style={{
+          fontFamily: "'Playfair Display', Georgia, serif",
+          fontSize: "clamp(17px, 2vw, 20px)", fontWeight: 400,
+          color: "#F5F0E8", margin: "0 0 6px", lineHeight: 1.2,
+        }}>
+          {f.nome}
+        </h3>
+        <p style={{
+          fontSize: 13, color: "rgba(245,240,232,0.50)",
+          margin: 0, lineHeight: 1.55,
+        }}>
+          {f.descricao}
+        </p>
+      </div>
+
+      {/* CTA */}
+      <Link
+        href={`/ferramentas/${f.slug}`}
+        style={{
+          display: "inline-block",
+          fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 700,
+          color: "#0E0E0E",
+          background: "linear-gradient(135deg, #C8A030, #e8c76a)",
+          padding: "12px 24px",
+          borderRadius: 12,
+          textDecoration: "none",
+          whiteSpace: "nowrap" as const,
+          boxShadow: "0 4px 20px rgba(200,160,48,0.30)",
+          flexShrink: 0,
+        }}
+      >
+        {bloqueada ? "Ver detalhes →" : "Continuar agora →"}
+      </Link>
+    </div>
+  );
+}
+
 // ─── Página ───────────────────────────────────────────────────────────────────
 
 export default function FeramentasPage() {
@@ -400,6 +510,24 @@ export default function FeramentasPage() {
           )}
         </div>
       </div>
+
+      {/* ── Próxima ferramenta ───────────────────────────────────────────── */}
+      {!loading && (() => {
+        const rec = getProximaFerramenta(concluidas);
+        if (!rec) return null;
+        return (
+          <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 0" }}>
+            <div style={{
+              fontFamily: "var(--font-mono)", fontSize: 10,
+              letterSpacing: "0.14em", textTransform: "uppercase" as const,
+              color: "rgba(200,160,48,0.60)", marginBottom: 12,
+            }}>
+              ✦ Sua próxima ferramenta
+            </div>
+            <CardProximaFerramenta rec={rec} concluidas={concluidas} />
+          </div>
+        );
+      })()}
 
       {/* ── Fases ────────────────────────────────────────────────────────── */}
       {loading ? (
