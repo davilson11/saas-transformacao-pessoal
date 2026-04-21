@@ -213,9 +213,14 @@ export default function MapaPage() {
     .map(([label, v]) => ({ label, score: [2,4,6,8,10][v.opcaoIdx as number] ?? 0 }));
 
   // F02 — valores
-  const f02Ranking = Array.isArray(f02.ranking) ? (f02.ranking as string[]) : [];
-  const f02Selecionados = Array.isArray(f02.selecionados) ? (f02.selecionados as string[]) : [];
-  const f02Valores = f02Ranking.length > 0 ? f02Ranking : f02Selecionados;
+  // ranking = ValorRankeado[] → { id: string; porque: string }; selecionados = string[] (IDs)
+  const f02Ranking: string[] = Array.isArray(f02.ranking)
+    ? (f02.ranking as Array<{ id?: string } | string>).flatMap(v =>
+        typeof v === 'string' ? [v] : (v as { id?: string }).id ? [(v as { id: string }).id] : []
+      )
+    : [];
+  const f02Selecionados: string[] = Array.isArray(f02.selecionados) ? (f02.selecionados as string[]) : [];
+  const f02Valores: string[] = f02Ranking.length > 0 ? f02Ranking : f02Selecionados;
 
   // F05 — objetivos
   const f05Objetivos = Array.isArray(f05.objetivos)
@@ -419,21 +424,24 @@ export default function MapaPage() {
                   Bússola de Valores — seus pilares
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {f02Valores.slice(0, 8).map((v, i) => (
-                    <span key={v} style={{
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: i < 3 ? GOLD : CREAM,
-                      background: i < 3 ? 'rgba(200,160,48,0.12)' : 'rgba(245,240,232,0.06)',
-                      border: `1px solid ${i < 3 ? 'rgba(200,160,48,0.28)' : 'rgba(245,240,232,0.1)'}`,
-                      borderRadius: 99,
-                      padding: '4px 12px',
-                    }}>
-                      {i < 3 && <span style={{ marginRight: 4 }}>{['①','②','③'][i]}</span>}
-                      {v}
-                    </span>
-                  ))}
+                  {f02Valores.slice(0, 8).map((id, i) => {
+                    const nome = id.charAt(0).toUpperCase() + id.slice(1);
+                    return (
+                      <span key={id + i} style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: i < 3 ? GOLD : CREAM,
+                        background: i < 3 ? 'rgba(200,160,48,0.12)' : 'rgba(245,240,232,0.06)',
+                        border: `1px solid ${i < 3 ? 'rgba(200,160,48,0.28)' : 'rgba(245,240,232,0.1)'}`,
+                        borderRadius: 99,
+                        padding: '4px 12px',
+                      }}>
+                        {i < 3 && <span style={{ marginRight: 4 }}>{['①','②','③'][i]}</span>}
+                        {nome}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
