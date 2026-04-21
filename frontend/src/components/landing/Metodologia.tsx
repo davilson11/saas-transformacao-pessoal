@@ -2,22 +2,22 @@ const fases = [
   {
     n: '01', icon: '🔍', titulo: 'Autoconhecimento',
     desc: 'Descubra quem você é, onde está hoje e quais são seus valores mais profundos.',
-    tools: ['Raio-X 360°', 'Mapa de Valores', 'Propósito de Vida', 'Visão de Futuro'],
+    tools: ['Raio-X 360°', 'Bússola de Valores', 'SWOT Pessoal', 'Visão Âncora'],
   },
   {
     n: '02', icon: '🎯', titulo: 'Visão e Metas',
-    desc: 'Defina com clareza onde quer chegar e estabeleça seus OKRs e plano de 12 meses.',
-    tools: ['OKRs Pessoais', 'Plano de 12 Meses', 'Finanças Pessoais', 'Rotina Ideal'],
+    desc: 'Defina com clareza onde quer chegar e estabeleça seus OKRs e design de vida.',
+    tools: ['OKRs Pessoais', 'Design de Vida', 'Mapa Financeiro Pessoal', 'Rotina Ideal'],
   },
   {
     n: '03', icon: '🚀', titulo: 'Hábitos e Energia',
-    desc: 'Construa a rotina que te leva lá: saúde, produtividade e relacionamentos.',
-    tools: ['Saúde e Energia', 'Relacionamentos', 'Espiritualidade', 'Energia Diária'],
+    desc: 'Construa a rotina que te leva lá: tempo, aprendizado e energia em ordem.',
+    tools: ['Auditoria de Tempo', 'Arquiteto de Rotinas', 'Sprint de Aprendizado', 'Energia e Vitalidade'],
   },
   {
-    n: '04', icon: '🧠', titulo: 'Crescimento e Revisão',
-    desc: 'Elimine bloqueios, registre sua evolução e ajuste o rumo mensalmente.',
-    tools: ['Aprendizado', 'Diário de Bordo', 'Conquistas', 'Revisão Mensal'],
+    n: '04', icon: '🧠', titulo: 'Crescimento',
+    desc: 'Elimine bloqueios, fortaleça relações, registre sua evolução e mantenha o progresso.',
+    tools: ['Desconstrutor de Crenças', 'Mapa de Relacionamentos', 'Diário de Bordo', 'Plano de Continuidade'],
   },
 ]
 

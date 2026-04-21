@@ -1,5 +1,5 @@
 const faqs = [
-  { icon: '📱', q: 'Qual plataforma?',       a: 'Notion — disponível em todas as plataformas, mobile e desktop. Você acessa de qualquer lugar.' },
+  { icon: '📱', q: 'Qual plataforma?',       a: 'Web e mobile — acesse pelo navegador ou instale como app no celular. Funciona em qualquer dispositivo.' },
   { icon: '⏱️', q: 'Quanto tempo leva?',     a: 'Cada ferramenta leva de 20 a 60 minutos. Você vai no seu ritmo, sem pressão.' },
   { icon: '🔄', q: 'Posso usar todo ano?',   a: 'Sim! O sistema foi projetado para ser revisado e reiniciado anualmente. É um sistema para a vida.' },
   { icon: '🛡️', q: 'E se eu não gostar?',   a: 'Garantia de 7 dias. Reembolso total, sem perguntas. Você não tem nada a perder.' },
