@@ -1,8 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
 import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
+import { useSupabaseClient } from '@/lib/useSupabaseClient';
+import { useUser } from '@clerk/nextjs';
+import { buscarRespostaFerramenta } from '@/lib/queries';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -467,6 +471,92 @@ export default function ArquitetoRotinasPage() {
   const { dados: dadosSalvos } = useCarregarRespostas("arquiteto-rotinas");
   useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).matinal) setMatinal((dadosSalvos as any).matinal); if ((dadosSalvos as any).blocos) setBlocos((dadosSalvos as any).blocos); if ((dadosSalvos as any).noturno) setNoturno((dadosSalvos as any).noturno); if ((dadosSalvos as any).rastreador) setRastreador((dadosSalvos as any).rastreador); }, [dadosSalvos]);
 
+  // ─── Verificação de pré-requisitos (F08 e F09) ─────────────────────────────
+  type StatusPreReq = 'loading' | 'done' | 'not_done';
+  const [statusF08, setStatusF08] = useState<StatusPreReq>('loading');
+  const [statusF09, setStatusF09] = useState<StatusPreReq>('loading');
+  const { user } = useUser();
+  const { getClient } = useSupabaseClient();
+
+  useEffect(() => {
+    if (!user?.id) return;
+    (async () => {
+      const client = await getClient();
+      const [r08, r09] = await Promise.all([
+        buscarRespostaFerramenta(user.id, 'rotina-ideal', client),
+        buscarRespostaFerramenta(user.id, 'auditoria-tempo', client),
+      ]);
+      setStatusF08(r08?.concluida ? 'done' : 'not_done');
+      setStatusF09(r09?.concluida ? 'done' : 'not_done');
+    })();
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const ambosFeitos  = statusF08 === 'done' && statusF09 === 'done';
+  const umFeito      = (statusF08 === 'done') !== (statusF09 === 'done');
+  const nenhumFeito  = statusF08 === 'not_done' && statusF09 === 'not_done';
+  const carregando   = statusF08 === 'loading' || statusF09 === 'loading';
+
+  const bannerPreReq = carregando ? null : (
+    <div style={{
+      borderRadius: 12,
+      padding: '14px 18px',
+      marginBottom: 20,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 6,
+      ...(ambosFeitos ? {
+        background: 'rgba(22,163,74,0.08)',
+        border: '1.5px solid rgba(22,163,74,0.35)',
+      } : umFeito ? {
+        background: 'rgba(217,119,6,0.08)',
+        border: '1.5px solid rgba(217,119,6,0.35)',
+      } : {
+        background: 'rgba(37,99,235,0.07)',
+        border: '1.5px solid rgba(37,99,235,0.3)',
+      }),
+    }}>
+      {ambosFeitos && (
+        <>
+          <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: '#15803d' }}>
+            ✅ Pré-requisitos concluídos
+          </p>
+          <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: 13, color: '#166534' }}>
+            Você já tem sua Rotina Ideal e seu Dia Típico definidos. Vamos construir sua rotina definitiva com base neles.
+          </p>
+        </>
+      )}
+      {umFeito && (
+        <>
+          <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: '#92400e' }}>
+            ⚠️ Um pré-requisito pendente
+          </p>
+          <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: 13, color: '#78350f' }}>
+            {statusF08 === 'not_done' && (
+              <>Você ainda não concluiu a <Link href="/ferramentas/rotina-ideal" style={{ color: '#b45309', fontWeight: 600, textDecoration: 'underline' }}>Rotina Ideal (F08)</Link>. Concluí-la enriquece essa etapa.</>
+            )}
+            {statusF09 === 'not_done' && (
+              <>Você ainda não concluiu a <Link href="/ferramentas/auditoria-tempo" style={{ color: '#b45309', fontWeight: 600, textDecoration: 'underline' }}>Auditoria de Tempo (F09)</Link>. Concluí-la enriquece essa etapa.</>
+            )}
+          </p>
+        </>
+      )}
+      {nenhumFeito && (
+        <>
+          <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: '#1d4ed8' }}>
+            💡 Dica: faça primeiro F08 e F09
+          </p>
+          <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: 13, color: '#1e40af' }}>
+            Para melhores resultados, conclua antes{' '}
+            <Link href="/ferramentas/rotina-ideal" style={{ color: '#1d4ed8', fontWeight: 600, textDecoration: 'underline' }}>Rotina Ideal (F08)</Link>
+            {' '}e{' '}
+            <Link href="/ferramentas/auditoria-tempo" style={{ color: '#1d4ed8', fontWeight: 600, textDecoration: 'underline' }}>Auditoria de Tempo (F09)</Link>.
+            Você pode continuar aqui mesmo assim.
+          </p>
+        </>
+      )}
+    </div>
+  );
+
   // ─── Métricas ──────────────────────────────────────────────────────────────
 
   const matinalPreenchidos = HABITOS_MATINAIS.filter(h => matinal[h.key].horario.length > 0).length;
@@ -892,6 +982,7 @@ export default function ArquitetoRotinasPage() {
       resumo={painelResumo}
   respostas={{ matinal, blocos, noturno, rastreador }}
     >
+      {bannerPreReq}
       {steps[etapa]}
     </FerramentaLayout>
   );

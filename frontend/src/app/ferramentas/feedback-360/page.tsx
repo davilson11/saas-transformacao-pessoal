@@ -6,21 +6,6 @@ import { useCarregarRespostas } from "@/lib/useCarregarRespostas";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
-type Fonte = {
-  nome: string;
-  relacao: string;
-  feedback: string;
-  preenchida: boolean;
-};
-
-type FonteTipo = {
-  id: string;
-  emoji: string;
-  titulo: string;
-  perguntaSugerida: string;
-  cor: string;
-};
-
 type Aspecto = {
   id: string;
   label: string;
@@ -37,48 +22,58 @@ type Insights = {
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
-const FONTES_CONFIG: FonteTipo[] = [
-  {
-    id: "colega",
-    emoji: "🤝",
-    titulo: "Colega de Trabalho",
-    perguntaSugerida: "Em qual projeto ou entrega das últimas 8 semanas trabalhamos juntos? O que você observou no meu jeito de colaborar e entregar — nas suas próprias palavras?",
-    cor: "#2980B9",
-  },
-  {
-    id: "lideranca",
-    emoji: "📊",
-    titulo: "Liderança / Gestor",
-    perguntaSugerida: "Em qual situação específica das últimas 8 semanas você percebeu onde posso crescer mais? Descreva o que aconteceu e o que você notou no meu comportamento.",
-    cor: "#8E44AD",
-  },
+const PERGUNTAS_IMAGINADO: Array<{
+  id: string;
+  emoji: string;
+  perspectiva: string;
+  cor: string;
+  pergunta: string;
+  placeholder: string;
+}> = [
   {
     id: "amigo",
     emoji: "😊",
-    titulo: "Amigo Próximo",
-    perguntaSugerida: "Lembre de uma situação recente (últimas 4 semanas) em que você me viu agir sob pressão ou tomar uma decisão difícil. O que você observou? O que eu poderia ter feito diferente?",
+    perspectiva: "Seu melhor amigo",
     cor: "#27AE60",
+    pergunta: "Como você acha que seu melhor amigo descreveria seu maior ponto forte?",
+    placeholder:
+      "Pense em como ele/ela realmente te vê. Quais palavras usaria para descrever o que faz você especial para as pessoas ao redor?",
   },
   {
-    id: "familiar",
+    id: "lider",
+    emoji: "📊",
+    perspectiva: "Seu gestor ou líder",
+    cor: "#8E44AD",
+    pergunta: "O que seu gestor ou líder diria que precisa melhorar em você?",
+    placeholder:
+      "Com base no que você percebe nas reuniões, projetos e avaliações. O que ele/ela diria de forma honesta sobre o que te falta desenvolver?",
+  },
+  {
+    id: "familia",
     emoji: "🏠",
-    titulo: "Familiar",
-    perguntaSugerida: "Lembre de uma situação recente onde você ficou desapontado comigo ou me viu no meu melhor. O que aconteceu exatamente? O que isso diz sobre quem eu sou?",
+    perspectiva: "Sua família",
     cor: "#E67E22",
+    pergunta: "Como sua família descreveria como você lida com pressão?",
+    placeholder:
+      "O que eles diriam ao observar você sob estresse, prazo ou conflito? Quais padrões de comportamento eles reconheceriam?",
   },
   {
-    id: "mentor",
-    emoji: "🎓",
-    titulo: "Mentor / Coach",
-    perguntaSugerida: "Qual padrão de comportamento você identificou em mim nas últimas sessões? Em qual situação específica esse padrão apareceu com mais clareza?",
+    id: "antigo",
+    emoji: "⏳",
+    perspectiva: "Alguém que te conhece há anos",
+    cor: "#2980B9",
+    pergunta: "O que alguém que te conhece há anos diria que é seu maior padrão limitante?",
+    placeholder:
+      "Aquele comportamento que se repete ao longo do tempo — que às vezes você mesmo reconhece. O que eles observariam com clareza por terem te acompanhado por tanto tempo?",
+  },
+  {
+    id: "admirador",
+    emoji: "✨",
+    perspectiva: "Alguém que te admira",
     cor: "#C0392B",
-  },
-  {
-    id: "outro",
-    emoji: "💡",
-    titulo: "Outra Fonte",
-    perguntaSugerida: "Descreva uma situação concreta das últimas 4 semanas em que você me observou agindo. O que eu fiz e o que isso revelou sobre mim — do ponto de vista de quem estava de fora?",
-    cor: "#7F8C8D",
+    pergunta: "Como uma pessoa que te admira descreveria o impacto que você tem na vida das pessoas?",
+    placeholder:
+      "O que ela diria sobre a forma como você influencia, inspira ou transforma as pessoas ao seu redor? Quais palavras específicas usaria?",
   },
 ];
 
@@ -93,43 +88,39 @@ const ASPECTOS_INICIAIS: Aspecto[] = [
   { id: "relacionamentos", label: "Relacionamentos",         comoMeVejo: "", oQueDisseram: "", pontoCego: null },
 ];
 
-const FONTES_INICIAIS: Record<string, Fonte> = Object.fromEntries(
-  FONTES_CONFIG.map((f) => [f.id, { nome: "", relacao: "", feedback: "", preenchida: false }])
-);
-
 const ETAPAS = [
   { label: "Bem-vindo",                descricao: "Introdução à ferramenta" },
-  { label: "Fontes de Feedback",       descricao: "Colete perspectivas" },
+  { label: "Feedback Imaginado",       descricao: "5 perspectivas revelam padrões" },
   { label: "Análise de Discrepâncias", descricao: "Compare percepções" },
   { label: "Insights e Ação",          descricao: "Transforme em compromissos" },
 ];
 
 const INSTRUCOES: Record<number, { titulo: string; itens: string[] }> = {
   1: {
-    titulo: "O que é o Feedback 360°?",
+    titulo: "O que é o Feedback 360° Imaginado?",
     itens: [
-      "Coleta perspectivas de diferentes pessoas da sua vida.",
-      "Revela pontos cegos que você não consegue ver sozinho.",
-      "Compara como você se vê com como os outros te veem.",
-      "Transforma percepções externas em ações concretas.",
+      "Você se coloca no lugar de pessoas próximas e imagina o que cada uma diria sobre você.",
+      "Estudos mostram que antecipar a perspectiva do outro ativa os mesmos mecanismos que ouvir o feedback real.",
+      "O que você imagina que os outros veem é, em si mesmo, uma revelação sobre sua autoconsciência.",
+      "5 perspectivas de contextos diferentes — o padrão que aparece em todas é o mais verdadeiro.",
     ],
   },
   2: {
-    titulo: "Coletando Feedback Episódico",
+    titulo: "Como responder o Feedback Imaginado",
     itens: [
-      "Peça que a pessoa lembre de uma situação específica, não avaliações gerais.",
-      "Âncoras temporais ativam memória concreta: 'nas últimas 8 semanas…'",
-      "Registre as palavras exatas delas — não seu resumo ou interpretação.",
-      "4+ fontes de contextos diferentes revelam padrões reais de comportamento.",
+      "Seja honesto(a) — imagine o que cada pessoa realmente diria, não o que você quer ouvir.",
+      "Use palavras concretas: 'diria que sou [X]' ou 'observaria que tenho dificuldade com [Y]'.",
+      "O desconforto em algumas respostas é normal — justamente aí está o aprendizado mais valioso.",
+      "Responda pelo menos 2 perspectivas para continuar.",
     ],
   },
   3: {
     titulo: "Analisando Discrepâncias",
     itens: [
-      "Para cada aspecto, cite uma situação concreta onde você agiu assim.",
-      "Discrepância = você se via de um jeito, eles viram diferente na prática.",
-      "Pontos cegos são os mais valiosos — resistência a eles é normal.",
-      "Pergunte: 'Em qual situação real isso apareceu?' antes de marcar.",
+      "Para cada aspecto, descreva como você se vê e o que as perspectivas imaginadas revelaram.",
+      "Discrepância = você se via de um jeito, mas as perspectivas mostram algo diferente.",
+      "Pontos cegos são os mais valiosos — resistência a eles é normal e esperada.",
+      "Pergunte: 'Em qual situação real esse padrão apareceu?' antes de marcar.",
     ],
   },
   4: {
@@ -137,7 +128,7 @@ const INSTRUCOES: Record<number, { titulo: string; itens: string[] }> = {
     itens: [
       "O compromisso deve ter data, comportamento observável e sinal de sucesso.",
       "UMA mudança bem implementada vale mais que dez intenções vagas.",
-      "Fechar o loop reforça o relacionamento e cria accountability.",
+      "Fechar o loop significa atualizar as pessoas próximas sobre o que você aprendeu.",
       "Feedback sem ação concreta e datada é apenas informação perecível.",
     ],
   },
@@ -147,178 +138,6 @@ const COR_GOLD = "#E0A55F";
 const COR_DARK = "#1E392A";
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
-
-function FonteCard({
-  config,
-  fonte,
-  onUpdate,
-}: {
-  config: FonteTipo;
-  fonte: Fonte;
-  onUpdate: (f: Partial<Fonte>) => void;
-}) {
-  const [expandida, setExpandida] = useState(false);
-  const preenchida = fonte.nome.trim().length > 0 && fonte.feedback.trim().length > 20;
-
-  return (
-    <div
-      className="flex flex-col rounded-2xl overflow-hidden transition-all duration-200"
-      style={{
-        border: `1.5px solid ${preenchida ? config.cor + "55" : "var(--color-brand-border)"}`,
-        background: "#fff",
-        boxShadow: preenchida ? `0 2px 12px ${config.cor}18` : "var(--shadow-card)",
-      }}
-    >
-      {/* Header clicável */}
-      <button
-        onClick={() => setExpandida((v) => !v)}
-        className="flex items-center gap-3 px-5 py-4 text-left w-full transition-all duration-200"
-        style={{
-          background: preenchida ? `${config.cor}0e` : "#fafafa",
-          borderBottom: expandida ? `1px solid ${config.cor}22` : "none",
-        }}
-      >
-        <div
-          className="flex items-center justify-center rounded-xl shrink-0"
-          style={{ width: 40, height: 40, background: `${config.cor}18`, fontSize: 20 }}
-        >
-          {config.emoji}
-        </div>
-        <div className="flex-1">
-          <p
-            style={{
-              fontFamily: "var(--font-heading)",
-              fontSize: 16,
-              fontWeight: 700,
-              color: COR_DARK,
-              lineHeight: 1.2,
-            }}
-          >
-            {config.titulo}
-          </p>
-          {fonte.nome.trim() ? (
-            <p style={{ fontSize: 15, color: config.cor, fontWeight: 600, marginTop: 2 }}>
-              {fonte.nome}
-            </p>
-          ) : (
-            <p style={{ fontSize: 15, color: "var(--color-brand-gray)", marginTop: 2 }}>
-              Não preenchido
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {preenchida && (
-            <div
-              className="flex items-center justify-center rounded-full"
-              style={{ width: 22, height: 22, background: config.cor }}
-            >
-              <span style={{ color: "#fff", fontSize: 11, fontWeight: 700 }}>✓</span>
-            </div>
-          )}
-          <span
-            style={{
-              fontSize: 12,
-              color: "var(--color-brand-gray)",
-              transform: expandida ? "rotate(180deg)" : "rotate(0deg)",
-              display: "inline-block",
-              transition: "transform 0.2s",
-            }}
-          >
-            ▾
-          </span>
-        </div>
-      </button>
-
-      {/* Conteúdo expansível */}
-      {expandida && (
-        <div className="flex flex-col gap-4 p-5">
-          {/* Nome + Relação */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--color-brand-gray)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                Nome
-              </label>
-              <input
-                type="text"
-                value={fonte.nome}
-                onChange={(e) => onUpdate({ nome: e.target.value })}
-                placeholder="Ex: Ana Lima"
-                className="rounded-xl px-3 py-2.5 text-sm outline-none transition-all duration-200"
-                style={{
-                  border: `1.5px solid ${config.cor}33`,
-                  background: `${config.cor}06`,
-                  color: COR_DARK,
-                  fontFamily: "var(--font-body)",
-                }}
-                onFocus={(e) => { e.target.style.borderColor = config.cor; e.target.style.boxShadow = `0 0 0 3px ${config.cor}18`; }}
-                onBlur={(e) => { e.target.style.borderColor = `${config.cor}33`; e.target.style.boxShadow = "none"; }}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--color-brand-gray)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                Relação
-              </label>
-              <input
-                type="text"
-                value={fonte.relacao}
-                onChange={(e) => onUpdate({ relacao: e.target.value })}
-                placeholder="Ex: Gerente de equipe"
-                className="rounded-xl px-3 py-2.5 text-sm outline-none transition-all duration-200"
-                style={{
-                  border: `1.5px solid ${config.cor}33`,
-                  background: `${config.cor}06`,
-                  color: COR_DARK,
-                  fontFamily: "var(--font-body)",
-                }}
-                onFocus={(e) => { e.target.style.borderColor = config.cor; e.target.style.boxShadow = `0 0 0 3px ${config.cor}18`; }}
-                onBlur={(e) => { e.target.style.borderColor = `${config.cor}33`; e.target.style.boxShadow = "none"; }}
-              />
-            </div>
-          </div>
-
-          {/* Pergunta sugerida */}
-          <div
-            className="flex items-start gap-2 rounded-xl p-3"
-            style={{ background: `${config.cor}0e`, border: `1px solid ${config.cor}22` }}
-          >
-            <span style={{ color: config.cor, fontSize: 13, marginTop: 1, flexShrink: 0 }}>💬</span>
-            <div>
-              <p style={{ fontSize: 10, fontWeight: 600, color: config.cor, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
-                Pergunta sugerida
-              </p>
-              <p style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5, fontStyle: "italic" }}>
-                &ldquo;{config.perguntaSugerida}&rdquo;
-              </p>
-            </div>
-          </div>
-
-          {/* Feedback recebido */}
-          <div className="flex flex-col gap-1">
-            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--color-brand-gray)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Feedback recebido (situação específica)
-            </label>
-            <textarea
-              value={fonte.feedback}
-              onChange={(e) => onUpdate({ feedback: e.target.value })}
-              placeholder="Descreva a situação concreta que esta pessoa relatou — quando aconteceu, o que eu fiz ou disse, e o que ela observou. Use as palavras dela, não um resumo geral."
-              className="resize-none rounded-xl p-3 text-sm outline-none transition-all duration-200"
-              style={{
-                border: `1.5px solid ${config.cor}33`,
-                background: `${config.cor}06`,
-                color: COR_DARK,
-                fontFamily: "var(--font-body)",
-                lineHeight: 1.6,
-                minHeight: 100,
-              }}
-              onFocus={(e) => { e.target.style.borderColor = config.cor; e.target.style.boxShadow = `0 0 0 3px ${config.cor}18`; }}
-              onBlur={(e) => { e.target.style.borderColor = `${config.cor}33`; e.target.style.boxShadow = "none"; }}
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 function TabelaDiscrepancias({
   aspectos,
@@ -332,7 +151,7 @@ function TabelaDiscrepancias({
       className="rounded-2xl overflow-hidden"
       style={{ border: "1px solid var(--color-brand-border)", background: "#fff", boxShadow: "var(--shadow-card)" }}
     >
-      {/* Cabeçalho da tabela */}
+      {/* Cabeçalho */}
       <div
         className="grid px-4 py-3"
         style={{
@@ -342,7 +161,7 @@ function TabelaDiscrepancias({
           borderBottom: "1px solid var(--color-brand-border)",
         }}
       >
-        {["Aspecto", "Situação onde demonstrei isso (últimas 8 sem.)", "O que disseram (palavras deles)", "Ponto Cego?"].map((h) => (
+        {["Aspecto", "Como me vejo (situação concreta)", "O que as perspectivas revelaram", "Ponto Cego?"].map((h) => (
           <p
             key={h}
             style={{
@@ -371,32 +190,19 @@ function TabelaDiscrepancias({
             background: a.pontoCego === true ? "rgba(231,76,60,0.04)" : "#fff",
           }}
         >
-          {/* Label */}
           <div className="flex items-center gap-2 pt-1">
             {a.pontoCego === true && (
-              <div
-                className="rounded-full shrink-0"
-                style={{ width: 6, height: 6, background: "#E74C3C" }}
-              />
+              <div className="rounded-full shrink-0" style={{ width: 6, height: 6, background: "#E74C3C" }} />
             )}
-            <p
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: 13,
-                fontWeight: 600,
-                color: COR_DARK,
-                lineHeight: 1.3,
-              }}
-            >
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600, color: COR_DARK, lineHeight: 1.3 }}>
               {a.label}
             </p>
           </div>
 
-          {/* Como me vejo */}
           <textarea
             value={a.comoMeVejo}
             onChange={(e) => onUpdate(a.id, { comoMeVejo: e.target.value })}
-            placeholder="Em qual situação específica (últimas 8 sem.) você demonstrou isso? O que fez exatamente?"
+            placeholder="Em qual situação concreta você demonstrou isso? O que fez exatamente?"
             className="resize-none rounded-lg p-2 text-xs outline-none transition-all duration-200 w-full"
             style={{
               border: "1.5px solid var(--color-brand-border)",
@@ -410,11 +216,10 @@ function TabelaDiscrepancias({
             onBlur={(e) => { e.target.style.borderColor = "var(--color-brand-border)"; e.target.style.background = "#fafafa"; }}
           />
 
-          {/* O que disseram */}
           <textarea
             value={a.oQueDisseram}
             onChange={(e) => onUpdate(a.id, { oQueDisseram: e.target.value })}
-            placeholder="O que essa pessoa disse com as palavras dela sobre este aspecto? Citar a situação concreta que ela mencionou."
+            placeholder="O que as perspectivas imaginadas revelaram sobre este aspecto? Qual padrão apareceu?"
             className="resize-none rounded-lg p-2 text-xs outline-none transition-all duration-200 w-full"
             style={{
               border: "1.5px solid var(--color-brand-border)",
@@ -428,7 +233,6 @@ function TabelaDiscrepancias({
             onBlur={(e) => { e.target.style.borderColor = "var(--color-brand-border)"; e.target.style.background = "#fafafa"; }}
           />
 
-          {/* Ponto cego toggle */}
           <div className="flex flex-col items-center gap-2 pt-1">
             <button
               onClick={() => onUpdate(a.id, { pontoCego: a.pontoCego === true ? null : true })}
@@ -446,7 +250,7 @@ function TabelaDiscrepancias({
               onClick={() => onUpdate(a.id, { pontoCego: a.pontoCego === false ? null : false })}
               className="w-full rounded-lg py-1.5 text-xs font-semibold transition-all duration-200"
               style={{
-                background: a.pontoCego === false ? `${COR_DARK}` : `${COR_DARK}08`,
+                background: a.pontoCego === false ? COR_DARK : `${COR_DARK}08`,
                 color: a.pontoCego === false ? "#fff" : "var(--color-brand-gray)",
                 border: `1.5px solid ${a.pontoCego === false ? COR_DARK : "var(--color-brand-border)"}`,
                 fontFamily: "var(--font-body)",
@@ -462,12 +266,7 @@ function TabelaDiscrepancias({
 }
 
 function CampoInsight({
-  emoji,
-  titulo,
-  placeholder,
-  valor,
-  onChange,
-  cor,
+  emoji, titulo, placeholder, valor, onChange, cor,
 }: {
   emoji: string;
   titulo: string;
@@ -486,14 +285,7 @@ function CampoInsight({
         style={{ background: `${cor}10`, borderBottom: `1px solid ${cor}22` }}
       >
         <span style={{ fontSize: 22 }}>{emoji}</span>
-        <h3
-          style={{
-            fontFamily: "var(--font-heading)",
-            fontSize: 15,
-            fontWeight: 700,
-            color: COR_DARK,
-          }}
-        >
+        <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK }}>
           {titulo}
         </h3>
       </div>
@@ -524,7 +316,10 @@ function CampoInsight({
 
 export default function Feedback360Page() {
   const [passo, setPasso] = useState(0);
-  const [fontes, setFontes] = useState<Record<string, Fonte>>(FONTES_INICIAIS);
+
+  const [feedbackImaginado, setFeedbackImaginado] = useState<Record<string, string>>(
+    Object.fromEntries(PERGUNTAS_IMAGINADO.map((p) => [p.id, ""]))
+  );
   const [aspectos, setAspectos] = useState<Aspecto[]>(ASPECTOS_INICIAIS);
   const [insights, setInsights] = useState<Insights>({
     maiorPontoCego: "",
@@ -533,17 +328,19 @@ export default function Feedback360Page() {
   });
 
   const { dados: dadosSalvos } = useCarregarRespostas("feedback-360");
-  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).fontes) setFontes((dadosSalvos as any).fontes); if ((dadosSalvos as any).aspectos) setAspectos((dadosSalvos as any).aspectos); if ((dadosSalvos as any).insights) setInsights((dadosSalvos as any).insights); }, [dadosSalvos]);
-
-  const updateFonte = (id: string, dados: Partial<Fonte>) =>
-    setFontes((prev) => ({ ...prev, [id]: { ...prev[id], ...dados } }));
+  useEffect(() => {
+    if (!dadosSalvos) return;
+    if ((dadosSalvos as any).feedbackImaginado) setFeedbackImaginado((dadosSalvos as any).feedbackImaginado);
+    if ((dadosSalvos as any).aspectos) setAspectos((dadosSalvos as any).aspectos);
+    if ((dadosSalvos as any).insights) setInsights((dadosSalvos as any).insights);
+  }, [dadosSalvos]);
 
   const updateAspecto = (id: string, campo: Partial<Aspecto>) =>
     setAspectos((prev) => prev.map((a) => (a.id === id ? { ...a, ...campo } : a)));
 
-  const fontesPreenchidas = FONTES_CONFIG.filter(
-    (f) => fontes[f.id].nome.trim().length > 0 && fontes[f.id].feedback.trim().length > 20
-  );
+  const imaginadosPreenchidos = PERGUNTAS_IMAGINADO.filter(
+    (p) => feedbackImaginado[p.id].trim().length > 20
+  ).length;
 
   const pontoCegosCount = aspectos.filter((a) => a.pontoCego === true).length;
   const aspectosPreenchidos = aspectos.filter((a) => a.comoMeVejo.trim() && a.oQueDisseram.trim()).length;
@@ -552,25 +349,25 @@ export default function Feedback360Page() {
 
   const podeAvancar = () => {
     if (passo === 0) return true;
-    if (passo === 1) return fontesPreenchidas.length >= 2;
+    if (passo === 1) return imaginadosPreenchidos >= 2;
     if (passo === 2) return aspectosPreenchidos >= 4;
     return true;
   };
 
   const instrucao = INSTRUCOES[passo + 1];
 
-  // ── Painel direito (resumo) ───────────────────────────────────────────────
+  // ── Painel direito ────────────────────────────────────────────────────────
 
   const painelResumo = (
     <>
-      {/* Fontes preenchidas */}
+      {/* Perspectivas imaginadas */}
       <div
         className="flex flex-col gap-3 rounded-xl p-4"
         style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}
       >
         <div className="flex items-center justify-between">
           <p style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, color: COR_DARK }}>
-            Fontes coletadas
+            Perspectivas imaginadas
           </p>
           <span
             style={{
@@ -583,37 +380,24 @@ export default function Feedback360Page() {
               borderRadius: 99,
             }}
           >
-            {fontesPreenchidas.length}/6
+            {imaginadosPreenchidos}/5
           </span>
         </div>
 
-        {FONTES_CONFIG.map((config) => {
-          const fonte = fontes[config.id];
-          const ok = fonte.nome.trim().length > 0 && fonte.feedback.trim().length > 20;
+        {PERGUNTAS_IMAGINADO.map((p) => {
+          const ok = feedbackImaginado[p.id].trim().length > 20;
           return (
-            <div key={config.id} className="flex items-center gap-2">
+            <div key={p.id} className="flex items-center gap-2">
               <div
                 className="flex items-center justify-center rounded-full shrink-0"
-                style={{
-                  width: 22,
-                  height: 22,
-                  background: ok ? config.cor : `${config.cor}18`,
-                  fontSize: ok ? 11 : 13,
-                }}
+                style={{ width: 22, height: 22, background: ok ? p.cor : `${p.cor}18`, fontSize: ok ? 11 : 13 }}
               >
-                {ok ? (
-                  <span style={{ color: "#fff", fontWeight: 700 }}>✓</span>
-                ) : (
-                  config.emoji
-                )}
+                {ok ? <span style={{ color: "#fff", fontWeight: 700 }}>✓</span> : p.emoji}
               </div>
               <div className="flex-1">
                 <p style={{ fontSize: 13, color: ok ? COR_DARK : "var(--color-brand-gray)", fontWeight: ok ? 600 : 400 }}>
-                  {ok ? fonte.nome : config.titulo}
+                  {p.perspectiva}
                 </p>
-                {ok && fonte.relacao && (
-                  <p style={{ fontSize: 10, color: "var(--color-brand-gray)" }}>{fonte.relacao}</p>
-                )}
               </div>
             </div>
           );
@@ -648,17 +432,14 @@ export default function Feedback360Page() {
               {pontoCegosCount}
             </span>
           </div>
-
           {pontoCegosCount > 0 && (
             <div className="flex flex-col gap-1 mt-1">
-              {aspectos
-                .filter((a) => a.pontoCego === true)
-                .map((a) => (
-                  <div key={a.id} className="flex items-center gap-1.5">
-                    <div className="rounded-full shrink-0" style={{ width: 5, height: 5, background: "#E74C3C" }} />
-                    <span style={{ fontSize: 13, color: "#E74C3C", fontWeight: 600 }}>{a.label}</span>
-                  </div>
-                ))}
+              {aspectos.filter((a) => a.pontoCego === true).map((a) => (
+                <div key={a.id} className="flex items-center gap-1.5">
+                  <div className="rounded-full shrink-0" style={{ width: 5, height: 5, background: "#E74C3C" }} />
+                  <span style={{ fontSize: 13, color: "#E74C3C", fontWeight: 600 }}>{a.label}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -696,12 +477,12 @@ export default function Feedback360Page() {
       )}
 
       {/* Estado vazio */}
-      {fontesPreenchidas.length === 0 && aspectosPreenchidos === 0 && !insights.maiorPontoCego && (
+      {imaginadosPreenchidos === 0 && aspectosPreenchidos === 0 && !insights.maiorPontoCego && (
         <div
           className="flex flex-col items-center gap-3 rounded-xl p-6 text-center"
           style={{ border: "1.5px dashed var(--color-brand-border)" }}
         >
-          <span style={{ fontSize: 32 }}>🔄</span>
+          <span style={{ fontSize: 32 }}>🪞</span>
           <p style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>
             Seu resumo vai aparecer aqui conforme você preenche.
           </p>
@@ -714,17 +495,17 @@ export default function Feedback360Page() {
     <FerramentaLayout
       codigo="F04"
       nome="Feedback 360°"
-      descricao="Colete perspectivas de quem convive com você e descubra seus pontos cegos."
+      descricao="Imagine como as pessoas mais próximas te veem — e descubra seus padrões mais verdadeiros."
       etapas={ETAPAS}
       etapaAtual={passo}
       progresso={progresso}
       onAvancar={() => podeAvancar() && setPasso((p) => Math.min(3, p + 1))}
       onVoltar={() => setPasso((p) => Math.max(0, p - 1))}
       podeAvancar={podeAvancar()}
-      totalItens={fontesPreenchidas.length}
-      labelItens={fontesPreenchidas.length === 1 ? "fonte" : "fontes"}
+      totalItens={imaginadosPreenchidos}
+      labelItens={imaginadosPreenchidos === 1 ? "perspectiva" : "perspectivas"}
       resumo={painelResumo}
-  respostas={{ fontes, aspectos, insights }}
+      respostas={{ feedbackImaginado, aspectos, insights }}
     >
       <div className="p-8">
 
@@ -746,7 +527,7 @@ export default function Feedback360Page() {
           </ul>
         </div>
 
-        {/* Passo 0 — Bem-vindo */}
+        {/* ── Passo 0 — Bem-vindo ─────────────────────────────────────────── */}
         {passo === 0 && (
           <div className="flex flex-col gap-8 max-w-2xl mx-auto">
             <div className="flex flex-col gap-3">
@@ -772,7 +553,7 @@ export default function Feedback360Page() {
                 }}
               >
                 Feedback{" "}
-                <span style={{ color: COR_GOLD, fontStyle: "italic" }}>360°</span>
+                <span style={{ color: COR_GOLD, fontStyle: "italic" }}>Imaginado</span>
               </h1>
               <p
                 style={{
@@ -782,16 +563,17 @@ export default function Feedback360Page() {
                   maxWidth: 520,
                 }}
               >
-                A versão mais honesta de quem você é vem de quem convive com você. O Feedback 360° coleta perspectivas de múltiplas fontes para revelar o que você não consegue ver sozinho.
+                A versão mais honesta de quem você é vem de como você se enxerga pelos olhos das pessoas próximas.
+                O Feedback Imaginado usa 5 perspectivas para revelar padrões que você não consegue ver sozinho.
               </p>
             </div>
 
             {/* Como funciona */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { num: "01", titulo: "Coleta", desc: "Registre o feedback de até 6 pessoas do seu círculo.", emoji: "📥" },
-                { num: "02", titulo: "Análise", desc: "Compare sua autopercepção com o que cada um disse.", emoji: "🔍" },
-                { num: "03", titulo: "Ação", desc: "Transforme pontos cegos em plano de desenvolvimento.", emoji: "🚀" },
+                { num: "01", titulo: "Perspectivas", desc: "Se coloque no lugar de 5 pessoas do seu círculo e imagine o que diriam.", emoji: "🪞" },
+                { num: "02", titulo: "Análise",      desc: "Compare sua autopercepção com as perspectivas que imaginou.", emoji: "🔍" },
+                { num: "03", titulo: "Ação",          desc: "Transforme os padrões descobertos em compromissos concretos.", emoji: "🚀" },
               ].map((e) => (
                 <div
                   key={e.num}
@@ -814,14 +596,7 @@ export default function Feedback360Page() {
                       {e.num}
                     </span>
                   </div>
-                  <h3
-                    style={{
-                      fontFamily: "var(--font-heading)",
-                      fontSize: 15,
-                      fontWeight: 700,
-                      color: COR_DARK,
-                    }}
-                  >
+                  <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK }}>
                     {e.titulo}
                   </h3>
                   <p style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{e.desc}</p>
@@ -829,106 +604,148 @@ export default function Feedback360Page() {
               ))}
             </div>
 
-            {/* Fontes */}
+            {/* As 5 perspectivas */}
             <div className="flex flex-col gap-3">
               <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK }}>
-                6 perspectivas disponíveis
+                5 perspectivas que você vai imaginar
               </p>
               <div className="flex flex-wrap gap-2">
-                {FONTES_CONFIG.map((f) => (
+                {PERGUNTAS_IMAGINADO.map((p) => (
                   <div
-                    key={f.id}
+                    key={p.id}
                     className="flex items-center gap-2 rounded-xl px-3 py-2"
-                    style={{ background: `${f.cor}12`, border: `1px solid ${f.cor}25` }}
+                    style={{ background: `${p.cor}12`, border: `1px solid ${p.cor}25` }}
                   >
-                    <span style={{ fontSize: 14 }}>{f.emoji}</span>
-                    <span style={{ fontSize: 15, color: f.cor, fontWeight: 600 }}>{f.titulo}</span>
+                    <span style={{ fontSize: 14 }}>{p.emoji}</span>
+                    <span style={{ fontSize: 15, color: p.cor, fontWeight: 600 }}>{p.perspectiva}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Tempo */}
+            {/* Princípio */}
             <div
-              className="flex items-center gap-4 rounded-xl p-4"
+              className="flex items-start gap-4 rounded-xl p-4"
               style={{ background: `${COR_GOLD}12`, border: `1px solid ${COR_GOLD}33` }}
             >
-              <span style={{ fontSize: 20 }}>⏱️</span>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>💡</span>
               <div>
-                <p style={{ fontFamily: "var(--font-heading)", fontSize: 16, fontWeight: 700, color: COR_DARK }}>
-                  20–40 minutos
+                <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK, marginBottom: 4 }}>
+                  O que se repete é o que é real
                 </p>
-                <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
-                  Mais rico quando feito após coletar feedback com as pessoas pessoalmente.
+                <p style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.6 }}>
+                  Quando o mesmo padrão aparece em perspectivas de contextos diferentes — amigo, família, trabalho — isso não é coincidência. É quem você realmente é.
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Passo 1 — Fontes de Feedback */}
+        {/* ── Passo 1 — Feedback Imaginado ───────────────────────────────── */}
         {passo === 1 && (
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-1">
-              <h2
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  fontSize: 24,
-                  fontWeight: 700,
-                  color: COR_DARK,
-                }}
-              >
-                Fontes de Feedback
+              <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 700, color: COR_DARK }}>
+                Feedback Imaginado
               </h2>
               <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
-                Preencha as perspectivas de quem você pediu feedback. Mínimo{" "}
-                <strong style={{ color: COR_DARK }}>2 fontes</strong> para continuar.
+                Para cada perspectiva, imagine o que essa pessoa <strong style={{ color: COR_DARK }}>realmente diria</strong> sobre você.
+                Mínimo <strong style={{ color: COR_DARK }}>2 perspectivas</strong> para continuar.
               </p>
             </div>
 
-            {fontesPreenchidas.length > 0 && (
+            {imaginadosPreenchidos >= 2 && (
               <div
                 className="flex items-center gap-3 rounded-xl px-4 py-3"
                 style={{ background: "rgba(39,174,96,0.08)", border: "1px solid rgba(39,174,96,0.25)" }}
               >
                 <span style={{ fontSize: 16 }}>✅</span>
                 <p style={{ fontSize: 15, color: "#27AE60", fontWeight: 600 }}>
-                  {fontesPreenchidas.length} fonte{fontesPreenchidas.length > 1 ? "s" : ""} preenchida{fontesPreenchidas.length > 1 ? "s" : ""}
-                  {fontesPreenchidas.length < 2 ? " — adicione mais 1 para continuar" : " — você pode continuar!"}
+                  {imaginadosPreenchidos} perspectiva{imaginadosPreenchidos > 1 ? "s" : ""} preenchida{imaginadosPreenchidos > 1 ? "s" : ""} — você pode continuar!
                 </p>
               </div>
             )}
 
             <div className="flex flex-col gap-4">
-              {FONTES_CONFIG.map((config) => (
-                <FonteCard
-                  key={config.id}
-                  config={config}
-                  fonte={fontes[config.id]}
-                  onUpdate={(dados) => updateFonte(config.id, dados)}
-                />
-              ))}
+              {PERGUNTAS_IMAGINADO.map((p) => {
+                const val = feedbackImaginado[p.id];
+                const preenchida = val.trim().length > 20;
+                return (
+                  <div
+                    key={p.id}
+                    className="flex flex-col rounded-2xl overflow-hidden"
+                    style={{
+                      border: `1.5px solid ${preenchida ? p.cor + "55" : "var(--color-brand-border)"}`,
+                      background: "#fff",
+                      boxShadow: preenchida ? `0 2px 12px ${p.cor}18` : "var(--shadow-card)",
+                    }}
+                  >
+                    {/* Header */}
+                    <div
+                      className="flex items-center gap-3 px-5 py-4"
+                      style={{ background: preenchida ? `${p.cor}0e` : "#fafafa", borderBottom: `1px solid ${p.cor}22` }}
+                    >
+                      <div
+                        className="flex items-center justify-center rounded-xl shrink-0"
+                        style={{ width: 40, height: 40, background: `${p.cor}18`, fontSize: 20 }}
+                      >
+                        {p.emoji}
+                      </div>
+                      <div className="flex-1">
+                        <p style={{ fontFamily: "var(--font-heading)", fontSize: 14, fontWeight: 700, color: "var(--color-brand-gray)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                          {p.perspectiva}
+                        </p>
+                        <p style={{ fontSize: 15, fontWeight: 600, color: COR_DARK, marginTop: 2, lineHeight: 1.4 }}>
+                          {p.pergunta}
+                        </p>
+                      </div>
+                      {preenchida && (
+                        <div
+                          className="flex items-center justify-center rounded-full shrink-0"
+                          style={{ width: 22, height: 22, background: p.cor }}
+                        >
+                          <span style={{ color: "#fff", fontSize: 11, fontWeight: 700 }}>✓</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Textarea */}
+                    <div className="p-5">
+                      <textarea
+                        value={val}
+                        onChange={(e) => setFeedbackImaginado((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                        placeholder={p.placeholder}
+                        className="resize-none rounded-xl p-3 w-full outline-none transition-all duration-200"
+                        style={{
+                          border: `1.5px solid ${p.cor}33`,
+                          background: `${p.cor}06`,
+                          color: COR_DARK,
+                          fontFamily: "var(--font-body)",
+                          fontSize: 15,
+                          lineHeight: 1.65,
+                          minHeight: 100,
+                        }}
+                        onFocus={(e) => { e.target.style.borderColor = p.cor; e.target.style.boxShadow = `0 0 0 3px ${p.cor}18`; }}
+                        onBlur={(e) => { e.target.style.borderColor = `${p.cor}33`; e.target.style.boxShadow = "none"; }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Passo 2 — Análise de Discrepâncias */}
+        {/* ── Passo 2 — Análise de Discrepâncias ─────────────────────────── */}
         {passo === 2 && (
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-1">
-              <h2
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  fontSize: 24,
-                  fontWeight: 700,
-                  color: COR_DARK,
-                }}
-              >
+              <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 700, color: COR_DARK }}>
                 Análise de Discrepâncias
               </h2>
               <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
-                Para cada aspecto, descreva <strong style={{ color: COR_DARK }}>uma situação concreta</strong> onde você agiu assim e{" "}
-                <strong style={{ color: COR_DARK }}>o que as pessoas disseram</strong> com as palavras delas. Marque se há diferença (ponto cego).
+                Para cada aspecto, descreva <strong style={{ color: COR_DARK }}>como você se vê</strong> e{" "}
+                <strong style={{ color: COR_DARK }}>o que as perspectivas imaginadas revelaram</strong>. Marque se há diferença (ponto cego).
               </p>
             </div>
 
@@ -953,18 +770,11 @@ export default function Feedback360Page() {
           </div>
         )}
 
-        {/* Passo 3 — Insights e Ação */}
+        {/* ── Passo 3 — Insights e Ação ──────────────────────────────────── */}
         {passo === 3 && (
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-1">
-              <h2
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  fontSize: 24,
-                  fontWeight: 700,
-                  color: COR_DARK,
-                }}
-              >
+              <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 700, color: COR_DARK }}>
                 Insights e Ação
               </h2>
               <p style={{ fontSize: 15, color: "var(--color-brand-gray)" }}>
@@ -972,10 +782,59 @@ export default function Feedback360Page() {
               </p>
             </div>
 
+            {/* Resumo das perspectivas imaginadas */}
+            {imaginadosPreenchidos > 0 && (
+              <div
+                className="flex flex-col gap-4 rounded-2xl p-5"
+                style={{ background: `${COR_DARK}05`, border: `1px solid ${COR_DARK}12` }}
+              >
+                <div className="flex items-start gap-3">
+                  <span style={{ fontSize: 20, flexShrink: 0 }}>🪞</span>
+                  <div>
+                    <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK, marginBottom: 4 }}>
+                      Suas perspectivas imaginadas
+                    </p>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: COR_GOLD,
+                        fontStyle: "italic",
+                        lineHeight: 1.55,
+                        fontWeight: 600,
+                      }}
+                    >
+                      &ldquo;O que se repete nas diferentes perspectivas revela seu padrão mais verdadeiro.&rdquo;
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {PERGUNTAS_IMAGINADO.filter((p) => feedbackImaginado[p.id].trim().length > 0).map((p) => (
+                    <div
+                      key={p.id}
+                      className="rounded-xl p-4"
+                      style={{ background: `${p.cor}08`, border: `1px solid ${p.cor}20` }}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span style={{ fontSize: 14 }}>{p.emoji}</span>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: p.cor, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                          {p.perspectiva}
+                        </p>
+                      </div>
+                      <p style={{ fontSize: 14, color: COR_DARK, lineHeight: 1.6, fontStyle: "italic" }}>
+                        &ldquo;{feedbackImaginado[p.id].length > 200
+                          ? feedbackImaginado[p.id].slice(0, 200) + "…"
+                          : feedbackImaginado[p.id]}&rdquo;
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <CampoInsight
               emoji="🔍"
               titulo="Maior ponto cego revelado"
-              placeholder="Complete: 'Eu acreditava que era [X] em [situação específica], mas múltiplas pessoas disseram que na verdade eu [Y].' O que esta diferença revela sobre um padrão que eu repito?"
+              placeholder="Complete: 'Eu acreditava que era [X], mas múltiplas perspectivas mostram que na verdade [Y].' O que essa diferença revela sobre um padrão que você repete?"
               valor={insights.maiorPontoCego}
               onChange={(v) => setInsights((p) => ({ ...p, maiorPontoCego: v }))}
               cor="#8E44AD"
@@ -983,21 +842,22 @@ export default function Feedback360Page() {
             <CampoInsight
               emoji="🎯"
               titulo="Compromisso nos próximos 30 dias"
-              placeholder="Complete: 'Até [data exata], vou [ação comportamental específica e observável] para trabalhar [ponto cego identificado]. Vou saber que funcionou quando [sinal concreto]."
+              placeholder="Complete: 'Até [data exata], vou [ação comportamental específica e observável] para trabalhar [padrão identificado]. Vou saber que funcionou quando [sinal concreto]."
               valor={insights.trabalharEm30Dias}
               onChange={(v) => setInsights((p) => ({ ...p, trabalharEm30Dias: v }))}
               cor={COR_DARK}
             />
             <CampoInsight
               emoji="🤝"
-              titulo="Como vou fechar o loop"
-              placeholder="Quem, especificamente, vou contatar? Quando (data)? O que vou compartilhar sobre o que aprendi e o que mudei como resultado do feedback delas?"
+              titulo="Como vou compartilhar o aprendizado"
+              placeholder="Com quem vai compartilhar o que descobriu sobre si mesmo? Quando? O que vai dizer sobre o padrão que identificou e o que vai mudar?"
               valor={insights.fecharLoop}
               onChange={(v) => setInsights((p) => ({ ...p, fecharLoop: v }))}
               cor={COR_GOLD}
             />
           </div>
         )}
+
       </div>
     </FerramentaLayout>
   );
