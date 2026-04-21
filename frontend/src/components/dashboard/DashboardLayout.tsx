@@ -103,6 +103,15 @@ function IconRegistros() {
   );
 }
 
+function IconMapa() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M1 4l5.5 2L12 2l5 2v11l-5-2-5.5 4L1 15V4Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M6.5 6v9M12 2v9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function IconMissoes() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -150,6 +159,7 @@ const PRIMARY_NAV = [
   { label: 'Início',   href: '/dashboard',                icon: <IconDashboard />,  exact: true,  destaque: false },
   { label: 'Momento',  href: '/momento',                  icon: <IconMomento />,    exact: true,  destaque: false },
   { label: 'Missões',  href: '/missoes',                  icon: <IconMissoes />,    exact: true,  destaque: false },
+  { label: 'Mapa',     href: '/mapa',                     icon: <IconMapa />,       exact: true,  destaque: false },
   { label: 'Diário',   href: '/ferramentas/diario-bordo', icon: <IconDiario />,     exact: false, destaque: true  },
 ];
 
