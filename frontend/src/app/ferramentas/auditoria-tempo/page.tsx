@@ -6,15 +6,13 @@ import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
-type Classificacao = 'produtivo' | 'essencial' | 'necessario' | 'ladrao';
-
-type ItemInventario = { horasDia: string; classificacao: Classificacao };
-
-type Inventario = {
-  sono: ItemInventario;        refeicoes: ItemInventario;  trabalho: ItemInventario;
-  estudo: ItemInventario;      exercicio: ItemInventario;  deslocamento: ItemInventario;
-  familia: ItemInventario;     redesSociais: ItemInventario; tv: ItemInventario;
-  lazer: ItemInventario;       improdutivo: ItemInventario;  outros: ItemInventario;
+type DiaTipico = {
+  trabalho:     number;
+  familia:      number;
+  saude:        number;
+  lazer:        number;
+  crescimento:  number;
+  desperdicado: number;
 };
 
 type ItemADE = { descricao: string; horas: string };
@@ -30,38 +28,25 @@ type Reflexao = { surpresa: string; prioridade: string; compromisso: string };
 
 const ETAPAS = [
   { label: 'Bem-vindo',    descricao: 'Introdução à ferramenta'      },
-  { label: 'Inventário',   descricao: 'Mapeie como usa suas 168h'    },
+  { label: 'Dia Típico',   descricao: 'Como você usa suas 24 horas'  },
   { label: 'Matriz ADE',   descricao: 'Automatizar, Delegar, Eliminar'},
   { label: 'Reflexão',     descricao: 'Perguntas poderosas'           },
 ];
 
-const CLASSIFICACOES: Record<Classificacao, { label: string; cor: string; descricao: string }> = {
-  produtivo:  { label: 'Produtivo',  cor: '#22c55e', descricao: 'Te aproxima dos seus objetivos'    },
-  essencial:  { label: 'Essencial',  cor: '#3b82f6', descricao: 'Necessário para vida e saúde'     },
-  necessario: { label: 'Necessário', cor: '#8b5cf6', descricao: 'Obrigações e compromissos'         },
-  ladrao:     { label: 'Ladrão',     cor: '#ef4444', descricao: 'Consome tempo sem retorno real'    },
-};
-
-const ATIVIDADES_CONFIG: Array<{
-  key: keyof Inventario;
+const DIA_TIPICO_CONFIG: Array<{
+  key: keyof DiaTipico;
   emoji: string;
   nome: string;
   descricao: string;
-  classificacaoPadrao: Classificacao;
+  cor: string;
   sugestao: number;
 }> = [
-  { key: 'sono',         emoji: '😴', nome: 'Sono',           descricao: 'Horas dormindo por noite',           classificacaoPadrao: 'essencial',  sugestao: 7.5 },
-  { key: 'refeicoes',    emoji: '🍽️', nome: 'Refeições',      descricao: 'Café, almoço, jantar e lanches',     classificacaoPadrao: 'essencial',  sugestao: 1.5 },
-  { key: 'trabalho',     emoji: '💼', nome: 'Trabalho',        descricao: 'Horas de trabalho produtivo',        classificacaoPadrao: 'necessario', sugestao: 8   },
-  { key: 'estudo',       emoji: '📚', nome: 'Estudo',          descricao: 'Aprendizado, cursos e leituras',     classificacaoPadrao: 'produtivo',  sugestao: 1   },
-  { key: 'exercicio',    emoji: '🏃', nome: 'Exercício',       descricao: 'Treino, caminhada ou esporte',       classificacaoPadrao: 'essencial',  sugestao: 0.5 },
-  { key: 'deslocamento', emoji: '🚗', nome: 'Deslocamento',    descricao: 'Transporte casa-trabalho e outros',  classificacaoPadrao: 'necessario', sugestao: 1   },
-  { key: 'familia',      emoji: '👨‍👩‍👧', nome: 'Família',        descricao: 'Tempo com cônjuge, filhos, pais',   classificacaoPadrao: 'essencial',  sugestao: 2   },
-  { key: 'redesSociais', emoji: '📱', nome: 'Redes Sociais',   descricao: 'Instagram, TikTok, WhatsApp etc.',   classificacaoPadrao: 'ladrao',     sugestao: 2   },
-  { key: 'tv',           emoji: '📺', nome: 'TV / Streaming',  descricao: 'Filmes, séries e YouTube',           classificacaoPadrao: 'ladrao',     sugestao: 2   },
-  { key: 'lazer',        emoji: '🎮', nome: 'Lazer',           descricao: 'Hobbies, diversão e descanso ativo', classificacaoPadrao: 'essencial',  sugestao: 1   },
-  { key: 'improdutivo',  emoji: '😶', nome: 'Improdutivo',     descricao: 'Procrastinação e tempo perdido',     classificacaoPadrao: 'ladrao',     sugestao: 1   },
-  { key: 'outros',       emoji: '📌', nome: 'Outros',          descricao: 'Tudo que não se encaixa acima',      classificacaoPadrao: 'necessario', sugestao: 1   },
+  { key: 'trabalho',     emoji: '💼', nome: 'Trabalho / Estudo',          descricao: 'Horas produtivas no trabalho ou estudando',      cor: '#2563eb', sugestao: 8   },
+  { key: 'familia',      emoji: '❤️', nome: 'Família / Relacionamentos',  descricao: 'Tempo de qualidade com quem você ama',           cor: '#e11d48', sugestao: 3   },
+  { key: 'saude',        emoji: '💪', nome: 'Saúde / Exercício',          descricao: 'Treino, caminhada, sono reparador e cuidados',   cor: '#16a34a', sugestao: 2   },
+  { key: 'lazer',        emoji: '🎮', nome: 'Lazer / Descanso',           descricao: 'Hobbies, entretenimento e recuperação ativa',    cor: '#7c3aed', sugestao: 3   },
+  { key: 'crescimento',  emoji: '📚', nome: 'Crescimento Pessoal',        descricao: 'Leitura, cursos, meditação, espiritualidade',    cor: '#d97706', sugestao: 1   },
+  { key: 'desperdicado', emoji: '📱', nome: 'Tempo Desperdiçado',         descricao: 'Redes sociais sem foco, procrastinação, ruído',  cor: '#ef4444', sugestao: 2   },
 ];
 
 const ADE_CONFIG: Array<{
@@ -116,13 +101,13 @@ const INSTRUCOES = [
     dica: '💡 Seja honesto(a). O valor da auditoria está na precisão — não nos números ideais que você gostaria de ter.',
   },
   {
-    titulo: 'Como fazer o inventário',
+    titulo: 'Como mapear seu dia típico',
     corpo: [
-      'Para cada atividade, estime quantas horas por dia você dedica a ela em média. O total semanal é calculado automaticamente.',
-      'Em seguida, classifique: Produtivo (te aproxima de objetivos), Essencial (necessário para vida), Necessário (obrigações), Ladrão (sem retorno real).',
-      'O painel ao lado mostra a distribuição em tempo real. Você tem 168h — quanto sobra depois de mapear tudo?',
+      'Ajuste os sliders para refletir como você realmente usa um dia comum — não o dia ideal, mas o dia real.',
+      'As 6 categorias precisam somar exatamente 24 horas. O indicador mostra o total em tempo real.',
+      'Tempo desperdiçado é honesto: redes sociais sem propósito, procrastinação e horas que simplesmente somem.',
     ],
-    dica: '💡 Não se preocupe em ser perfeito. Uma estimativa honesta vale mais do que dados exatos que você vai inventar.',
+    dica: '💡 Seja honesto(a). O valor do mapeamento está na precisão — não nos números ideais.',
   },
   {
     titulo: 'A Matriz ADE',
@@ -144,9 +129,9 @@ const INSTRUCOES = [
   },
 ];
 
-const TOTAL_SEMANA = 168;
-const COR_PRIMARY  = '#1a5c3a';
-const COR_GOLD     = '#b5840a';
+const HORAS_DIA   = 24;
+const COR_PRIMARY = '#1a5c3a';
+const COR_GOLD    = '#b5840a';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -166,12 +151,16 @@ function fmtH(h: number): string {
 function GraficoDonut({
   segmentos,
   totalUsado,
+  total = HORAS_DIA,
+  unidade = 'h/dia',
 }: {
   segmentos: Array<{ label: string; horas: number; cor: string }>;
   totalUsado: number;
+  total?: number;
+  unidade?: string;
 }) {
   const cx = 90, cy = 90, R = 72, ri = 46;
-  const livre = Math.max(0, TOTAL_SEMANA - totalUsado);
+  const livre = Math.max(0, total - totalUsado);
   const ativos = segmentos.filter((s) => s.horas > 0.01);
   const todos  = livre > 0.01 ? [...ativos, { label: 'Livre', horas: livre, cor: '#e5e7eb' }] : ativos;
 
@@ -191,8 +180,8 @@ function GraficoDonut({
     return (
       <svg width="180" height="180" viewBox="0 0 180 180">
         <circle cx={cx} cy={cy} r={R} fill="none" stroke="#e5e7eb" strokeWidth={R - ri} />
-        <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontSize: 12, fill: '#9ca3af', fontFamily: 'Inter' }}>Preencha as</text>
-        <text x={cx} y={cy + 20} textAnchor="middle" style={{ fontSize: 12, fill: '#9ca3af', fontFamily: 'Inter' }}>atividades →</text>
+        <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontSize: 12, fill: '#9ca3af', fontFamily: 'Inter' }}>Ajuste os</text>
+        <text x={cx} y={cy + 20} textAnchor="middle" style={{ fontSize: 12, fill: '#9ca3af', fontFamily: 'Inter' }}>sliders →</text>
       </svg>
     );
   }
@@ -200,13 +189,13 @@ function GraficoDonut({
   let cum = -90;
   const slices = todos.map((seg) => {
     const start = cum;
-    const sweep = (seg.horas / TOTAL_SEMANA) * 360;
+    const sweep = (seg.horas / total) * 360;
     cum += sweep;
     return { ...seg, start, end: cum };
   });
 
-  const pct  = Math.round((totalUsado / TOTAL_SEMANA) * 100);
-  const over = totalUsado > TOTAL_SEMANA;
+  const pct  = Math.round((totalUsado / total) * 100);
+  const over = totalUsado > total;
 
   return (
     <svg width="180" height="180" viewBox="0 0 180 180">
@@ -219,106 +208,17 @@ function GraficoDonut({
       </text>
       <text x={cx} y={cy + 6} textAnchor="middle"
         style={{ fontSize: 10, fill: '#9ca3af', fontFamily: 'Inter' }}>
-        de {TOTAL_SEMANA}h/semana
+        de {total}{unidade}
       </text>
       <text x={cx} y={cy + 22} textAnchor="middle"
         style={{ fontSize: 13, fontWeight: 700, fill: over ? '#ef4444' : '#6b7280', fontFamily: 'Inter' }}>
-        {over ? `+${pct - 100}% acima` : `${pct}% mapeado`}
+        {over ? `+${fmtH(totalUsado - total)} acima` : `${pct}% alocado`}
       </text>
     </svg>
   );
 }
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
-
-function InventarioRow({
-  config, valor, onChange,
-}: {
-  config: typeof ATIVIDADES_CONFIG[0];
-  valor: ItemInventario;
-  onChange: (v: Partial<ItemInventario>) => void;
-}) {
-  const horas    = parseH(valor.horasDia);
-  const semana   = horas * 7;
-  const cls      = CLASSIFICACOES[valor.classificacao];
-  const preench  = valor.horasDia !== '';
-
-  return (
-    <div
-      className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-150"
-      style={{
-        background: '#fff',
-        border: preench ? `1.5px solid ${cls.cor}33` : '1px solid var(--color-brand-border)',
-        boxShadow: preench ? `0 1px 6px ${cls.cor}14` : 'none',
-      }}
-    >
-      <span style={{ fontSize: 18, flexShrink: 0, width: 24, textAlign: 'center' }}>{config.emoji}</span>
-
-      {/* Nome + descrição */}
-      <div className="flex-1 min-w-0">
-        <p style={{ fontSize: 14, fontWeight: 600, color: COR_PRIMARY, lineHeight: 1.2 }}>{config.nome}</p>
-        <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginTop: 1 }}>{config.descricao}</p>
-      </div>
-
-      {/* h/dia input */}
-      <div className="flex flex-col items-center gap-0.5 shrink-0">
-        <input
-          type="number"
-          step="0.5"
-          min="0"
-          max="24"
-          value={valor.horasDia}
-          onChange={(e) => onChange({ horasDia: e.target.value })}
-          placeholder="0"
-          className="rounded-lg outline-none text-center transition-all duration-150"
-          style={{
-            width: 60,
-            padding: '6px 6px',
-            fontSize: 15,
-            fontFamily: 'var(--font-mono)',
-            fontWeight: 700,
-            color: COR_PRIMARY,
-            background: preench ? 'rgba(26,92,58,0.05)' : 'rgba(26,92,58,0.03)',
-            border: preench ? `1.5px solid ${COR_PRIMARY}66` : '1.5px solid var(--color-brand-border)',
-          }}
-          onFocus={(e) => { e.target.style.borderColor = COR_PRIMARY; e.target.style.boxShadow = `0 0 0 3px rgba(26,92,58,0.1)`; }}
-          onBlur={(e) => { e.target.style.borderColor = preench ? `${COR_PRIMARY}66` : 'var(--color-brand-border)'; e.target.style.boxShadow = 'none'; }}
-        />
-        <span style={{ fontSize: 10, color: 'var(--color-brand-gray)', letterSpacing: '0.03em' }}>h/dia</span>
-      </div>
-
-      {/* Total semanal */}
-      <div className="flex flex-col items-center gap-0.5 shrink-0" style={{ minWidth: 46 }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: preench ? cls.cor : 'rgba(0,0,0,0.15)' }}>
-          {preench ? fmtH(semana) : '—'}
-        </span>
-        <span style={{ fontSize: 10, color: 'var(--color-brand-gray)' }}>semana</span>
-      </div>
-
-      {/* Classificação select */}
-      <select
-        value={valor.classificacao}
-        onChange={(e) => onChange({ classificacao: e.target.value as Classificacao })}
-        className="rounded-lg outline-none shrink-0 transition-all duration-150"
-        style={{
-          padding: '5px 7px',
-          fontSize: 12,
-          fontWeight: 600,
-          fontFamily: 'var(--font-body)',
-          color: cls.cor,
-          background: `${cls.cor}12`,
-          border: `1.5px solid ${cls.cor}44`,
-          cursor: 'pointer',
-          width: 110,
-        }}
-      >
-        {(Object.keys(CLASSIFICACOES) as Classificacao[]).map((k) => (
-          <option key={k} value={k}>{CLASSIFICACOES[k].label}</option>
-        ))}
-      </select>
-    </div>
-  );
-}
 
 function ADECard({
   config, valor, onChange,
@@ -408,11 +308,9 @@ function ADECard({
 export default function AuditoriaTempoPage() {
   const [passo, setPasso] = useState(0);
 
-  const [inventario, setInventario] = useState<Inventario>(() =>
-    Object.fromEntries(
-      ATIVIDADES_CONFIG.map((c) => [c.key, { horasDia: '', classificacao: c.classificacaoPadrao }])
-    ) as Inventario
-  );
+  const [diaTipico, setDiaTipico] = useState<DiaTipico>({
+    trabalho: 0, familia: 0, saude: 0, lazer: 0, crescimento: 0, desperdicado: 0,
+  });
 
   const [ade, setADE] = useState<MatrizADE>({
     eliminar: { descricao: '', horas: '' }, delegar:    { descricao: '', horas: '' },
@@ -423,33 +321,29 @@ export default function AuditoriaTempoPage() {
   const [reflexao, setReflexao] = useState<Reflexao>({ surpresa: '', prioridade: '', compromisso: '' });
 
   const { dados: dadosSalvos } = useCarregarRespostas("auditoria-tempo");
-  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).inventario) setInventario((dadosSalvos as any).inventario); if ((dadosSalvos as any).ade) setADE((dadosSalvos as any).ade); if ((dadosSalvos as any).reflexao) setReflexao((dadosSalvos as any).reflexao); }, [dadosSalvos]);
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).diaTipico) setDiaTipico((dadosSalvos as any).diaTipico); if ((dadosSalvos as any).ade) setADE((dadosSalvos as any).ade); if ((dadosSalvos as any).reflexao) setReflexao((dadosSalvos as any).reflexao); }, [dadosSalvos]);
 
   // ── Computed ─────────────────────────────────────────────────────────────────
 
-  const updateInventario = (key: keyof Inventario, v: Partial<ItemInventario>) =>
-    setInventario((prev) => ({ ...prev, [key]: { ...prev[key], ...v } }));
+  const updateDiaTipico = (key: keyof DiaTipico, val: number) =>
+    setDiaTipico((prev) => ({ ...prev, [key]: Math.max(0, Math.min(24, val)) }));
 
   const updateADE = (key: keyof MatrizADE, v: Partial<ItemADE>) =>
     setADE((prev) => ({ ...prev, [key]: { ...prev[key], ...v } }));
 
-  const totalHorasSemana = Object.values(inventario).reduce(
-    (sum, item) => sum + parseH(item.horasDia) * 7, 0
-  );
+  const totalDia = Object.values(diaTipico).reduce((sum, h) => sum + h, 0);
 
-  const horasPorClassificacao = (Object.keys(CLASSIFICACOES) as Classificacao[]).map((k) => ({
-    label: CLASSIFICACOES[k].label,
-    cor:   CLASSIFICACOES[k].cor,
-    horas: Object.values(inventario)
-      .filter((item) => item.classificacao === k)
-      .reduce((sum, item) => sum + parseH(item.horasDia) * 7, 0),
+  const diaTipicoPorCategoria = DIA_TIPICO_CONFIG.map((c) => ({
+    label: c.nome,
+    cor:   c.cor,
+    horas: diaTipico[c.key],
   }));
 
   const horasRecuperadas = ['eliminar', 'delegar', 'automatizar'].reduce(
     (sum, k) => sum + parseH(ade[k as keyof MatrizADE].horas), 0
   );
 
-  const preenchidas  = Object.values(inventario).filter((i) => i.horasDia !== '').length;
+  const preenchidas  = Object.values(diaTipico).filter((h) => h > 0).length;
   const adeItems     = Object.values(ade).filter((i) => i.descricao.trim()).length;
   const reflexOk     = Object.values(reflexao).filter((v) => v.trim()).length;
   const totalItens   = preenchidas + adeItems;
@@ -458,7 +352,7 @@ export default function AuditoriaTempoPage() {
 
   const podeAvancar =
     passo === 0 ? true :
-    passo === 1 ? preenchidas >= 3 :
+    passo === 1 ? preenchidas >= 3 && totalDia > 0 :
     passo === 2 ? adeItems >= 1 :
     reflexOk >= 1;
 
@@ -472,62 +366,58 @@ export default function AuditoriaTempoPage() {
 
   // ── Painel direito ────────────────────────────────────────────────────────────
 
-  const livre        = Math.max(0, TOTAL_SEMANA - totalHorasSemana);
-  const over         = totalHorasSemana > TOTAL_SEMANA;
+  const livre = Math.max(0, HORAS_DIA - totalDia);
+  const over  = totalDia > HORAS_DIA;
 
   const painelResumo = (
     <>
       {/* Gráfico */}
       <div className="flex justify-center">
-        <GraficoDonut segmentos={horasPorClassificacao} totalUsado={totalHorasSemana} />
+        <GraficoDonut segmentos={diaTipicoPorCategoria} totalUsado={totalDia} total={HORAS_DIA} unidade="h" />
       </div>
 
-      {/* Legenda por classificação */}
+      {/* Legenda por categoria */}
       <div className="flex flex-col gap-1.5">
-        {horasPorClassificacao.map((seg) => (
-          <div key={seg.label} className="flex items-center gap-2">
-            <div style={{ width: 10, height: 10, borderRadius: 2, background: seg.cor, flexShrink: 0 }} />
-            <span style={{ fontSize: 12, flex: 1, color: 'var(--color-brand-gray)' }}>{seg.label}</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: seg.horas > 0 ? COR_PRIMARY : 'rgba(0,0,0,0.2)' }}>
-              {seg.horas > 0 ? fmtH(seg.horas) : '—'}
+        {DIA_TIPICO_CONFIG.map((cfg) => (
+          <div key={cfg.key} className="flex items-center gap-2">
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: cfg.cor, flexShrink: 0 }} />
+            <span style={{ fontSize: 12, flex: 1, color: 'var(--color-brand-gray)' }}>{cfg.nome.split(' / ')[0]}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: diaTipico[cfg.key] > 0 ? cfg.cor : 'rgba(0,0,0,0.2)' }}>
+              {diaTipico[cfg.key] > 0 ? fmtH(diaTipico[cfg.key]) : '—'}
             </span>
           </div>
         ))}
-        {/* Livre */}
+        {/* Saldo */}
         <div className="flex items-center gap-2" style={{ borderTop: '1px solid var(--color-brand-border)', paddingTop: 6, marginTop: 4 }}>
-          <div style={{ width: 10, height: 10, borderRadius: 2, background: '#e5e7eb', flexShrink: 0 }} />
+          <div style={{ width: 10, height: 10, borderRadius: 2, background: over ? '#ef4444' : '#e5e7eb', flexShrink: 0 }} />
           <span style={{ fontSize: 12, flex: 1, color: 'var(--color-brand-gray)' }}>
-            {over ? '⚠ Excesso' : 'Livre / não mapeado'}
+            {over ? '⚠ Acima de 24h' : 'Não alocado'}
           </span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: over ? '#ef4444' : COR_PRIMARY }}>
-            {over ? `-${fmtH(totalHorasSemana - TOTAL_SEMANA)}` : fmtH(livre)}
+            {over ? `+${fmtH(totalDia - HORAS_DIA)}` : fmtH(livre)}
           </span>
         </div>
       </div>
 
-      {/* Alertas */}
+      {/* Alerta excesso */}
       {over && (
         <div className="rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
-          <p style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, marginBottom: 2 }}>⚠ Total acima de 168h</p>
+          <p style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, marginBottom: 2 }}>⚠ Total acima de 24h</p>
           <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', lineHeight: 1.5 }}>
-            Reavalie as estimativas — a soma não pode ultrapassar 168h por semana.
+            A soma das categorias não pode ultrapassar 24h — ajuste os sliders.
           </p>
         </div>
       )}
 
-      {/* Horas por tipo de atividade — ladrões */}
-      {passo >= 1 && (() => {
-        const ladrao = horasPorClassificacao.find((s) => s.label === 'Ladrão');
-        if (!ladrao || ladrao.horas === 0) return null;
-        return (
-          <div className="rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
-            <p style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, marginBottom: 2 }}>⏱ Ladrões de tempo</p>
-            <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', lineHeight: 1.5 }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#dc2626' }}>{fmtH(ladrao.horas)}</span> por semana em atividades sem retorno.
-            </p>
-          </div>
-        );
-      })()}
+      {/* Alerta tempo desperdiçado */}
+      {passo >= 1 && diaTipico.desperdicado >= 2 && (
+        <div className="rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
+          <p style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, marginBottom: 2 }}>⏱ Tempo desperdiçado</p>
+          <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', lineHeight: 1.5 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#dc2626' }}>{fmtH(diaTipico.desperdicado)}</span> por dia — {fmtH(diaTipico.desperdicado * 7)} na semana. Isso dá para recuperar!
+          </p>
+        </div>
+      )}
 
       {/* Potencial de recuperação (passo 2+) */}
       {passo >= 2 && horasRecuperadas > 0 && (
@@ -547,7 +437,7 @@ export default function AuditoriaTempoPage() {
     <FerramentaLayout
       codigo="F09"
       nome="Auditoria de Tempo"
-      descricao="Mapeie como você usa suas 168 horas semanais e recupere o tempo que está sendo desperdiçado."
+      descricao="Mapeie como você usa suas 24 horas diárias e recupere o tempo que está sendo desperdiçado."
       etapas={ETAPAS}
       etapaAtual={passo}
       progresso={progresso}
@@ -558,7 +448,7 @@ export default function AuditoriaTempoPage() {
       totalItens={totalItens > 0 ? totalItens : undefined}
       labelItens="atividades"
       resumo={painelResumo}
-  respostas={{ inventario, ade, reflexao }}
+  respostas={{ diaTipico, ade, reflexao }}
     >
       <div className="p-8">
 
@@ -588,15 +478,15 @@ export default function AuditoriaTempoPage() {
               </h1>
               <p style={{ fontSize: 16, color: 'var(--color-brand-gray)', lineHeight: 1.7, maxWidth: 560 }}>
                 Você tem exatamente{' '}
-                <strong style={{ color: COR_PRIMARY, fontFamily: 'var(--font-mono)' }}>168 horas</strong>{' '}
-                por semana. Esta auditoria mostra onde elas realmente vão — e onde você pode recuperar tempo para o que importa.
+                <strong style={{ color: COR_PRIMARY, fontFamily: 'var(--font-mono)' }}>24 horas</strong>{' '}
+                por dia. Esta ferramenta mostra onde elas realmente vão — e onde você pode recuperar tempo para o que importa.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               {[
-                { emoji: '🗂️', titulo: '12 categorias',        desc: 'Mapeie todas as dimensões de como você gasta seu tempo na semana.'  },
-                { emoji: '📊', titulo: 'Gráfico em tempo real', desc: 'Veja a distribuição do seu tempo sendo construída enquanto preenche.' },
+                { emoji: '🕐', titulo: 'Dia Típico',            desc: 'Mapeie 6 dimensões de como você realmente usa suas 24 horas.'  },
+                { emoji: '📊', titulo: 'Gráfico em tempo real', desc: 'Veja a distribuição sendo construída conforme ajusta os sliders.' },
                 { emoji: '⚡', titulo: 'Matriz ADE',            desc: 'Automatizar, Delegar, Eliminar — o plano para recuperar horas perdidas.' },
                 { emoji: '🧠', titulo: '3 reflexões',           desc: 'Perguntas poderosas que transformam dados em mudança de comportamento.' },
               ].map((c) => (
@@ -609,97 +499,121 @@ export default function AuditoriaTempoPage() {
               ))}
             </div>
 
-            {/* Legenda de classificações */}
+            {/* As 6 categorias */}
             <div className="rounded-2xl p-5" style={{ background: '#fff', border: '1px solid var(--color-brand-border)', boxShadow: 'var(--shadow-card)' }}>
               <p style={{ fontFamily: 'var(--font-heading)', fontSize: 16, fontStyle: 'italic', color: COR_PRIMARY, marginBottom: 14 }}>
-                As 4 classificações de tempo
+                As 6 dimensões do seu dia
               </p>
               <div className="grid grid-cols-2 gap-3">
-                {(Object.keys(CLASSIFICACOES) as Classificacao[]).map((k) => {
-                  const cls = CLASSIFICACOES[k];
-                  return (
-                    <div key={k} className="flex items-start gap-3">
-                      <div style={{ width: 12, height: 12, borderRadius: 3, background: cls.cor, marginTop: 3, flexShrink: 0 }} />
-                      <div>
-                        <p style={{ fontSize: 14, fontWeight: 600, color: COR_PRIMARY }}>{cls.label}</p>
-                        <p style={{ fontSize: 13, color: 'var(--color-brand-gray)', marginTop: 1 }}>{cls.descricao}</p>
-                      </div>
+                {DIA_TIPICO_CONFIG.map((cfg) => (
+                  <div key={cfg.key} className="flex items-start gap-3">
+                    <div style={{ width: 12, height: 12, borderRadius: 3, background: cfg.cor, marginTop: 3, flexShrink: 0 }} />
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: COR_PRIMARY }}>{cfg.emoji} {cfg.nome.split(' / ')[0]}</p>
+                      <p style={{ fontSize: 13, color: 'var(--color-brand-gray)', marginTop: 1 }}>{cfg.descricao}</p>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* ══ PASSO 1 — INVENTÁRIO ═════════════════════════════════════════ */}
+        {/* ══ PASSO 1 — DIA TÍPICO ═════════════════════════════════════════ */}
         {passo === 1 && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-5">
             <div className="flex items-end justify-between">
               <div>
                 <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 26, fontWeight: 400, fontStyle: 'italic', color: COR_PRIMARY, marginBottom: 4 }}>
-                  Inventário da Semana
+                  Seu Dia Típico
                 </h2>
                 <p style={{ fontSize: 15, color: 'var(--color-brand-gray)' }}>
-                  Estime as horas por dia em cada atividade. Classifique-as pelo tipo de retorno.
+                  Ajuste cada categoria para refletir um dia comum. Total deve somar 24h.
                 </p>
               </div>
-              {/* Totalizador inline */}
               <div className="flex flex-col items-end shrink-0 gap-0.5">
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700, color: over ? '#ef4444' : COR_PRIMARY }}>
-                  {fmtH(totalHorasSemana)}
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700, color: over ? '#ef4444' : totalDia === HORAS_DIA ? '#16a34a' : COR_PRIMARY }}>
+                  {fmtH(totalDia)}
                 </span>
                 <span style={{ fontSize: 12, color: 'var(--color-brand-gray)' }}>
-                  de {TOTAL_SEMANA}h · {fmtH(Math.max(0, livre))} livres
+                  de {HORAS_DIA}h · {over ? `⚠ +${fmtH(totalDia - HORAS_DIA)} acima` : `${fmtH(livre)} livres`}
                 </span>
               </div>
             </div>
 
-            {/* Header colunas */}
-            <div className="flex items-center gap-3 px-4" style={{ opacity: 0.55 }}>
-              <div style={{ width: 24 }} />
-              <div style={{ flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-brand-gray)' }}>Atividade</span>
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-brand-gray)', width: 60, textAlign: 'center' }}>H/dia</span>
-              <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-brand-gray)', width: 46, textAlign: 'center' }}>Semana</span>
-              <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-brand-gray)', width: 110, textAlign: 'center' }}>Tipo</span>
+            {/* Sliders */}
+            <div className="flex flex-col gap-3">
+              {DIA_TIPICO_CONFIG.map((cfg) => {
+                const val = diaTipico[cfg.key];
+                const pct = (val / HORAS_DIA) * 100;
+                return (
+                  <div key={cfg.key} className="rounded-2xl p-5"
+                    style={{ background: '#fff', border: `1.5px solid ${val > 0 ? cfg.cor + '30' : 'var(--color-brand-border)'}`, boxShadow: 'var(--shadow-card)' }}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <span style={{ fontSize: 20, flexShrink: 0 }}>{cfg.emoji}</span>
+                      <div className="flex-1">
+                        <p style={{ fontSize: 14, fontWeight: 700, color: COR_PRIMARY, lineHeight: 1.2 }}>{cfg.nome}</p>
+                        <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginTop: 1 }}>{cfg.descricao}</p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: val > 0 ? cfg.cor : 'rgba(0,0,0,0.2)' }}>
+                          {val}
+                        </span>
+                        <span style={{ fontSize: 12, color: 'var(--color-brand-gray)' }}>h</span>
+                      </div>
+                    </div>
+                    {/* Slider */}
+                    <div style={{ position: 'relative' }}>
+                      <div className="rounded-full overflow-hidden" style={{ height: 6, background: 'rgba(0,0,0,0.07)', marginBottom: 4 }}>
+                        <div className="h-full rounded-full transition-all duration-150"
+                          style={{ width: `${pct}%`, background: cfg.cor }} />
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={HORAS_DIA}
+                        step={0.5}
+                        value={val}
+                        onChange={(e) => updateDiaTipico(cfg.key, parseFloat(e.target.value))}
+                        style={{
+                          position: 'absolute', top: -6, left: 0, width: '100%',
+                          height: 18, opacity: 0, cursor: 'pointer', margin: 0,
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between" style={{ opacity: 0.4 }}>
+                      <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)' }}>0h</span>
+                      <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)' }}>{HORAS_DIA}h</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Linhas */}
-            <div className="flex flex-col gap-2">
-              {ATIVIDADES_CONFIG.map((cfg) => (
-                <InventarioRow
-                  key={cfg.key}
-                  config={cfg}
-                  valor={inventario[cfg.key]}
-                  onChange={(v) => updateInventario(cfg.key, v)}
-                />
-              ))}
-            </div>
-
-            {/* Barra de progresso das 168h */}
+            {/* Barra de total */}
             <div className="rounded-2xl p-5 flex items-center justify-between gap-5"
               style={{ background: COR_PRIMARY }}>
               <div>
-                <p style={{ fontSize: 13, color: 'rgba(245,244,240,0.6)', marginBottom: 4 }}>Total mapeado</p>
-                <p style={{ fontFamily: 'var(--font-heading)', fontSize: 26, fontStyle: 'italic', color: over ? '#fca5a5' : COR_GOLD, lineHeight: 1 }}>
-                  {fmtH(totalHorasSemana)}<span style={{ fontSize: 14, color: 'rgba(245,244,240,0.35)' }}> / {TOTAL_SEMANA}h</span>
+                <p style={{ fontSize: 13, color: 'rgba(245,244,240,0.6)', marginBottom: 4 }}>Total alocado</p>
+                <p style={{ fontFamily: 'var(--font-heading)', fontSize: 26, fontStyle: 'italic', color: over ? '#fca5a5' : totalDia === HORAS_DIA ? '#86efac' : COR_GOLD, lineHeight: 1 }}>
+                  {fmtH(totalDia)}<span style={{ fontSize: 14, color: 'rgba(245,244,240,0.35)' }}> / {HORAS_DIA}h</span>
                 </p>
               </div>
               <div className="flex-1">
                 <div className="rounded-full overflow-hidden" style={{ height: 8, background: 'rgba(255,255,255,0.12)' }}>
                   <div className="h-full rounded-full transition-all duration-500"
                     style={{
-                      width: `${Math.min(100, (totalHorasSemana / TOTAL_SEMANA) * 100)}%`,
-                      background: over ? '#fca5a5' : `linear-gradient(90deg, ${COR_GOLD}, #e8b84b)`,
+                      width: `${Math.min(100, (totalDia / HORAS_DIA) * 100)}%`,
+                      background: over ? '#fca5a5' : totalDia === HORAS_DIA ? '#86efac' : `linear-gradient(90deg, ${COR_GOLD}, #e8b84b)`,
                     }}
                   />
                 </div>
                 <p style={{ fontSize: 12, color: 'rgba(245,244,240,0.5)', marginTop: 6 }}>
                   {over
-                    ? `⚠ ${fmtH(totalHorasSemana - TOTAL_SEMANA)} acima do limite — reavalie as estimativas`
-                    : `${fmtH(livre)} sem alocação — tempo livre ou não mapeado`}
+                    ? `⚠ ${fmtH(totalDia - HORAS_DIA)} acima do limite — reduza alguma categoria`
+                    : totalDia === HORAS_DIA
+                    ? '✓ Perfeito! Todas as 24h foram alocadas'
+                    : `${fmtH(livre)} ainda não alocadas`}
                 </p>
               </div>
             </div>
@@ -804,9 +718,9 @@ export default function AuditoriaTempoPage() {
                 </p>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { n: `${preenchidas}/12`,              l: 'atividades mapeadas' },
-                    { n: fmtH(totalHorasSemana),            l: 'horas por semana'    },
-                    { n: fmtH(horasRecuperadas),             l: 'a recuperar'         },
+                    { n: `${fmtH(diaTipico.desperdicado)}/dia`,  l: 'desperdiçado'    },
+                    { n: fmtH(diaTipico.crescimento),             l: 'crescimento/dia' },
+                    { n: fmtH(horasRecuperadas),                  l: 'a recuperar/sem' },
                   ].map((s) => (
                     <div key={s.l} className="rounded-xl p-3 text-center"
                       style={{ background: 'rgba(255,255,255,0.7)' }}>

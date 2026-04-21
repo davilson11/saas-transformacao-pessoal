@@ -129,6 +129,12 @@ const GOLD     = "#C8A030";
 const CREAM    = "#F8F4EE";
 const ASIDE_BG = "#FFFFFF";
 
+const TEMPO_ESTIMADO: Record<string, number> = {
+  F01: 20, F02: 15, F03: 25, F04: 20, F05: 15, F06: 30,
+  F07: 20, F08: 20, F09: 15, F10: 20, F11: 15, F12: 20,
+  F13: 25, F14: 15, F15: 5,  F16: 10,
+};
+
 // ─── Componente ───────────────────────────────────────────────────────────────
 
 export default function FerramentaLayout({
@@ -862,6 +868,19 @@ export default function FerramentaLayout({
             <span className="fl-breadcrumb-sep">›</span>
             <span className="fl-breadcrumb-current">{nome}</span>
             <span className="fl-code-badge">{codigo}</span>
+            {TEMPO_ESTIMADO[codigo.toUpperCase()] !== undefined && (
+              <span style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: 10, fontWeight: 600,
+                color: 'rgba(250,248,245,0.40)',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                padding: '1px 8px', borderRadius: 99,
+                letterSpacing: '0.03em', flexShrink: 0, marginLeft: 2,
+              }}>
+                ⏱ {TEMPO_ESTIMADO[codigo.toUpperCase()]}min
+              </span>
+            )}
           </nav>
 
           {/* Contador (opcional) */}

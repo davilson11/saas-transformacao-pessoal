@@ -22,7 +22,7 @@ type FrequenciaState = {
   proximoPasso: string;
 };
 
-type Reflexao = { q1: string; q2: string; q3: string; q4: string };
+type Reflexao = { q1: string; q2: string; q3: string; q4: string; q5: string };
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -34,7 +34,7 @@ const ETAPAS = [
   { label: 'Bem-vindo',          descricao: 'Introdução à ferramenta'         },
   { label: 'Mapa de Contatos',   descricao: '10 relacionamentos mapeados'     },
   { label: 'Frequência Ideal',   descricao: 'Estratégia por categoria'        },
-  { label: 'Reflexão',           descricao: '4 perguntas sobre conexões'      },
+  { label: 'Reflexão',           descricao: '5 perguntas sobre conexões'      },
 ];
 
 const CATEGORIA_KEYS: CategoriaContato[] = ['mentor', 'familia', 'amigo', 'network', 'recrutador'];
@@ -109,6 +109,11 @@ const PERGUNTAS_REFLEXAO: Array<{ key: keyof Reflexao; titulo: string; placehold
     titulo: 'Como agregar antes de receber',
     placeholder: 'Como você pode gerar valor genuíno para as pessoas que admira antes de precisar de algo delas?',
   },
+  {
+    key: 'q5', emoji: '❤️',
+    titulo: 'A última vez que você disse o quanto importa',
+    placeholder: 'Quando foi a última vez que você disse a essa pessoa o quanto ela importa para você? Como foi?',
+  },
 ];
 
 const CONTATO_DEFAULT: Contato = {
@@ -116,7 +121,7 @@ const CONTATO_DEFAULT: Contato = {
 };
 
 const FREQ_DEFAULT: FrequenciaState = { estouFazendo: null, proximoPasso: '' };
-const REFL_DEFAULT: Reflexao         = { q1: '', q2: '', q3: '', q4: '' };
+const REFL_DEFAULT: Reflexao         = { q1: '', q2: '', q3: '', q4: '', q5: '' };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -337,7 +342,7 @@ export default function CrmRelacionamentosPage() {
     etapa === 0 ? 0
     : etapa === 1 ? Math.min(33, Math.round((contatosPreenchidos / 10) * 33))
     : etapa === 2 ? 33 + Math.min(33, Math.round((freqPreenchidas / 5) * 33))
-    : 66 + Math.min(34, Math.round((reflPreenchidas / 4) * 34));
+    : 66 + Math.min(34, Math.round((reflPreenchidas / 5) * 34));
 
   const podeAvancar =
     etapa === 0 ? true
@@ -482,7 +487,7 @@ export default function CrmRelacionamentosPage() {
         }}>
           <span style={{ fontSize: 14 }}>🤝</span>
           <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: COR_GOLD }}>
-            F14 · CRM de Relacionamentos
+            F14 · Mapa de Relacionamentos
           </span>
         </div>
         <h1 style={{ color: COR_VERDE, marginBottom: 12 }}>
@@ -683,7 +688,7 @@ export default function CrmRelacionamentosPage() {
       <div>
         <h2 style={{ color: COR_VERDE, marginBottom: 8 }}>Reflexão sobre Relacionamentos</h2>
         <p style={{ color: '#4a5568' }}>
-          Quatro perguntas que revelam a verdade sobre como você está gerindo seus relacionamentos. Responda com honestidade total.
+          Cinco perguntas que revelam a verdade sobre como você está gerindo seus relacionamentos. Responda com honestidade total.
         </p>
       </div>
 
@@ -734,7 +739,7 @@ export default function CrmRelacionamentosPage() {
   return (
     <FerramentaLayout
       codigo="F14"
-      nome="CRM de Relacionamentos"
+      nome="Mapa de Relacionamentos"
       descricao="Gerencie seus 10 relacionamentos mais importantes com intenção, frequência e reciprocidade."
       etapas={ETAPAS}
       etapaAtual={etapa}

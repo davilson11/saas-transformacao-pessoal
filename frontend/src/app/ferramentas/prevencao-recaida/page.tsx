@@ -552,7 +552,7 @@ export default function PrevencaoRecaidaPage() {
         }}>
           <span style={{ fontSize: 14 }}>🛡️</span>
           <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: COR_GOLD }}>
-            F16 · Mecanismo de Prevenção de Recaída
+            F16 · Plano de Continuidade
           </span>
         </div>
         <h1 style={{ color: COR_VERDE, marginBottom: 12 }}>
@@ -662,7 +662,7 @@ export default function PrevencaoRecaidaPage() {
       <div>
         <h2 style={{ color: COR_VERDE, marginBottom: 8 }}>Protocolo de Recuperação</h2>
         <p style={{ color: '#4a5568' }}>
-          Quando a recaída acontece, a velocidade de recuperação é o que separa quem desiste de quem persiste. Configure seu sistema de suporte antes de precisar dele.
+          Quando um deslize acontece, a velocidade de recuperação é o que separa quem desiste de quem persiste. Configure seu sistema de suporte antes de precisar dele.
         </p>
       </div>
 
@@ -785,7 +785,7 @@ export default function PrevencaoRecaidaPage() {
           </label>
         </div>
         {[
-          { field: 'passo1' as const, num: 1, placeholder: 'Primeiro passo imediato ao perceber a recaída…' },
+          { field: 'passo1' as const, num: 1, placeholder: 'Primeiro passo imediato ao perceber o deslize…' },
           { field: 'passo2' as const, num: 2, placeholder: 'Segundo passo — dentro das próximas horas…' },
           { field: 'passo3' as const, num: 3, placeholder: 'Terceiro passo — para evitar que se repita…' },
         ].map(item => (
@@ -901,7 +901,7 @@ export default function PrevencaoRecaidaPage() {
   return (
     <FerramentaLayout
       codigo="F16"
-      nome="Prevenção de Recaída"
+      nome="Plano de Continuidade"
       descricao="Planos SE-ENTÃO para os 7 cenários de risco, protocolo de reset e sistema de recompensas."
       etapas={ETAPAS}
       etapaAtual={etapa}

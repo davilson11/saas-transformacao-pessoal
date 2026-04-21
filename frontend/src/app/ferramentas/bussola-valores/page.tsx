@@ -6,7 +6,9 @@ import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
-type Passo = 0 | 1 | 2 | 3;
+type Passo = 0 | 1 | 2 | 3 | 4;
+
+type RespostaDilema = 'a' | 'b' | null;
 
 type Valor = {
   id: string;
@@ -62,9 +64,51 @@ const VALORES: Valor[] = [
 
 const MAX = 5;
 
+type DilemOpcao = { texto: string; valores: string[] };
+type Dilema = { id: string; titulo: string; pergunta: string; opcaoA: DilemOpcao; opcaoB: DilemOpcao };
+
+const DILEMAS: Dilema[] = [
+  {
+    id: 'd1',
+    titulo: 'A proposta tentadora',
+    pergunta: 'Uma empresa oferece 50% a mais de salário — mas exige 60h/semana, viagens constantes e zero flexibilidade. Você aceita?',
+    opcaoA: { texto: 'Aceito. O ganho financeiro é transformador.', valores: ['abundancia'] },
+    opcaoB: { texto: 'Recuso. Minha autonomia e tempo valem mais.', valores: ['liberdade'] },
+  },
+  {
+    id: 'd2',
+    titulo: 'Amigo em crise',
+    pergunta: 'Um amigo próximo está em crise emocional e te liga às 23h. Você tem uma apresentação crucial amanhã cedo. O que faz?',
+    opcaoA: { texto: 'Fico com ele. Ele precisa de mim agora.', valores: ['lealdade', 'amor'] },
+    opcaoB: { texto: 'Explico e marco para amanhã. Preciso descansar.', valores: ['disciplina', 'excelencia'] },
+  },
+  {
+    id: 'd3',
+    titulo: 'O projeto lucrativo',
+    pergunta: 'Um cliente paga 3x seu valor normal — mas o projeto contraria seus princípios éticos. Você aceita?',
+    opcaoA: { texto: 'Aceito. A remuneração justifica.', valores: ['abundancia'] },
+    opcaoB: { texto: 'Recuso. Não negocio com meus princípios.', valores: ['integridade', 'autenticidade'] },
+  },
+  {
+    id: 'd4',
+    titulo: 'A oportunidade única',
+    pergunta: 'Surge a chance de viver 6 meses em outro país num projeto incrível. Sua família ficaria aqui. O que decide?',
+    opcaoA: { texto: 'Fico. Família é prioridade absoluta.', valores: ['amor', 'pertencimento'] },
+    opcaoB: { texto: 'Vou. Essa oportunidade não volta.', valores: ['aprendizado', 'proposito'] },
+  },
+  {
+    id: 'd5',
+    titulo: 'A promoção',
+    pergunta: 'Para conseguir uma promoção desejada, você precisaria omitir informações que prejudicariam um colega. O que faz?',
+    opcaoA: { texto: 'Não faço isso. Não traio quem confia em mim.', valores: ['integridade', 'lealdade'] },
+    opcaoB: { texto: 'É o mercado. Preciso pensar em mim.', valores: ['abundancia'] },
+  },
+];
+
 const ETAPAS = [
   { label: 'Bem-vindo',             descricao: 'Introdução à ferramenta' },
   { label: 'Selecione Valores',     descricao: 'Escolha seus 5 essenciais' },
+  { label: 'Dilemas Práticos',      descricao: 'Revele seus valores reais' },
   { label: 'Ordene e Justifique',   descricao: 'Ranqueie e reflita' },
   { label: 'Código de Conduta',     descricao: 'Crie suas regras de vida' },
 ];
@@ -87,6 +131,15 @@ const INSTRUCOES = [
       'Pense em momentos em que se sentiu mais vivo e realizado. Quais desses valores estavam presentes?',
     ],
     dica: '💡 Se dois valores parecem iguais para você, escolha o que te custaria mais abandonar.',
+  },
+  {
+    titulo: 'Dilemas que revelam valores reais',
+    corpo: [
+      'Situações de conflito mostram seus valores verdadeiros — não os que você diz ter, mas os que guiam suas decisões sob pressão.',
+      'Para cada dilema, escolha a opção que você genuinamente escolheria, não a que parece mais "correta".',
+      'Não existe certo ou errado. O objetivo é aumentar sua autoconsciência sobre o que realmente importa para você.',
+    ],
+    dica: '💡 Se sentir resistência em uma escolha, preste atenção — esse desconforto revela algo importante.',
   },
   {
     titulo: 'Por que ranquear importa',
@@ -156,19 +209,22 @@ export default function BussolaValoresPage() {
   const [passo, setPasso] = useState<Passo>(0);
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [ranking, setRanking] = useState<ValorRankeado[]>([]);
+  const [dilemas, setDilemas] = useState<Record<string, RespostaDilema>>(
+    Object.fromEntries(DILEMAS.map(d => [d.id, null]))
+  );
 
   const { dados: dadosSalvos } = useCarregarRespostas("bussola-valores");
-  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).selecionados) setSelecionados((dadosSalvos as any).selecionados); if ((dadosSalvos as any).ranking) setRanking((dadosSalvos as any).ranking); }, [dadosSalvos]);
+  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).selecionados) setSelecionados((dadosSalvos as any).selecionados); if ((dadosSalvos as any).ranking) setRanking((dadosSalvos as any).ranking); if ((dadosSalvos as any).dilemas) setDilemas((dadosSalvos as any).dilemas); }, [dadosSalvos]);
   const [codigo, setCodigo] = useState<CodigoConduta>({ naoTolero: '', sobPressao: '', compromisso: '' });
 
   const instrucao = INSTRUCOES[passo];
 
-  // Quando avança do passo 1 → 2, inicializa o ranking com os selecionados
+  // Quando avança do passo 2 → 3, inicializa o ranking com os selecionados
   const avancar = () => {
-    if (passo === 1 && ranking.length !== selecionados.length) {
+    if (passo === 2 && ranking.length !== selecionados.length) {
       setRanking(selecionados.map((id) => ({ id, porque: '' })));
     }
-    setPasso((p) => Math.min(3, p + 1) as Passo);
+    setPasso((p) => Math.min(4, p + 1) as Passo);
   };
 
   const toggleValor = (id: string) => {
@@ -196,7 +252,8 @@ export default function BussolaValoresPage() {
   const podeAvancar =
     passo === 0 ? true :
     passo === 1 ? selecionados.length === MAX :
-    passo === 2 ? ranking.every((v) => v.porque.trim().length > 0) :
+    passo === 2 ? Object.values(dilemas).filter(v => v !== null).length === 5 :
+    passo === 3 ? ranking.every((v) => v.porque.trim().length > 0) :
     codigo.naoTolero.trim().length > 0 && codigo.sobPressao.trim().length > 0 && codigo.compromisso.trim().length > 0;
 
   const getValor = (id: string) => VALORES.find((v) => v.id === id)!;
@@ -206,7 +263,7 @@ export default function BussolaValoresPage() {
 
   // ── Painel direito (resumo) ───────────────────────────────────────────────
 
-  const listaRanking = passo >= 2 ? ranking : selecionados.map((id) => ({ id, porque: '' }));
+  const listaRanking = passo >= 3 ? ranking : selecionados.map((id) => ({ id, porque: '' }));
 
   const painelResumo = (
     <>
@@ -254,7 +311,7 @@ export default function BussolaValoresPage() {
       </div>
 
       {/* Código de conduta resumo */}
-      {passo === 3 && (codigo.naoTolero || codigo.sobPressao || codigo.compromisso) && (
+      {passo === 4 && (codigo.naoTolero || codigo.sobPressao || codigo.compromisso) && (
         <div className="flex flex-col gap-2" style={{ borderTop: '1px solid var(--color-brand-border)', paddingTop: 16 }}>
           <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-brand-gray)', marginBottom: 4 }}>
             Código de conduta
@@ -381,6 +438,87 @@ export default function BussolaValoresPage() {
     );
 
     if (passo === 2) return (
+      <div className="flex flex-col gap-5">
+        {/* Instrução */}
+        <div className="rounded-xl p-4" style={{ background: 'rgba(224,165,95,0.1)', border: '1px solid rgba(224,165,95,0.25)' }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-brand-dark-green)', marginBottom: 4 }}>{instrucao.titulo}</p>
+          <p style={{ fontSize: 15, color: '#a0692d', lineHeight: 1.6 }}>{instrucao.dica}</p>
+        </div>
+
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 20, fontWeight: 700, color: 'var(--color-brand-dark-green)' }}>
+            5 Dilemas — o que você realmente escolheria?
+          </h2>
+          <p style={{ fontSize: 15, color: 'var(--color-brand-gray)', marginTop: 2 }}>
+            Cada escolha revela o valor que você prioriza sob pressão real
+          </p>
+        </div>
+
+        {DILEMAS.map((dilema, i) => {
+          const resp = dilemas[dilema.id];
+          return (
+            <div key={dilema.id} className="rounded-2xl p-5 flex flex-col gap-4"
+              style={{ background: '#fff', border: '1px solid var(--color-brand-border)', boxShadow: 'var(--shadow-card)' }}>
+              <div className="flex items-start gap-3">
+                <div className="flex items-center justify-center rounded-xl flex-shrink-0 font-bold"
+                  style={{ width: 32, height: 32, background: resp ? 'var(--color-brand-gold)' : 'rgba(30,57,42,0.07)', color: resp ? '#1E392A' : 'var(--color-brand-gray)', fontFamily: 'var(--font-heading)', fontSize: 13 }}>
+                  {i + 1}
+                </div>
+                <div>
+                  <p style={{ fontFamily: 'var(--font-heading)', fontSize: 14, fontWeight: 700, color: 'var(--color-brand-dark-green)', marginBottom: 4 }}>
+                    {dilema.titulo}
+                  </p>
+                  <p style={{ fontSize: 15, color: 'var(--color-brand-gray)', lineHeight: 1.65 }}>
+                    {dilema.pergunta}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                {(['a', 'b'] as const).map(opcao => {
+                  const info = opcao === 'a' ? dilema.opcaoA : dilema.opcaoB;
+                  const selecionado = resp === opcao;
+                  return (
+                    <button
+                      key={opcao}
+                      onClick={() => setDilemas(prev => ({ ...prev, [dilema.id]: opcao }))}
+                      className="text-left rounded-xl p-4 transition-all duration-150"
+                      style={{
+                        background: selecionado ? 'rgba(30,57,42,0.07)' : 'rgba(30,57,42,0.02)',
+                        border: selecionado ? '2px solid var(--color-brand-dark-green)' : '1.5px solid var(--color-brand-border)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex items-center justify-center rounded-full flex-shrink-0"
+                          style={{ width: 20, height: 20, marginTop: 1, background: selecionado ? 'var(--color-brand-dark-green)' : 'transparent', border: `2px solid ${selecionado ? 'var(--color-brand-dark-green)' : 'rgba(30,57,42,0.25)'}` }}>
+                          {selecionado && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff' }} />}
+                        </div>
+                        <div>
+                          <p style={{ fontSize: 15, color: 'var(--color-brand-dark-green)', lineHeight: 1.55, fontWeight: selecionado ? 600 : 400 }}>
+                            {info.texto}
+                          </p>
+                          <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginTop: 4 }}>
+                            Valores: {info.valores.map(vid => VALORES.find(v => v.id === vid)?.nome).filter(Boolean).join(', ')}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+
+        {Object.values(dilemas).filter(v => v !== null).length < 5 && (
+          <p style={{ fontSize: 14, color: '#92400e', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 8, padding: '10px 14px', margin: 0, fontFamily: 'var(--font-body)' }}>
+            Responda todos os 5 dilemas para continuar ({Object.values(dilemas).filter(v => v !== null).length}/5).
+          </p>
+        )}
+      </div>
+    );
+
+    if (passo === 3) return (
       <div className="flex flex-col gap-4">
         {/* Instrução */}
         <div className="rounded-xl p-4" style={{ background: 'rgba(224,165,95,0.1)', border: '1px solid rgba(224,165,95,0.25)' }}>
@@ -458,7 +596,7 @@ export default function BussolaValoresPage() {
       </div>
     );
 
-    // passo === 3
+    // passo === 4
     return (
       <div className="flex flex-col gap-5">
         {/* Instrução */}
@@ -538,12 +676,12 @@ export default function BussolaValoresPage() {
       etapaAtual={passo}
       progresso={progresso}
       onAvancar={avancar}
-      onVoltar={() => setPasso((p) => Math.max(0, p - 1) as Passo)}
+      onVoltar={passo > 0 ? () => setPasso((p) => Math.max(0, p - 1) as Passo) : undefined}
       podeAvancar={podeAvancar}
       totalItens={selecionados.length}
       labelItens="valores"
       resumo={painelResumo}
-  respostas={{ selecionados, ranking }}
+  respostas={{ selecionados, ranking, dilemas }}
     >
       <div className="p-8">
         <div className="max-w-xl mx-auto flex flex-col gap-4" style={{ minHeight: passo === 0 ? '100%' : 'auto' }}>

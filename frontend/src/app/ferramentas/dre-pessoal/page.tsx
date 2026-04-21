@@ -47,35 +47,35 @@ const MESES = [
 const ANO_ATUAL = 2026;
 
 const ETAPAS = [
-  { label: "Bem-vindo", descricao: "O que é o DRE Pessoal?" },
-  { label: "Receitas", descricao: "Registre todas as suas fontes de renda." },
-  { label: "Despesas", descricao: "Fixos, variáveis e investimentos." },
-  { label: "Diagnóstico", descricao: "Semáforo de saúde financeira." },
+  { label: "Bem-vindo",    descricao: "Como funciona o Mapa Financeiro" },
+  { label: "O que entra",  descricao: "Registre suas fontes de renda" },
+  { label: "O que sai",    descricao: "Fixos, variáveis e investimentos" },
+  { label: "Diagnóstico",  descricao: "Semáforo de saúde financeira" },
 ];
 
 const INSTRUCOES: Record<number, { titulo: string; itens: string[] }> = {
   1: {
-    titulo: "O que é o DRE Pessoal?",
+    titulo: "O que é o Mapa Financeiro?",
     itens: [
-      "DRE = Demonstrativo de Resultado do Exercício.",
-      "Adaptado para as suas finanças pessoais.",
-      "Mostra exatamente para onde vai cada real.",
-      "Base para qualquer decisão financeira saudável.",
+      "Mapa Financeiro = onde cada real entra e sai da sua vida.",
+      "Simples e direto — sem jargão contábil.",
+      "Mostra exatamente para onde vai o seu dinheiro.",
+      "Base para qualquer decisão financeira inteligente.",
     ],
   },
   2: {
-    titulo: "Registrando Receitas",
+    titulo: "Registrando o que entra",
     itens: [
       "Inclua todas as fontes de entrada de dinheiro.",
       "Use valores líquidos (já descontado imposto).",
-      "Receita variável: use a média dos últimos 3 meses.",
+      "Renda variável: use a média dos últimos 3 meses.",
       "Seja honesto — este dado é só seu.",
     ],
   },
   3: {
-    titulo: "Despesas e Investimentos",
+    titulo: "O que sai todo mês",
     itens: [
-      "Fixos: valores que não mudam todo mês.",
+      "Custos fixos: o que sai todo mês sem variar.",
       "Variáveis: estimativa ou média dos últimos meses.",
       "Investimento é diferente de gasto — é ativo.",
       "Regra 50-30-20: necessidades, desejos, investimentos.",
@@ -413,7 +413,7 @@ export default function DREPessoalPage() {
       {totalReceitas === 0 && totalGastos === 0 && (
         <div className="flex flex-col items-center gap-3 rounded-xl p-6 text-center" style={{ border: "1.5px dashed var(--color-brand-border)" }}>
           <span style={{ fontSize: 32 }}>💰</span>
-          <p style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>Seu DRE vai aparecer aqui conforme você preenche.</p>
+          <p style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>Seu Mapa Financeiro vai aparecer aqui conforme você preenche.</p>
         </div>
       )}
     </>
@@ -422,15 +422,15 @@ export default function DREPessoalPage() {
   return (
     <FerramentaLayout
       codigo="F07"
-      nome="DRE Pessoal"
-      descricao="Demonstrativo completo das suas finanças mensais."
+      nome="Mapa Financeiro Pessoal"
+      descricao="Visualize onde cada real entra e sai na sua vida."
       etapas={ETAPAS}
       etapaAtual={passo}
       progresso={progresso}
       onAvancar={() => setPasso((p) => Math.min(ETAPAS.length - 1, p + 1))}
       onVoltar={() => setPasso((p) => Math.max(0, p - 1))}
       podeAvancar={podeAvancar()}
-      labelAvancar={passo === 0 ? "Começar →" : passo === ETAPAS.length - 1 ? "Salvar DRE ✓" : "Continuar →"}
+      labelAvancar={passo === 0 ? "Começar →" : passo === ETAPAS.length - 1 ? "Salvar Mapa ✓" : "Continuar →"}
       resumo={painelResumo}
   respostas={{ mes, receitas, fixos, variaveis, invest, vazamentoFinanceiro, compraImplanejada }}
     >
@@ -462,10 +462,10 @@ export default function DREPessoalPage() {
             <div className="flex flex-col gap-3">
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, color: COR_GOLD, textTransform: "uppercase", letterSpacing: "0.1em" }}>Ferramenta F07</span>
               <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 700, color: COR_DARK, lineHeight: 1.15 }}>
-                DRE <span style={{ color: COR_GOLD, fontStyle: "italic" }}>Pessoal</span>
+                Mapa <span style={{ color: COR_GOLD, fontStyle: "italic" }}>Financeiro</span>
               </h1>
               <p style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.7, maxWidth: 520 }}>
-                O Demonstrativo de Resultado do Exercício é a ferramenta que toda empresa usa para entender sua saúde financeira. Agora adaptada para a sua vida — com diagnóstico automático e semáforo de saúde financeira.
+                O Mapa Financeiro mostra exatamente onde cada real entra e para onde vai — sem surpresas, sem achismos. É a base de qualquer decisão financeira inteligente, com diagnóstico automático e semáforo de saúde financeira.
               </p>
             </div>
 
