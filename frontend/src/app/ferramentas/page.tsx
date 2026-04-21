@@ -50,7 +50,7 @@ const FASES: FaseDef[] = [
     ferramentas: [
       { codigo: "F05", slug: "okrs-pessoais",    emoji: "📊", nome: "OKRs Pessoais",         frequencia: "Trimestral", descricao: "Defina objetivos ambiciosos e resultados-chave mensuráveis para cada trimestre." },
       { codigo: "F06", slug: "design-vida",      emoji: "📅", nome: "Design de Vida",         frequencia: "Anual",     descricao: "Visualize seu dia perfeito e trace horizontes de 1, 5 e 10 anos com clareza." },
-      { codigo: "F07", slug: "dre-pessoal",      emoji: "💰", nome: "DRE Pessoal",            frequencia: "Mensal",    descricao: "Demonstrativo financeiro pessoal com receitas, custos, lucro líquido e metas." },
+      { codigo: "F07", slug: "dre-pessoal",      emoji: "💰", nome: "Mapa Financeiro Pessoal", frequencia: "Mensal",    descricao: "Mapeie o que entra, o que sai e construa sua saúde financeira com clareza e intenção." },
       { codigo: "F08", slug: "rotina-ideal",     emoji: "🌅", nome: "Rotina Ideal",           frequencia: "Semanal",   descricao: "Monte blocos de tempo para manhã, tarde e noite que maximizam energia e foco." },
     ],
   },
@@ -75,9 +75,9 @@ const FASES: FaseDef[] = [
     cor:       "#9b6baf",
     ferramentas: [
       { codigo: "F13", slug: "desconstrutor-crencas", emoji: "🧠", nome: "Desconstrutor de Crenças",  frequencia: "Mensal", descricao: "Identifique e desconstrua crenças limitantes com 9 perguntas socráticas e mantras." },
-      { codigo: "F14", slug: "crm-relacionamentos",   emoji: "🤝", nome: "CRM de Relacionamentos",    frequencia: "Mensal", descricao: "Mapeie contatos-chave, defina frequência ideal e receba alertas de quem precisa de atenção." },
+      { codigo: "F14", slug: "crm-relacionamentos",   emoji: "🤝", nome: "Mapa de Relacionamentos",   frequencia: "Mensal", descricao: "Mapeie as pessoas que importam, fortaleça vínculos e cultive relacionamentos que constroem." },
       { codigo: "F15", slug: "diario-bordo",          emoji: "📔", nome: "Diário de Bordo",           frequencia: "Diária", descricao: "Ritual matinal + noturno + revisão semanal com análise acumulativa dos seus registros." },
-      { codigo: "F16", slug: "prevencao-recaida",     emoji: "🛡",  nome: "Prevenção de Recaída",     frequencia: "Mensal", descricao: "Planos SE-ENTÃO para cenários de risco, protocolo de recuperação e recompensas." },
+      { codigo: "F16", slug: "prevencao-recaida",     emoji: "🛡",  nome: "Plano de Continuidade",    frequencia: "Mensal", descricao: "Crie planos para manter o progresso, superar obstáculos e continuar avançando mesmo nos dias difíceis." },
     ],
   },
 ];
