@@ -294,9 +294,31 @@ export default function FerramentaLayout({
     setTimeout(() => setSaveStatus("idle"), 3000);
   }
 
-  function handleAvancar() {
+  async function handleAvancar() {
     onAvancar();
-    if (isUltimaEtapa) setConcluido(true);
+    if (!isUltimaEtapa) return;
+
+    // Última etapa: salva com concluida: true e progresso 100
+    setConcluido(true);
+    if (!user?.id) return;
+    setSaveStatus("saving");
+    try {
+      const client = await getClient();
+      const ok = await salvarRespostaFerramenta(
+        user.id,
+        codigo,
+        resolvedSlug,
+        (respostas as Json) ?? {},
+        100,
+        true,  // concluida
+        client,
+      );
+      setSaveStatus(ok ? "saved" : "error");
+      if (ok) mostrarToast(getMensagem(codigo));
+    } catch {
+      setSaveStatus("error");
+    }
+    setTimeout(() => setSaveStatus("idle"), 3000);
   }
 
   // Anel SVG
