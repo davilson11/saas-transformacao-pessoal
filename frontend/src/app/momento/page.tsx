@@ -229,7 +229,7 @@ export default function MomentoPage() {
       if (momentoData) setMomento(momentoData);
       const { data: diarioData } = await client.from('diario_kairos').select('*').eq('user_id', user.id).eq('data', hoje).maybeSingle();
       if (diarioData) setDiario(diarioData);
-      const { data: hist } = await client.from('diario_kairos').select('*').eq('user_id', user.id).order('data', { ascending: false }).limit(30);
+      const { data: hist } = await client.from('diario_kairos').select('*').eq('user_id', user.id).or('tipo_entrada.eq.momento,tipo_entrada.is.null').order('data', { ascending: false }).limit(30);
       if (hist) { setHistorico(hist); setStreak(calcularStreak(hist)); }
       setCarregando(false);
     })();
@@ -261,6 +261,7 @@ export default function MomentoPage() {
       const client = await getClient();
       const { error } = await client.from('diario_kairos').upsert({
         user_id: user.id, data: hoje,
+        tipo_entrada: 'momento',
         qualidade_sono: diario.qualidade_sono ?? null,
         emocao: diario.emocao ?? null,
         preocupacao: diario.preocupacao ?? null,
@@ -284,12 +285,13 @@ export default function MomentoPage() {
     try {
       const client = await getClient();
       const { error } = await client.from('diario_kairos').upsert({
-        user_id:     user.id,
-        data:        hoje,
-        conquista:   diario.conquista   ?? null,
-        aprendizado: diario.aprendizado ?? null,
-        energia_fim: diario.energia_fim ?? null,
-        nota_dia:    diario.nota_dia    ?? null,
+        user_id:      user.id,
+        data:         hoje,
+        tipo_entrada: 'momento',
+        conquista:    diario.conquista   ?? null,
+        aprendizado:  diario.aprendizado ?? null,
+        energia_fim:  diario.energia_fim ?? null,
+        nota_dia:     diario.nota_dia    ?? null,
       }, { onConflict: 'user_id,data' });
       if (error) throw error;
       setSalvoNoite(true);

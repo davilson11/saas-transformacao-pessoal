@@ -17,11 +17,12 @@ import type { DiarioKairos } from '@/lib/database.types';
 // ─── Alias ────────────────────────────────────────────────────────────────────
 
 type Entrada = DiarioKairos;
-type TipoEntrada = 'livre' | 'diario' | 'legado';
+type TipoEntrada = 'livre' | 'diario' | 'profunda' | 'legado';
 
 function getTipo(e: Entrada): TipoEntrada {
-  if (e.tipo_entrada === 'diario') return 'diario';
-  if (e.tipo_entrada === 'livre')  return 'livre';
+  if (e.tipo_entrada === 'diario')   return 'diario';
+  if (e.tipo_entrada === 'livre')    return 'livre';
+  if (e.tipo_entrada === 'profunda') return 'profunda';
   return 'legado';
 }
 
@@ -297,22 +298,27 @@ function ModalEntradaLivre({
 function CardDiario({
   onSalvar,
 }: {
-  onSalvar: (d: { conquista: string; preocupacao: string; gratidao: string }) => Promise<void>;
+  onSalvar: (d: { conquista: string; preocupacao: string; gratidao: string; aprendizado: string; missao_execucao: string }) => Promise<void>;
 }) {
-  const [conquista,   setConquista]   = useState('');
-  const [preocupacao, setPreocupacao] = useState('');
-  const [gratidao,    setGratidao]    = useState('');
-  const [salvando,    setSalvando]    = useState(false);
-  const [salvo,       setSalvo]       = useState(false);
+  const [conquista,      setConquista]      = useState('');
+  const [preocupacao,    setPreocupacao]    = useState('');
+  const [gratidao,       setGratidao]       = useState('');
+  const [aprendizado,    setAprendizado]    = useState('');
+  const [missaoExecucao, setMissaoExecucao] = useState('');
+  const [salvando,       setSalvando]       = useState(false);
+  const [salvo,          setSalvo]          = useState(false);
 
   async function salvar() {
-    if (salvando || (!conquista.trim() && !preocupacao.trim() && !gratidao.trim())) return;
+    const algum = conquista || preocupacao || gratidao || aprendizado || missaoExecucao;
+    if (salvando || !algum.trim()) return;
     setSalvando(true);
     try {
       await onSalvar({
-        conquista:   conquista.trim(),
-        preocupacao: preocupacao.trim(),
-        gratidao:    gratidao.trim(),
+        conquista:      conquista.trim(),
+        preocupacao:    preocupacao.trim(),
+        gratidao:       gratidao.trim(),
+        aprendizado:    aprendizado.trim(),
+        missao_execucao: missaoExecucao.trim(),
       });
       setSalvo(true);
     } catch {
@@ -322,7 +328,16 @@ function CardDiario({
 
   if (salvo) return null;
 
-  const algumPreenchido = conquista.trim() || preocupacao.trim() || gratidao.trim();
+  const algumPreenchido = conquista.trim() || preocupacao.trim() || gratidao.trim()
+    || aprendizado.trim() || missaoExecucao.trim();
+
+  const perguntas = [
+    { label: '🌟 O que foi mais significativo hoje?', value: conquista,      set: setConquista,      ph: 'Qualquer coisa, pequena ou grande…' },
+    { label: '💭 O que está pesando?',                value: preocupacao,    set: setPreocupacao,    ph: 'Pode ser algo concreto ou uma sensação…' },
+    { label: '🙏 Pelo que sou grato?',               value: gratidao,       set: setGratidao,       ph: 'Uma pessoa, momento, sensação…' },
+    { label: '📈 O que você aprendeu hoje?',          value: aprendizado,    set: setAprendizado,    ph: 'Uma percepção, habilidade ou lição…' },
+    { label: '🎯 O que faria diferente amanhã?',      value: missaoExecucao, set: setMissaoExecucao, ph: 'Uma atitude, decisão ou abordagem…' },
+  ];
 
   return (
     <div style={{
@@ -337,23 +352,17 @@ function CardDiario({
         <div style={{ width: 3, height: 32, background: '#C8A030', borderRadius: 99, flexShrink: 0 }} />
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#C8A030', marginBottom: 2 }}>
-            Registro do dia
+            Reflexão do dia
           </div>
           <div style={{ fontSize: 11, color: 'rgba(245,240,232,0.3)' }}>
-            3 perguntas · responda no seu ritmo
+            5 perguntas · responda no seu ritmo
           </div>
         </div>
       </div>
 
       {/* Perguntas */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {(
-          [
-            { label: '🌟 O que foi mais significativo hoje?', value: conquista,   set: setConquista,   ph: 'Qualquer coisa, pequena ou grande…' },
-            { label: '💭 O que está pesando?',                value: preocupacao, set: setPreocupacao, ph: 'Pode ser algo concreto ou uma sensação…' },
-            { label: '🙏 Pelo que sou grato?',               value: gratidao,    set: setGratidao,    ph: 'Uma pessoa, momento, sensação…' },
-          ] as const
-        ).map(({ label, value, set, ph }) => (
+        {perguntas.map(({ label, value, set, ph }) => (
           <div key={label}>
             <label style={{
               fontSize: 12, color: 'rgba(245,240,232,0.5)',
@@ -386,7 +395,112 @@ function CardDiario({
             transition: 'all 0.15s',
           }}
         >
-          {salvando ? 'Salvando…' : 'Salvar registro'}
+          {salvando ? 'Salvando…' : 'Salvar reflexão'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Camada — Reflexão Profunda (Domingos) ────────────────────────────────────
+
+function CardReflexaoProfunda({
+  onSalvar,
+}: {
+  onSalvar: (d: { texto_livre: string; conquista: string; aprendizado: string; preocupacao: string }) => Promise<void>;
+}) {
+  const [padrao,     setPadrao]     = useState('');
+  const [desafio,    setDesafio]    = useState('');
+  const [crescendo,  setCrescendo]  = useState('');
+  const [drenando,   setDrenando]   = useState('');
+  const [salvando,   setSalvando]   = useState(false);
+  const [salvo,      setSalvo]      = useState(false);
+
+  async function salvar() {
+    const algum = padrao || desafio || crescendo || drenando;
+    if (salvando || !algum.trim()) return;
+    setSalvando(true);
+    try {
+      await onSalvar({
+        texto_livre:  padrao.trim(),
+        conquista:    desafio.trim(),
+        aprendizado:  crescendo.trim(),
+        preocupacao:  drenando.trim(),
+      });
+      setSalvo(true);
+    } catch {
+      setSalvando(false);
+    }
+  }
+
+  if (salvo) return null;
+
+  const algumPreenchido = padrao.trim() || desafio.trim() || crescendo.trim() || drenando.trim();
+
+  const perguntas = [
+    { label: '🔍 Qual padrão você notou em si esta semana?', value: padrao,    set: setPadrao,    ph: 'Um comportamento recorrente, emoção ou pensamento…' },
+    { label: '💪 Qual foi seu maior desafio?',               value: desafio,   set: setDesafio,   ph: 'O que te testou, o que você aprendeu com isso…' },
+    { label: '🌱 O que está crescendo em você?',             value: crescendo, set: setCrescendo, ph: 'Uma qualidade, habilidade ou mudança percebida…' },
+    { label: '⚡ O que está drenando sua energia?',          value: drenando,  set: setDrenando,  ph: 'Pessoa, situação, hábito ou pensamento…' },
+  ];
+
+  return (
+    <div style={{
+      background: 'rgba(109,40,217,0.05)',
+      border: '1px solid rgba(109,40,217,0.2)',
+      borderRadius: 16,
+      padding: '22px 22px 20px',
+      display: 'flex', flexDirection: 'column', gap: 18,
+    }}>
+      {/* Cabeçalho */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ width: 3, height: 32, background: '#a78bfa', borderRadius: 99, flexShrink: 0 }} />
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#a78bfa', marginBottom: 2 }}>
+            Reflexão profunda — domingo
+          </div>
+          <div style={{ fontSize: 11, color: 'rgba(245,240,232,0.3)' }}>
+            4 perguntas para encerrar a semana com consciência
+          </div>
+        </div>
+      </div>
+
+      {/* Perguntas */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {perguntas.map(({ label, value, set, ph }) => (
+          <div key={label}>
+            <label style={{
+              fontSize: 12, color: 'rgba(245,240,232,0.5)',
+              display: 'block', marginBottom: 6,
+            }}>
+              {label}
+            </label>
+            <textarea
+              value={value}
+              onChange={(e) => set(e.target.value)}
+              rows={2}
+              placeholder={ph}
+              style={INPUT_STYLE}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Botão salvar */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          onClick={salvar}
+          disabled={!algumPreenchido || salvando}
+          style={{
+            background: algumPreenchido ? '#a78bfa' : 'rgba(109,40,217,0.15)',
+            border: 'none', borderRadius: 8,
+            padding: '9px 24px', cursor: algumPreenchido ? 'pointer' : 'not-allowed',
+            color: algumPreenchido ? '#0E0E0E' : 'rgba(167,139,250,0.35)',
+            fontSize: 13, fontWeight: 700,
+            transition: 'all 0.15s',
+          }}
+        >
+          {salvando ? 'Salvando…' : 'Salvar reflexão'}
         </button>
       </div>
     </div>
@@ -541,13 +655,62 @@ function CardEntrada({ entrada }: { entrada: Entrada }) {
             border: '1px solid rgba(200,160,48,0.2)',
             borderRadius: 99, padding: '2px 8px',
           }}>
-            registro
+            reflexão
           </span>
         </div>
         {[
-          { icon: '🌟', label: 'Significativo', value: entrada.conquista },
-          { icon: '💭', label: 'Pesando',       value: entrada.preocupacao },
-          { icon: '🙏', label: 'Gratidão',      value: entrada.gratidao },
+          { icon: '🌟', label: 'Significativo',  value: entrada.conquista },
+          { icon: '💭', label: 'Pesando',        value: entrada.preocupacao },
+          { icon: '🙏', label: 'Gratidão',       value: entrada.gratidao },
+          { icon: '📈', label: 'Aprendizado',    value: entrada.aprendizado },
+          { icon: '🎯', label: 'Faria diferente', value: entrada.missao_execucao },
+        ].filter(item => item.value).map(({ icon, label, value }) => (
+          <div key={label}>
+            <div style={{
+              fontSize: 10, color: 'rgba(245,240,232,0.3)',
+              marginBottom: 3,
+            }}>
+              {icon} {label}
+            </div>
+            <p style={{
+              color: 'rgba(245,240,232,0.72)',
+              fontSize: 13, lineHeight: 1.65, margin: 0,
+            }}>
+              {value}
+            </p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (tipo === 'profunda') {
+    return (
+      <div style={{
+        background: 'rgba(109,40,217,0.04)',
+        border: '1px solid rgba(109,40,217,0.15)',
+        borderRadius: 12,
+        padding: '16px 18px',
+        display: 'flex', flexDirection: 'column', gap: 12,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: 'rgba(245,240,232,0.25)' }}>{hora}</span>
+          <span style={{
+            marginLeft: 'auto',
+            fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase',
+            color: 'rgba(167,139,250,0.7)',
+            background: 'rgba(109,40,217,0.1)',
+            border: '1px solid rgba(109,40,217,0.25)',
+            borderRadius: 99, padding: '2px 8px',
+          }}>
+            profunda
+          </span>
+        </div>
+        {[
+          { icon: '🔍', label: 'Padrão notado',  value: entrada.texto_livre },
+          { icon: '💪', label: 'Maior desafio',  value: entrada.conquista },
+          { icon: '🌱', label: 'Crescendo',      value: entrada.aprendizado },
+          { icon: '⚡', label: 'Drenando',       value: entrada.preocupacao },
         ].filter(item => item.value).map(({ icon, label, value }) => (
           <div key={label}>
             <div style={{
@@ -651,6 +814,7 @@ export default function DiarioBordoPage() {
         .from('diario_kairos')
         .select('*')
         .eq('user_id', user.id)
+        .or('tipo_entrada.neq.momento,tipo_entrada.is.null')
         .order('created_at', { ascending: false })
         .limit(200);
       if (!cancelado) {
@@ -662,8 +826,10 @@ export default function DiarioBordoPage() {
   }, [user?.id, getClient]);
 
   // ── Estado derivado ────────────────────────────────────────────────────────
-  const hoje          = dataHoje();
-  const temDiarioHoje = entradas.some(e => e.data === hoje && e.tipo_entrada === 'diario');
+  const hoje           = dataHoje();
+  const ehDomingo      = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long' }) === 'domingo';
+  const temDiarioHoje  = entradas.some(e => e.data === hoje && e.tipo_entrada === 'diario');
+  const temProfundaHoje = entradas.some(e => e.data === hoje && e.tipo_entrada === 'profunda');
   const mostrarPadroes = entradas.length >= 7;
 
   // Agrupa por data (já vêm ordenados por created_at desc)
@@ -701,7 +867,31 @@ export default function DiarioBordoPage() {
   // ── Salvar registro diário ─────────────────────────────────────────────────
   // Upsert por user_id+data: atualiza apenas conquista, preocupacao e gratidao;
   // texto_livre e emocao não constam no payload e permanecem intactos.
-  async function salvarDiario(dados: { conquista: string; preocupacao: string; gratidao: string }) {
+  async function salvarDiario(dados: { conquista: string; preocupacao: string; gratidao: string; aprendizado: string; missao_execucao: string }) {
+    if (!user?.id) return;
+    const client = await getClient();
+    const { data, error } = await client
+      .from('diario_kairos')
+      .upsert(
+        {
+          user_id:         user.id,
+          data:            hoje,
+          tipo_entrada:    'diario',
+          conquista:       dados.conquista       || null,
+          preocupacao:     dados.preocupacao     || null,
+          gratidao:        dados.gratidao        || null,
+          aprendizado:     dados.aprendizado     || null,
+          missao_execucao: dados.missao_execucao || null,
+        },
+        { onConflict: 'user_id,data' }
+      )
+      .select()
+      .single();
+    if (error) throw error;
+    if (data) setEntradas(prev => [data as Entrada, ...prev]);
+  }
+
+  async function salvarProfunda(dados: { texto_livre: string; conquista: string; aprendizado: string; preocupacao: string }) {
     if (!user?.id) return;
     const client = await getClient();
     const { data, error } = await client
@@ -710,10 +900,11 @@ export default function DiarioBordoPage() {
         {
           user_id:      user.id,
           data:         hoje,
-          tipo_entrada: 'diario',
+          tipo_entrada: 'profunda',
+          texto_livre:  dados.texto_livre || null,
           conquista:    dados.conquista   || null,
+          aprendizado:  dados.aprendizado || null,
           preocupacao:  dados.preocupacao || null,
-          gratidao:     dados.gratidao    || null,
         },
         { onConflict: 'user_id,data' }
       )
@@ -759,6 +950,11 @@ export default function DiarioBordoPage() {
 
             {/* CAMADA 3 — Padrões (≥ 7 entradas) */}
             {mostrarPadroes && <CardPadroes entradas={entradas} />}
+
+            {/* CAMADA 2 — Reflexão Profunda (domingos, uma vez por semana) */}
+            {!carregando && ehDomingo && !temProfundaHoje && (
+              <CardReflexaoProfunda onSalvar={salvarProfunda} />
+            )}
 
             {/* CAMADA 2 — Registro diário (uma vez por dia) */}
             {!carregando && !temDiarioHoje && (

@@ -781,7 +781,7 @@ export default function RegistrosPage() {
         { data: ferramentas },
         { data: visao },
       ] = await Promise.all([
-        client.from('diario_kairos').select('*').eq('user_id', user.id).order('data', { ascending: false }).limit(90),
+        client.from('diario_kairos').select('*').eq('user_id', user.id).or('tipo_entrada.neq.momento,tipo_entrada.is.null').order('data', { ascending: false }).limit(90),
         client.from('ferramentas_respostas').select('created_at, concluida').eq('user_id', user.id).eq('concluida', true).order('created_at', { ascending: true }).limit(1),
         client.from('visao_ancora').select('created_at').eq('user_id', user.id).order('created_at', { ascending: true }).limit(1),
       ]);
