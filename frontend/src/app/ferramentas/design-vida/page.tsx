@@ -810,8 +810,8 @@ export default function DesignVidaPage() {
 
   return (
     <FerramentaLayout
-      codigo="F05"
-      nome="Design da Vida Ideal"
+      codigo="F06"
+      nome="Design de Vida"
       descricao="Projete intencionalmente sua vida ideal em 1, 3 e 5 anos."
       etapas={ETAPAS}
       etapaAtual={passo}

@@ -951,7 +951,7 @@ export default function OKRsPessoaisPage() {
 
   return (
     <FerramentaLayout
-      codigo="F06"
+      codigo="F05"
       nome="OKRs Pessoais"
       descricao="Objetivos trimestrais com resultados-chave mensuráveis."
       etapas={ETAPAS}

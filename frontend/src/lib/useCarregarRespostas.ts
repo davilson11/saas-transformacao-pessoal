@@ -12,9 +12,13 @@ export function useCarregarRespostas<T = Record<string, unknown>>(slug: string) 
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
-      const client = await getClient();
-      const r = await buscarRespostaFerramenta(user.id, slug, client);
-      if (r?.respostas) setDados(r.respostas as T);
+      try {
+        const client = await getClient();
+        const r = await buscarRespostaFerramenta(user.id, slug, client);
+        if (r?.respostas) setDados(r.respostas as T);
+      } catch (err) {
+        console.error('[useCarregarRespostas]', slug, err);
+      }
     })();
   }, [user?.id, slug]); // eslint-disable-line react-hooks/exhaustive-deps
 
