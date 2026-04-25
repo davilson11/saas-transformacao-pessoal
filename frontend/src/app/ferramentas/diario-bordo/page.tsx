@@ -73,14 +73,24 @@ function formatarData(data: string): string {
 function palavraFrequente(entradas: Entrada[]): string {
   const freq: Record<string, number> = {};
   for (const e of entradas) {
-    const txt = e.tipo_entrada === 'livre' ? e.texto_livre : null;
-    if (!txt) continue;
-    txt
-      .toLowerCase()
-      .replace(/[^a-záéíóúãõâêîôûçàü\s]/g, ' ')
-      .split(/\s+/)
-      .filter(p => p.length > 3 && !STOPWORDS.has(p))
-      .forEach(p => { freq[p] = (freq[p] ?? 0) + 1; });
+    // Incluir todos os campos de texto de todos os tipos de entrada
+    const textos = [
+      e.texto_livre,
+      e.conquista,
+      e.preocupacao,
+      e.gratidao,
+      e.aprendizado,
+      e.missao_execucao,
+    ];
+    for (const txt of textos) {
+      if (!txt) continue;
+      txt
+        .toLowerCase()
+        .replace(/[^a-záéíóúãõâêîôûçàü\s]/g, ' ')
+        .split(/\s+/)
+        .filter(p => p.length > 3 && !STOPWORDS.has(p))
+        .forEach(p => { freq[p] = (freq[p] ?? 0) + 1; });
+    }
   }
   return Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
 }
@@ -809,17 +819,22 @@ export default function DiarioBordoPage() {
     if (!user?.id) return;
     let cancelado = false;
     (async () => {
-      const client = await getClient();
-      const { data } = await client
-        .from('diario_kairos')
-        .select('*')
-        .eq('user_id', user.id)
-        .or('tipo_entrada.neq.momento,tipo_entrada.is.null')
-        .order('created_at', { ascending: false })
-        .limit(200);
-      if (!cancelado) {
-        setEntradas((data ?? []) as Entrada[]);
-        setCarregando(false);
+      try {
+        const client = await getClient();
+        const { data } = await client
+          .from('diario_kairos')
+          .select('*')
+          .eq('user_id', user.id)
+          .or('tipo_entrada.neq.momento,tipo_entrada.is.null')
+          .order('created_at', { ascending: false })
+          .limit(200);
+        if (!cancelado) {
+          setEntradas((data ?? []) as Entrada[]);
+        }
+      } catch (err) {
+        console.error('[diario-bordo] Erro ao carregar entradas:', err);
+      } finally {
+        if (!cancelado) setCarregando(false);
       }
     })();
     return () => { cancelado = true; };
@@ -861,7 +876,10 @@ export default function DiarioBordoPage() {
       .select()
       .single();
     if (error) throw error;
-    if (data) setEntradas(prev => [data as Entrada, ...prev]);
+    if (data) {
+      const nova = data as Entrada;
+      setEntradas(prev => [nova, ...prev.filter(e => e.id !== nova.id)]);
+    }
   }
 
   // ── Salvar registro diário ─────────────────────────────────────────────────
@@ -888,7 +906,10 @@ export default function DiarioBordoPage() {
       .select()
       .single();
     if (error) throw error;
-    if (data) setEntradas(prev => [data as Entrada, ...prev]);
+    if (data) {
+      const nova = data as Entrada;
+      setEntradas(prev => [nova, ...prev.filter(e => e.id !== nova.id)]);
+    }
   }
 
   async function salvarProfunda(dados: { texto_livre: string; conquista: string; aprendizado: string; preocupacao: string }) {
@@ -911,7 +932,10 @@ export default function DiarioBordoPage() {
       .select()
       .single();
     if (error) throw error;
-    if (data) setEntradas(prev => [data as Entrada, ...prev]);
+    if (data) {
+      const nova = data as Entrada;
+      setEntradas(prev => [nova, ...prev.filter(e => e.id !== nova.id)]);
+    }
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
