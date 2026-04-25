@@ -27,6 +27,17 @@ const CREAM = '#F5F0E8';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// Retorna data no fuso de São Paulo como YYYY-MM-DD, offset em dias (0 = hoje)
+function getDiaStr(offsetDias = 0): string {
+  const ts = Date.now() - offsetDias * 86_400_000;
+  return new Date(ts)
+    .toLocaleDateString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    })
+    .split('/').reverse().join('-');
+}
+
 const EMOCAO_EMOJI: Record<string, string> = {
   animado:   '😄',
   focado:    '🎯',
@@ -50,7 +61,7 @@ const STOP_WORDS = new Set([
 
 function palavrasMaisFrequentes(historico: Partial<DiarioKairos>[], top = 1): string[] {
   const texto = historico
-    .flatMap(h => [h.preocupacao, h.gratidao, h.conquista, h.aprendizado])
+    .flatMap(h => [h.preocupacao, h.gratidao, h.conquista, h.aprendizado, h.texto_livre])
     .filter(Boolean)
     .join(' ')
     .toLowerCase()
@@ -84,11 +95,8 @@ function calcularStreakMaximo(hist: Partial<DiarioKairos>[]): number {
 function calcularStreakAtual(hist: Partial<DiarioKairos>[]): number {
   const datas = hist.map(h => h.data).filter(Boolean).sort((a, b) => b!.localeCompare(a!)) as string[];
   let streak = 0;
-  const base = new Date();
   for (let i = 0; i < datas.length; i++) {
-    const esp = new Date(base);
-    esp.setDate(base.getDate() - i);
-    if (datas[i] === esp.toISOString().split('T')[0]) streak++;
+    if (datas[i] === getDiaStr(i)) streak++;
     else break;
   }
   return streak;
@@ -272,7 +280,7 @@ function CardDia({ entry, data }: { entry: Partial<DiarioKairos> | null; data: s
               </div>
             )}
 
-            {entry!.missao_cumprida !== undefined && (
+            {entry!.missao_cumprida !== undefined && entry!.missao_cumprida !== null && (
               <div style={{
                 background: entry!.missao_cumprida ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.04)',
                 border: entry!.missao_cumprida ? '1px solid rgba(34,197,94,0.2)' : 'none',
@@ -321,11 +329,9 @@ function CardDia({ entry, data }: { entry: Partial<DiarioKairos> | null; data: s
 
 function AbaDiario({ historico }: { historico: Partial<DiarioKairos>[] }) {
   const dias = Array.from({ length: 30 }).map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const dataStr = d.toISOString().split('T')[0];
-    const entry = historico.find(h => h.data === dataStr) ?? null;
-    return { dataStr, entry };
+    const ds = getDiaStr(i);
+    const entry = historico.find(h => h.data === ds) ?? null;
+    return { dataStr: ds, entry };
   });
 
   const totalRegistros = dias.filter(d => d.entry !== null).length;
@@ -364,33 +370,29 @@ function AbaDiario({ historico }: { historico: Partial<DiarioKairos>[] }) {
 
 function AbaPadroes({ historico }: { historico: Partial<DiarioKairos>[] }) {
   // Emoção dominante da semana (últimos 7 dias)
-  const ultimos7 = historico.filter(h => {
-    if (!h.data) return false;
-    const limite = new Date();
-    limite.setDate(limite.getDate() - 7);
-    return new Date(h.data) >= limite;
-  });
+  const limite7 = getDiaStr(6); // 6 dias atrás = janela de 7 dias incluindo hoje
+  const ultimos7 = historico.filter(h => h.data != null && h.data >= limite7);
   const emocaoCount: Record<string, number> = {};
   ultimos7.forEach(h => { if (h.emocao) emocaoCount[h.emocao] = (emocaoCount[h.emocao] ?? 0) + 1; });
   const emocaoDominante = Object.entries(emocaoCount).sort((a, b) => b[1] - a[1])[0] ?? null;
-  const emocaoPct = emocaoDominante && ultimos7.length > 0
-    ? Math.round((emocaoDominante[1] / ultimos7.filter(h => h.emocao).length) * 100)
+  const emocoesDias = ultimos7.filter(h => h.emocao).length;
+  const emocaoPct = emocaoDominante && emocoesDias > 0
+    ? Math.round((emocaoDominante[1] / emocoesDias) * 100)
     : 0;
 
   // Palavra mais frequente
   const [palavraTop] = palavrasMaisFrequentes(historico, 1);
 
-  // Gráfico últimos 14 dias — nota média (nota_dia ou qualidade_sono)
+  // Gráfico últimos 14 dias — nota média (nota_dia)
   const ultimos14 = Array.from({ length: 14 }).map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (13 - i));
-    const dataStr = d.toISOString().split('T')[0];
-    const entry = historico.find(h => h.data === dataStr);
+    const offset = 13 - i; // 13 = mais antigo, 0 = hoje
+    const ds = getDiaStr(offset);
+    const entry = historico.find(h => h.data === ds);
     const nota = entry?.nota_dia ?? null;
-    return {
-      label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      nota,
-    };
+    // Label: dd/mm no fuso correto
+    const label = new Date(Date.now() - offset * 86_400_000)
+      .toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' });
+    return { label, nota };
   });
 
   const mediaNota14 = (() => {
@@ -781,7 +783,7 @@ export default function RegistrosPage() {
         { data: ferramentas },
         { data: visao },
       ] = await Promise.all([
-        client.from('diario_kairos').select('*').eq('user_id', user.id).or('tipo_entrada.neq.momento,tipo_entrada.is.null').order('data', { ascending: false }).limit(90),
+        client.from('diario_kairos').select('*').eq('user_id', user.id).or('tipo_entrada.neq.momento,tipo_entrada.is.null').order('data', { ascending: false }).limit(365),
         client.from('ferramentas_respostas').select('created_at, concluida').eq('user_id', user.id).eq('concluida', true).order('created_at', { ascending: true }).limit(1),
         client.from('visao_ancora').select('created_at').eq('user_id', user.id).order('created_at', { ascending: true }).limit(1),
       ]);
@@ -818,7 +820,7 @@ export default function RegistrosPage() {
 
   return (
     <DashboardLayout>
-      <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16, padding: '24px 24px 120px', minHeight: '100vh', background: DARK }}>
 
         {/* Header */}
         <div style={{
