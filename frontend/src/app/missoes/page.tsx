@@ -35,6 +35,16 @@ type HistItem = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+/** Data YYYY-MM-DD em fuso America/Sao_Paulo. offsetDias=0 → hoje, 1 → ontem, … */
+function getDiaStr(offsetDias = 0): string {
+  return new Date(Date.now() - offsetDias * 86_400_000)
+    .toLocaleDateString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    })
+    .split('/').reverse().join('-');
+}
+
 function fmtData(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('pt-BR', {
@@ -47,17 +57,6 @@ function fmtDataCurta(iso: string): string {
   return new Date(y, m - 1, d).toLocaleDateString('pt-BR', {
     weekday: 'short', day: '2-digit', month: '2-digit',
   });
-}
-
-function hojeISO(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function diasAtras(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 // ─── Sub-componente: CartãoMissãoHoje ─────────────────────────────────────────
@@ -101,7 +100,7 @@ function CartaoMissaoHoje({
             Missão do Dia
           </p>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: C.muted, margin: 0 }}>
-            Fase {fase} · {fmtData(hojeISO())}
+            Fase {fase} · {fmtData(getDiaStr())}
           </p>
         </div>
       </div>
@@ -229,66 +228,71 @@ export default function MissoesPage() {
     if (!user?.id) return;
     (async () => {
       setLoading(true);
-      const client = await getClient();
-      const hoje   = hojeISO();
-      const limite = diasAtras(30);
+      try {
+        const client = await getClient();
+        const hoje   = getDiaStr();
+        const limite = getDiaStr(30);
 
-      // Missão do dia
-      const { data: mom } = await client
-        .from('momento_kairos')
-        .select('*')
-        .eq('data', hoje)
-        .single();
-      if (mom) setMomento(mom as MomentoKairos);
-
-      // Diário de hoje
-      const { data: dHoje } = await client
-        .from('diario_kairos')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('data', hoje)
-        .single();
-      if (dHoje) {
-        setDiarioHoje(dHoje as DiarioKairos);
-        setExecucao((dHoje as DiarioKairos).missao_execucao ?? '');
-        setCumprida((dHoje as DiarioKairos).missao_cumprida ?? false);
-      }
-
-      // Histórico últimos 30 dias
-      const { data: hist } = await client
-        .from('diario_kairos')
-        .select('data, missao_cumprida, missao_execucao')
-        .eq('user_id', user.id)
-        .gte('data', limite)
-        .order('data', { ascending: false });
-
-      if (hist && hist.length > 0) {
-        const datas = hist.map((h: { data: string }) => h.data);
-        const { data: moms } = await client
+        // Missão do dia
+        const { data: mom } = await client
           .from('momento_kairos')
-          .select('data, missao, fase')
-          .in('data', datas);
+          .select('*')
+          .eq('data', hoje)
+          .single();
+        if (mom) setMomento(mom as MomentoKairos);
 
-        const momMap: Record<string, string> = {};
-        if (moms) {
-          for (const m of moms as { data: string; missao: string }[]) {
-            momMap[m.data] = m.missao;
-          }
+        // Diário de hoje
+        const { data: dHoje } = await client
+          .from('diario_kairos')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('data', hoje)
+          .single();
+        if (dHoje) {
+          setDiarioHoje(dHoje as DiarioKairos);
+          setExecucao((dHoje as DiarioKairos).missao_execucao ?? '');
+          setCumprida((dHoje as DiarioKairos).missao_cumprida ?? false);
         }
 
-        setHistorico(
-          hist
-            .filter((h: { data: string }) => h.data !== hoje)
-            .map((h: { data: string; missao_cumprida: boolean; missao_execucao: string | null }) => ({
-              data:            h.data,
-              missao:          momMap[h.data] ?? '—',
-              missao_cumprida: h.missao_cumprida ?? false,
-              missao_execucao: h.missao_execucao ?? null,
-            }))
-        );
-      }
+        // Histórico últimos 30 dias — apenas entradas Momento (tipo_entrada = 'momento' ou null)
+        const { data: hist } = await client
+          .from('diario_kairos')
+          .select('data, missao_cumprida, missao_execucao')
+          .eq('user_id', user.id)
+          .gte('data', limite)
+          .or('tipo_entrada.eq.momento,tipo_entrada.is.null')
+          .order('data', { ascending: false });
 
-      setLoading(false);
+        if (hist && hist.length > 0) {
+          const datas = hist.map((h: { data: string }) => h.data);
+          const { data: moms } = await client
+            .from('momento_kairos')
+            .select('data, missao, fase')
+            .in('data', datas);
+
+          const momMap: Record<string, string> = {};
+          if (moms) {
+            for (const m of moms as { data: string; missao: string }[]) {
+              momMap[m.data] = m.missao;
+            }
+          }
+
+          setHistorico(
+            hist
+              .filter((h: { data: string }) => h.data !== hoje)
+              .map((h: { data: string; missao_cumprida: boolean; missao_execucao: string | null }) => ({
+                data:            h.data,
+                missao:          momMap[h.data] ?? '—',
+                missao_cumprida: h.missao_cumprida ?? false,
+                missao_execucao: h.missao_execucao ?? null,
+              }))
+          );
+        }
+      } catch (err) {
+        console.error('[missoes] Erro ao carregar dados:', err);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -305,7 +309,7 @@ export default function MissoesPage() {
     if (!user?.id) return;
     setSalvando(true);
     const client = await getClient();
-    const hoje   = hojeISO();
+    const hoje   = getDiaStr();
     await client.from('diario_kairos').upsert(
       { user_id: user.id, data: hoje, missao_execucao: texto, updated_at: new Date().toISOString() },
       { onConflict: 'user_id,data' }
@@ -323,7 +327,7 @@ export default function MissoesPage() {
     setCumprida(novaCumprida);
     setSalvandoCumprida(true);
     const client = await getClient();
-    const hoje   = hojeISO();
+    const hoje   = getDiaStr();
 
     // Ao marcar como cumprida, persiste também missao_execucao no mesmo upsert
     // para garantir que o texto não seja perdido caso o debounce ainda não tenha disparado.
@@ -551,7 +555,7 @@ export default function MissoesPage() {
                 {/* Mini calendário de calor */}
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                   {Array.from({ length: 30 }, (_, i) => {
-                    const data = diasAtras(30 - i);
+                    const data = getDiaStr(30 - i);
                     const item = historico.find(h => h.data === data);
                     const cor = !item
                       ? 'rgba(255,255,255,0.04)'
