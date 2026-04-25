@@ -24,17 +24,22 @@ const EMOCAO_COR: Record<string, string> = {
   tranquilo: '#8b5cf6',
 };
 
+// Retorna YYYY-MM-DD no fuso de Brasília; offsetDias=0 → hoje, 1 → ontem, etc.
+function getDiaStr(offsetDias = 0): string {
+  return new Date(Date.now() - offsetDias * 86_400_000)
+    .toLocaleDateString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    })
+    .split('/').reverse().join('-');
+}
 
 function calcularStreak(hist: Partial<DiarioKairos>[]): number {
   if (!hist.length) return 0;
-  const datas = hist.map(h => h.data).sort((a, b) => b!.localeCompare(a!));
+  const datas = hist.map(h => h.data).filter(Boolean).sort((a, b) => b!.localeCompare(a!)) as string[];
   let streak = 0;
-  const hoje = new Date();
   for (let i = 0; i < datas.length; i++) {
-    const esperado = new Date(hoje);
-    esperado.setDate(hoje.getDate() - i);
-    const esperadoStr = esperado.toISOString().split('T')[0];
-    if (datas[i] === esperadoStr) streak++;
+    if (datas[i] === getDiaStr(i)) streak++;
     else break;
   }
   return streak;
@@ -44,13 +49,15 @@ function calcularStreak(hist: Partial<DiarioKairos>[]): number {
 function GraficoHumor({ historico }: { historico: Partial<DiarioKairos>[] }) {
   const W = 580, H = 140, PAD = 32;
   const dias = Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    const dataStr = d.toISOString().split('T')[0];
-    const reg = historico.find(h => h.data === dataStr);
+    const offset = 6 - i;
+    const ds  = getDiaStr(offset);
+    const reg = historico.find(h => h.data === ds);
+    const label = new Date(Date.now() - offset * 86_400_000)
+      .toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'short' })
+      .replace('.', '');
     return {
-      label: d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''),
-      sono: reg?.qualidade_sono ?? null,
+      label,
+      sono:   reg?.qualidade_sono ?? null,
       emocao: reg?.emocao ? (EMOCAO_VALOR[reg.emocao] ?? null) : null,
     };
   });
@@ -224,14 +231,19 @@ export default function MomentoPage() {
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
-      const client = await getClient();
-      const { data: momentoData } = await client.from('momento_kairos').select('*').eq('data', hoje).maybeSingle();
-      if (momentoData) setMomento(momentoData);
-      const { data: diarioData } = await client.from('diario_kairos').select('*').eq('user_id', user.id).eq('data', hoje).maybeSingle();
-      if (diarioData) setDiario(diarioData);
-      const { data: hist } = await client.from('diario_kairos').select('*').eq('user_id', user.id).or('tipo_entrada.eq.momento,tipo_entrada.is.null').order('data', { ascending: false }).limit(30);
-      if (hist) { setHistorico(hist); setStreak(calcularStreak(hist)); }
-      setCarregando(false);
+      try {
+        const client = await getClient();
+        const { data: momentoData } = await client.from('momento_kairos').select('*').eq('data', hoje).maybeSingle();
+        if (momentoData) setMomento(momentoData);
+        const { data: diarioData } = await client.from('diario_kairos').select('*').eq('user_id', user.id).eq('data', hoje).maybeSingle();
+        if (diarioData) setDiario(diarioData);
+        const { data: hist } = await client.from('diario_kairos').select('*').eq('user_id', user.id).or('tipo_entrada.eq.momento,tipo_entrada.is.null').order('data', { ascending: false }).limit(60);
+        if (hist) { setHistorico(hist); setStreak(calcularStreak(hist)); }
+      } catch (e) {
+        console.error('[MomentoPage] erro ao carregar:', e);
+      } finally {
+        setCarregando(false);
+      }
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -239,17 +251,21 @@ export default function MomentoPage() {
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
-      const client = await getClient();
-      const { data } = await client
-        .from('ferramentas_respostas')
-        .select('ferramenta_codigo, concluida')
-        .eq('user_id', user.id);
-      if (!data) return;
-      const concluidas = data.filter(f => f.concluida).length;
-      if (concluidas >= 12) setFaseUsuario(4);
-      else if (concluidas >= 8) setFaseUsuario(3);
-      else if (concluidas >= 4) setFaseUsuario(2);
-      else setFaseUsuario(1);
+      try {
+        const client = await getClient();
+        const { data } = await client
+          .from('ferramentas_respostas')
+          .select('ferramenta_codigo, concluida')
+          .eq('user_id', user.id);
+        if (!data) return;
+        const concluidas = data.filter(f => f.concluida).length;
+        if (concluidas >= 12) setFaseUsuario(4);
+        else if (concluidas >= 8) setFaseUsuario(3);
+        else if (concluidas >= 4) setFaseUsuario(2);
+        else setFaseUsuario(1);
+      } catch (e) {
+        console.error('[MomentoPage] erro ao carregar fase:', e);
+      }
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -580,15 +596,14 @@ export default function MomentoPage() {
           <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginBottom: 16 }}>Últimos 30 dias — clique num dia para ver o registro</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {Array.from({ length: 30 }).map((_, i) => {
-              const d = new Date();
-              d.setDate(d.getDate() - (29 - i));
-              const dataStr = d.toISOString().split('T')[0];
-              const registro = historico.find(h => h.data === dataStr);
-              const isHoje = dataStr === hoje;
+              const offset  = 29 - i;
+              const ds      = getDiaStr(offset);
+              const registro = historico.find(h => h.data === ds);
+              const isHoje  = offset === 0;
               return (
-                <button key={dataStr}
-                  onClick={() => registro ? setDiaSelecionado(diaSelecionado?.data === dataStr ? null : registro) : null}
-                  title={dataStr}
+                <button key={ds}
+                  onClick={() => registro ? setDiaSelecionado(diaSelecionado?.data === ds ? null : registro) : null}
+                  title={ds}
                   style={{
                     width: 32, height: 32, borderRadius: '50%', border: 'none',
                     cursor: registro ? 'pointer' : 'default',

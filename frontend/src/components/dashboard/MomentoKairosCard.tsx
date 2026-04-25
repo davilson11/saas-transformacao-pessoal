@@ -27,16 +27,22 @@ function saudacao(hora: number): string {
   return 'Boa noite';
 }
 
+// Retorna YYYY-MM-DD no fuso de Brasília; offsetDias=0 → hoje, 1 → ontem, etc.
+function getDiaStr(offsetDias = 0): string {
+  return new Date(Date.now() - offsetDias * 86_400_000)
+    .toLocaleDateString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    })
+    .split('/').reverse().join('-');
+}
+
 function calcularStreak(hist: Partial<DiarioKairos>[]): number {
   if (!hist.length) return 0;
-  const datas = hist.map(h => h.data).filter(Boolean).sort((a, b) => b!.localeCompare(a!));
+  const datas = hist.map(h => h.data).filter(Boolean).sort((a, b) => b!.localeCompare(a!)) as string[];
   let streak = 0;
-  const base = new Date();
   for (let i = 0; i < datas.length; i++) {
-    const esperado = new Date(base);
-    esperado.setDate(base.getDate() - i);
-    const esperadoStr = esperado.toISOString().split('T')[0];
-    if (datas[i] === esperadoStr) streak++;
+    if (datas[i] === getDiaStr(i)) streak++;
     else break;
   }
   return streak;
@@ -70,30 +76,39 @@ export default function MomentoKairosCard() {
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
-      const client = await getClient();
-      const [{ data: momentoData }, { data: diarioData }, { data: hist }] = await Promise.all([
-        client.from('momento_kairos').select('*').eq('data', hoje).maybeSingle(),
-        client.from('diario_kairos').select('*').eq('user_id', user.id).eq('data', hoje).maybeSingle(),
-        client.from('diario_kairos').select('*').eq('user_id', user.id).order('data', { ascending: false }).limit(30),
-      ]);
-      if (momentoData) setMomento(momentoData);
-      if (diarioData) setDiario(diarioData);
-      if (hist) { setHistorico(hist); setStreak(calcularStreak(hist)); }
-      setCarregando(false);
+      try {
+        const client = await getClient();
+        const [{ data: momentoData }, { data: diarioData }, { data: hist }] = await Promise.all([
+          client.from('momento_kairos').select('*').eq('data', hoje).maybeSingle(),
+          client.from('diario_kairos').select('*').eq('user_id', user.id).eq('data', hoje).maybeSingle(),
+          client.from('diario_kairos').select('*').eq('user_id', user.id).or('tipo_entrada.eq.momento,tipo_entrada.is.null').order('data', { ascending: false }).limit(60),
+        ]);
+        if (momentoData) setMomento(momentoData);
+        if (diarioData) setDiario(diarioData);
+        if (hist) { setHistorico(hist); setStreak(calcularStreak(hist)); }
+      } catch (e) {
+        console.error('[MomentoKairosCard] erro ao carregar:', e);
+      } finally {
+        setCarregando(false);
+      }
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
-      const client = await getClient();
-      const { data } = await client.from('ferramentas_respostas').select('concluida').eq('user_id', user.id);
-      if (!data) return;
-      const n = data.filter(f => f.concluida).length;
-      if (n >= 12) setFaseUsuario(4);
-      else if (n >= 8) setFaseUsuario(3);
-      else if (n >= 4) setFaseUsuario(2);
-      else setFaseUsuario(1);
+      try {
+        const client = await getClient();
+        const { data } = await client.from('ferramentas_respostas').select('concluida').eq('user_id', user.id);
+        if (!data) return;
+        const n = data.filter(f => f.concluida).length;
+        if (n >= 12) setFaseUsuario(4);
+        else if (n >= 8) setFaseUsuario(3);
+        else if (n >= 4) setFaseUsuario(2);
+        else setFaseUsuario(1);
+      } catch (e) {
+        console.error('[MomentoKairosCard] erro ao carregar fase:', e);
+      }
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -103,11 +118,13 @@ export default function MomentoKairosCard() {
     try {
       const client = await getClient();
       const { error } = await client.from('diario_kairos').upsert({
-        user_id: user.id, data: hoje,
-        qualidade_sono: diario.qualidade_sono ?? null,
-        emocao: diario.emocao ?? null,
-        preocupacao: diario.preocupacao ?? null,
-        gratidao: diario.gratidao ?? null,
+        user_id:         user.id,
+        data:            hoje,
+        tipo_entrada:    'momento',
+        qualidade_sono:  diario.qualidade_sono  ?? null,
+        emocao:          diario.emocao          ?? null,
+        preocupacao:     diario.preocupacao     ?? null,
+        gratidao:        diario.gratidao        ?? null,
         missao_cumprida: diario.missao_cumprida ?? false,
       }, { onConflict: 'user_id,data' });
       if (error) throw error;
@@ -126,11 +143,13 @@ export default function MomentoKairosCard() {
     try {
       const client = await getClient();
       const { error } = await client.from('diario_kairos').upsert({
-        user_id: user.id, data: hoje,
-        conquista:   diario.conquista   ?? null,
-        aprendizado: diario.aprendizado ?? null,
-        energia_fim: diario.energia_fim ?? null,
-        nota_dia:    diario.nota_dia    ?? null,
+        user_id:      user.id,
+        data:         hoje,
+        tipo_entrada: 'momento',
+        conquista:    diario.conquista   ?? null,
+        aprendizado:  diario.aprendizado ?? null,
+        energia_fim:  diario.energia_fim ?? null,
+        nota_dia:     diario.nota_dia    ?? null,
       }, { onConflict: 'user_id,data' });
       if (error) throw error;
       setSalvoNoite(true);
@@ -506,13 +525,13 @@ export default function MomentoKairosCard() {
           <div style={{ padding: '0 20px 20px' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
               {Array.from({ length: 30 }).map((_, i) => {
-                const d = new Date();
-                d.setDate(d.getDate() - (29 - i));
-                const dataStr = d.toISOString().split('T')[0];
-                const reg = historico.find(h => h.data === dataStr);
-                const isHoje = dataStr === hoje;
+                const offset = 29 - i;
+                const ds     = getDiaStr(offset);
+                const reg    = historico.find(h => h.data === ds);
+                const isHoje = offset === 0;
+                const diaNum = parseInt(ds.split('-')[2], 10);
                 return (
-                  <div key={i} title={dataStr}
+                  <div key={ds} title={ds}
                     style={{
                       width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center',
                       justifyContent: 'center', fontSize: 11, fontWeight: 600, cursor: 'default',
@@ -520,7 +539,7 @@ export default function MomentoKairosCard() {
                       color: reg ? (isHoje ? DARK : '#854F0B') : 'rgba(30,57,42,0.3)',
                       border: `1px solid ${isHoje ? GOLD : reg ? 'rgba(200,160,48,0.3)' : 'var(--color-brand-border)'}`,
                     }}>
-                    {d.getDate()}
+                    {diaNum}
                   </div>
                 );
               })}
