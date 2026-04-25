@@ -51,7 +51,7 @@ const FASES: FaseData[] = [
     ferramentas: [
       { codigo: 'F05', nome: 'OKRs Pessoais',  slug: 'okrs-pessoais' },
       { codigo: 'F06', nome: 'Design de Vida', slug: 'design-vida'   },
-      { codigo: 'F07', nome: 'DRE Pessoal',    slug: 'dre-pessoal'   },
+      { codigo: 'F07', nome: 'Mapa Financeiro Pessoal', slug: 'dre-pessoal' },
       { codigo: 'F08', nome: 'Rotina Ideal',   slug: 'rotina-ideal'  },
     ],
   },
@@ -74,14 +74,24 @@ const FASES: FaseData[] = [
     emoji: '🌱',
     ferramentas: [
       { codigo: 'F13', nome: 'Desconstrutor de Crenças', slug: 'desconstrutor-crencas' },
-      { codigo: 'F14', nome: 'CRM de Relacionamentos',   slug: 'crm-relacionamentos'   },
+      { codigo: 'F14', nome: 'Mapa de Relacionamentos',    slug: 'crm-relacionamentos'   },
       { codigo: 'F15', nome: 'Diário de Bordo',          slug: 'diario-bordo'          },
-      { codigo: 'F16', nome: 'Prevenção de Recaída',     slug: 'prevencao-recaida'     },
+      { codigo: 'F16', nome: 'Plano de Continuidade',      slug: 'prevencao-recaida'     },
     ],
   },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Data YYYY-MM-DD em fuso America/Sao_Paulo. offsetDias=0 → hoje, 1 → ontem, … */
+function getDiaStr(offsetDias = 0): string {
+  return new Date(Date.now() - offsetDias * 86_400_000)
+    .toLocaleDateString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    })
+    .split('/').reverse().join('-');
+}
 
 function fraseMotivacional(pct: number): string {
   if (pct === 0)  return 'Sua jornada começa agora. O primeiro passo é o mais importante.';
@@ -99,11 +109,8 @@ function formatarData(iso: string): string {
 function calcularStreak(datas: string[]): number {
   const sorted = [...datas].sort((a, b) => b.localeCompare(a));
   let s = 0;
-  const base = new Date();
   for (let i = 0; i < sorted.length; i++) {
-    const esp = new Date(base);
-    esp.setDate(base.getDate() - i);
-    if (sorted[i] === esp.toISOString().split('T')[0]) s++;
+    if (sorted[i] === getDiaStr(i)) s++;
     else break;
   }
   return s;
@@ -353,14 +360,14 @@ function CardStreak({
   streak: number;
 }) {
   const set = new Set(datasRegistradas);
-  const hoje = new Date().toISOString().split('T')[0];
+  const hoje = getDiaStr();
   const streakEmoji = streak >= 14 ? '⚡' : streak >= 7 ? '🔥' : streak >= 3 ? '✨' : '💤';
 
   const dias = Array.from({ length: 30 }).map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (29 - i));
-    const s = d.toISOString().split('T')[0];
-    return { s, registrado: set.has(s), isHoje: s === hoje, dom: d.getDay() };
+    const offset = 29 - i; // 29 dias atrás … hoje
+    const s   = getDiaStr(offset);
+    const dom = new Date(s + 'T12:00:00').getDay(); // getDay() em horário local
+    return { s, registrado: set.has(s), isHoje: s === hoje, dom };
   });
 
   return (
@@ -522,26 +529,31 @@ export default function ProgressoPage() {
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
-      const client = await getClient();
-      const [{ data: resp }, { data: hist }] = await Promise.all([
-        client.from('ferramentas_respostas').select('*').eq('user_id', user.id),
-        client
-          .from('diario_kairos')
-          .select('data')
-          .eq('user_id', user.id)
-          .order('data', { ascending: false })
-          .limit(60),
-      ]);
+      try {
+        const client = await getClient();
+        const [{ data: resp }, { data: hist }] = await Promise.all([
+          client.from('ferramentas_respostas').select('*').eq('user_id', user.id),
+          client
+            .from('diario_kairos')
+            .select('data')
+            .eq('user_id', user.id)
+            .or('tipo_entrada.neq.momento,tipo_entrada.is.null')
+            .order('data', { ascending: false })
+            .limit(90),
+        ]);
 
-      if (resp) setRespostas(resp as FerramentasRespostas[]);
+        if (resp) setRespostas(resp as FerramentasRespostas[]);
 
-      if (hist) {
-        const datas = hist.map((h: Pick<DiarioKairos, 'data'>) => h.data);
-        setDatasRegistradas(datas);
-        setStreak(calcularStreak(datas));
+        if (hist) {
+          const datas = hist.map((h: Pick<DiarioKairos, 'data'>) => h.data);
+          setDatasRegistradas(datas);
+          setStreak(calcularStreak(datas));
+        }
+      } catch (err) {
+        console.error('[progresso] Erro ao carregar dados:', err);
+      } finally {
+        setCarregando(false);
       }
-
-      setCarregando(false);
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
