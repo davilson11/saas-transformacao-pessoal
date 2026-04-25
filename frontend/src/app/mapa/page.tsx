@@ -48,6 +48,27 @@ const TODAS_SLUGS = [
   'diario-bordo','prevencao-recaida',
 ];
 
+const FASES_EXEC = [
+  { n: 1, slugs: ['raio-x','bussola-valores','swot-pessoal','feedback-360'],
+    nomes: ['Raio-X 360°','Bússola de Valores','SWOT Pessoal','Feedback 360°'] },
+  { n: 2, slugs: ['okrs-pessoais','design-vida','dre-pessoal','rotina-ideal'],
+    nomes: ['OKRs Pessoais','Design de Vida','Mapa Financeiro Pessoal','Rotina Ideal'] },
+  { n: 3, slugs: ['auditoria-tempo','arquiteto-rotinas','sprint-aprendizado','energia-vitalidade'],
+    nomes: ['Auditoria de Tempo','Arquiteto de Rotinas','Sprint de Aprendizado','Energia e Vitalidade'] },
+  { n: 4, slugs: ['desconstrutor-crencas','crm-relacionamentos','diario-bordo','prevencao-recaida'],
+    nomes: ['Desconstrutor de Crenças','Mapa de Relacionamentos','Diário de Bordo','Plano de Continuidade'] },
+];
+
+function getWeekKey(): string {
+  const now = new Date();
+  const d   = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const wk = Math.ceil(((d.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${wk}`;
+}
+
 // ─── Áreas da Roda da Vida ────────────────────────────────────────────────────
 
 type RodaKey = 'saude' | 'carreira' | 'financas' | 'relacionamentos' | 'lazer' | 'espiritualidade' | 'familia' | 'crescimento';
@@ -143,11 +164,20 @@ export default function MapaPage() {
 
   // ── Estado ────────────────────────────────────────────────────────────────
 
-  const [loading, setLoading] = useState(true);
+  const [loading,       setLoading]       = useState(true);
   const [allRespostas,  setAllRespostas]  = useState<FerramentasRespostas[]>([]);
   const [visaoAncora,   setVisaoAncora]   = useState<VisaoAncora | null>(null);
   const [rodaVida,      setRodaVida]      = useState<RodaVida | null>(null);
-  const [diarioUlt7,   setDiarioUlt7]   = useState<DiarioKairos[]>([]);
+  const [diarioUlt7,    setDiarioUlt7]    = useState<DiarioKairos[]>([]);
+  const [diasMes,       setDiasMes]       = useState(0);
+  const [abaAtiva,      setAbaAtiva]      = useState<'mapa' | 'execucao'>('mapa');
+  const [checkedSemana, setCheckedSemana] = useState<Set<number>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = localStorage.getItem(`kairos_exec_${getWeekKey()}`);
+      return new Set(raw ? (JSON.parse(raw) as number[]) : []);
+    } catch { return new Set(); }
+  });
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
 
@@ -161,20 +191,29 @@ export default function MapaPage() {
         buscarRodaVida(user.id, client),
       ]);
 
-      // Últimos 7 dias do diário
-      const hoje  = new Date();
-      const d7ago = new Date(hoje); d7ago.setDate(hoje.getDate() - 6);
-      const { data: diario } = await client
-        .from('diario_kairos')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('data', d7ago.toISOString().split('T')[0])
-        .order('data', { ascending: false });
+      // Últimos 7 dias do diário + contagem do mês atual
+      const hoje   = new Date();
+      const d7ago  = new Date(hoje); d7ago.setDate(hoje.getDate() - 6);
+      const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
+      const [{ data: diario }, { count: cntMes }] = await Promise.all([
+        client
+          .from('diario_kairos')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('data', d7ago.toISOString().split('T')[0])
+          .order('data', { ascending: false }),
+        client
+          .from('diario_kairos')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('data', inicioMes),
+      ]);
 
       setAllRespostas(respostas);
       setVisaoAncora(ancora);
       setRodaVida(roda);
       setDiarioUlt7((diario ?? []) as DiarioKairos[]);
+      setDiasMes(cntMes ?? 0);
       setLoading(false);
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -272,6 +311,93 @@ export default function MapaPage() {
     : progPct < 75 ? 'Você está construindo algo sólido.'
     : 'Seu mapa está completo. Execute.';
 
+  // ── Dados para aba Execução ──────────────────────────────────────────────
+
+  // Fase atual (primeira fase com ferramentas incompletas)
+  const faseAtual = FASES_EXEC.find(f => f.slugs.some(s => !concluidas.has(s))) ?? FASES_EXEC[3];
+
+  // Primeira ferramenta incompleta na fase atual
+  const proxIdxFase = faseAtual.slugs.findIndex(s => !concluidas.has(s));
+  const proxNomeFase = proxIdxFase >= 0 ? faseAtual.nomes[proxIdxFase] : null;
+  const proxSlugFase = proxIdxFase >= 0 ? faseAtual.slugs[proxIdxFase] : null;
+
+  // Primeiro OKR
+  const primeiroOKR = f05Objetivos[0]?.texto ?? null;
+
+  // Streak de diário (dias consecutivos até hoje)
+  const hojeStr = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    .split('/').reverse().join('-');
+  const datasSet = new Set(diarioUlt7.map(d => d.data));
+  let streakDiario = 0;
+  {
+    let checkDate = hojeStr;
+    while (datasSet.has(checkDate)) {
+      streakDiario++;
+      const d = new Date(checkDate); d.setDate(d.getDate() - 1);
+      checkDate = d.toISOString().split('T')[0];
+    }
+  }
+
+  const fezMomentoHoje = datasSet.has(hojeStr);
+
+  // Prioridades desta semana (lista de até 4 itens gerados dinamicamente)
+  const prioridadesSemana: Array<{ texto: string; href?: string }> = [];
+  if (proxNomeFase && proxSlugFase) {
+    prioridadesSemana.push({ texto: `Concluir: ${proxNomeFase}`, href: `/ferramentas/${proxSlugFase}` });
+  }
+  if (primeiroOKR) {
+    prioridadesSemana.push({ texto: `Avançar em: ${primeiroOKR.slice(0, 55)}${primeiroOKR.length > 55 ? '…' : ''}` });
+  }
+  if (streakDiario < 5) {
+    prioridadesSemana.push({ texto: 'Registrar no diário 5 dias seguidos', href: '/ferramentas/diario-bordo' });
+  }
+  if (!fezMomentoHoje) {
+    prioridadesSemana.push({ texto: 'Completar o Momento Kairos de hoje', href: '/momento' });
+  }
+  // Garantir pelo menos 3 itens
+  if (prioridadesSemana.length === 0) {
+    prioridadesSemana.push({ texto: 'Revisar seus OKRs da semana', href: '/ferramentas/okrs-pessoais' });
+  }
+  if (prioridadesSemana.length < 2) {
+    prioridadesSemana.push({ texto: 'Atualizar sua Roda da Vida no Dashboard', href: '/dashboard' });
+  }
+  if (prioridadesSemana.length < 3) {
+    prioridadesSemana.push({ texto: 'Escrever no Diário de Bordo hoje', href: '/ferramentas/diario-bordo' });
+  }
+  const prioridades3 = prioridadesSemana.slice(0, 3);
+
+  // Marcos do mês
+  const totalFase = faseAtual.slugs.length;
+  const concluidasFase = faseAtual.slugs.filter(s => concluidas.has(s)).length;
+  const metaDiasMes = Math.max(20, Math.round(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() * 0.7));
+  const statusCompletarFase = concluidasFase === totalFase ? 'done' : concluidasFase > 0 ? 'progress' : 'open';
+  const statusDiarioMes     = diasMes >= metaDiasMes ? 'done' : diasMes > 0 ? 'progress' : 'open';
+  const statusProxFerr      = proxNomeFase ? (concluidas.has(proxSlugFase ?? '') ? 'done' : 'open') : 'done';
+
+  // Frase motivacional 90 dias
+  const fraseMotivacional =
+    progPct < 25 ? 'Você está construindo a fundação. Todo arranha-céu começa aqui.'
+    : progPct < 50 ? 'Você já passou do ponto de retorno. Continue.'
+    : progPct < 75 ? 'Você está na metade. A segunda metade é onde a transformação real acontece.'
+    : 'Você está quase lá. Não pare agora.';
+
+  // Checkpoint de 90 dias (mês atual + 2)
+  const agora = new Date();
+  const mes1Label = agora.toLocaleDateString('pt-BR', { month: 'long', timeZone: 'America/Sao_Paulo' });
+  const mes2 = new Date(agora.getFullYear(), agora.getMonth() + 1, 1);
+  const mes2Label = mes2.toLocaleDateString('pt-BR', { month: 'long', timeZone: 'America/Sao_Paulo' });
+  const mes3 = new Date(agora.getFullYear(), agora.getMonth() + 2, 1);
+  const mes3Label = mes3.toLocaleDateString('pt-BR', { month: 'long', timeZone: 'America/Sao_Paulo' });
+
+  function toggleChecked(idx: number) {
+    setCheckedSemana(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx); else next.add(idx);
+      try { localStorage.setItem(`kairos_exec_${getWeekKey()}`, JSON.stringify([...next])); } catch { /* noop */ }
+      return next;
+    });
+  }
+
   // ── Emoção dominante + nota média ────────────────────────────────────────
 
   const emocoes   = diarioUlt7.filter(d => d.emocao).map(d => d.emocao as string);
@@ -365,6 +491,289 @@ export default function MapaPage() {
             </p>
           </div>
         </div>
+
+        {/* ══════════════════════════════════
+            ABAS
+        ══════════════════════════════════ */}
+        <div style={{
+          padding: '0 24px',
+          background: BG_DARK,
+          borderBottom: `1px solid ${GOLD_DIM}`,
+          display: 'flex',
+          gap: 0,
+        }}>
+          {(['mapa', 'execucao'] as const).map((aba) => {
+            const ativo = abaAtiva === aba;
+            const label = aba === 'mapa' ? 'Meu Mapa' : 'Plano de Execução';
+            return (
+              <button
+                key={aba}
+                onClick={() => setAbaAtiva(aba)}
+                style={{
+                  padding: '14px 20px',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 13,
+                  fontWeight: ativo ? 700 : 400,
+                  color: ativo ? GOLD : CREAM_DIM,
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: ativo ? `2px solid ${GOLD}` : '2px solid transparent',
+                  cursor: 'pointer',
+                  transition: 'color 0.2s, border-color 0.2s',
+                  marginBottom: -1,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ══════════════════════════════════
+            ABA — EXECUÇÃO
+        ══════════════════════════════════ */}
+        {abaAtiva === 'execucao' && (
+          <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 24px 120px' }}>
+
+            {/* SEÇÃO 1 — ESTA SEMANA */}
+            <div style={{ marginBottom: 48 }}>
+              <div style={{ marginBottom: 20 }}>
+                <p style={{ margin: '0 0 4px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: GOLD, textTransform: 'uppercase' }}>
+                  Esta semana
+                </p>
+                <h2 style={{ margin: 0, fontFamily: "'Playfair Display', Georgia, serif", fontSize: 22, fontWeight: 700, color: CREAM }}>
+                  Suas 3 prioridades
+                </h2>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {prioridades3.map((p, idx) => {
+                  const checked = checkedSemana.has(idx);
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => toggleChecked(idx)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 14,
+                        padding: '16px 18px',
+                        borderRadius: 12,
+                        background: checked ? 'rgba(200,160,48,0.07)' : BG_MID,
+                        border: `1px solid ${checked ? 'rgba(200,160,48,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                        cursor: 'pointer',
+                        transition: 'background 0.2s, border-color 0.2s',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {/* Checkbox */}
+                      <div style={{
+                        flexShrink: 0,
+                        width: 22, height: 22,
+                        borderRadius: 6,
+                        border: `2px solid ${checked ? GOLD : 'rgba(200,160,48,0.3)'}`,
+                        background: checked ? GOLD : 'transparent',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.18s ease',
+                      }}>
+                        {checked && (
+                          <span style={{ color: '#0E0E0E', fontSize: 13, fontWeight: 900, lineHeight: 1, transform: 'scale(1)', transition: 'transform 0.18s ease' }}>✓</span>
+                        )}
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{
+                          margin: 0,
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: checked ? CREAM_DIM : CREAM,
+                          textDecoration: checked ? 'line-through' : 'none',
+                          transition: 'color 0.2s',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}>
+                          {p.texto}
+                        </p>
+                        {p.href && !checked && (
+                          <Link
+                            href={p.href}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ fontSize: 11, color: 'rgba(200,160,48,0.6)', textDecoration: 'none', marginTop: 2, display: 'inline-block' }}
+                          >
+                            Ir agora →
+                          </Link>
+                        )}
+                      </div>
+
+                      <span style={{
+                        flexShrink: 0,
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 9,
+                        color: 'rgba(200,160,48,0.35)',
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                      }}>
+                        {idx + 1}/3
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <p style={{ margin: '12px 0 0', fontSize: 11, color: 'rgba(245,240,232,0.2)', textAlign: 'right' }}>
+                Reset toda segunda-feira · progresso salvo localmente
+              </p>
+            </div>
+
+            {/* SEÇÃO 2 — ESTE MÊS */}
+            <div style={{ marginBottom: 48 }}>
+              <div style={{ marginBottom: 20 }}>
+                <p style={{ margin: '0 0 4px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: GOLD, textTransform: 'uppercase' }}>
+                  Este mês
+                </p>
+                <h2 style={{ margin: 0, fontFamily: "'Playfair Display', Georgia, serif", fontSize: 22, fontWeight: 700, color: CREAM }}>
+                  Marcos do mês
+                </h2>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  {
+                    status: statusCompletarFase,
+                    label: `Completar Fase ${faseAtual.n}`,
+                    detalhe: `${concluidasFase}/${totalFase} ferramentas concluídas`,
+                  },
+                  {
+                    status: statusDiarioMes,
+                    label: `${metaDiasMes} dias de registro este mês`,
+                    detalhe: `${diasMes} ${diasMes === 1 ? 'dia registrado' : 'dias registrados'} até agora`,
+                  },
+                  {
+                    status: statusProxFerr,
+                    label: proxNomeFase ? `Concluir: ${proxNomeFase}` : 'Todas as ferramentas concluídas',
+                    detalhe: proxSlugFase ? 'Próxima ferramenta na fila' : 'Fase completa!',
+                  },
+                ].map(({ status, label, detalhe }, i) => {
+                  const icon   = status === 'done' ? '✅' : status === 'progress' ? '⏳' : '☐';
+                  const clr    = status === 'done' ? '#22c55e' : status === 'progress' ? '#f59e0b' : 'rgba(245,240,232,0.25)';
+                  return (
+                    <div key={i} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 14,
+                      padding: '14px 18px',
+                      borderRadius: 10,
+                      background: BG_MID,
+                      border: `1px solid rgba(255,255,255,0.05)`,
+                    }}>
+                      <span style={{ fontSize: 18, flexShrink: 0 }}>{icon}</span>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: status === 'done' ? CREAM_DIM : CREAM }}>{label}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: 11, color: clr }}>{detalhe}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* SEÇÃO 3 — PRÓXIMOS 90 DIAS */}
+            <div>
+              <div style={{ marginBottom: 20 }}>
+                <p style={{ margin: '0 0 4px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: GOLD, textTransform: 'uppercase' }}>
+                  Próximos 90 dias
+                </p>
+                <h2 style={{ margin: 0, fontFamily: "'Playfair Display', Georgia, serif", fontSize: 22, fontWeight: 700, color: CREAM }}>
+                  Sua linha do tempo
+                </h2>
+              </div>
+
+              {/* Timeline */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+                {[
+                  {
+                    mes: mes1Label,
+                    label: 'Agora',
+                    cor: GOLD,
+                    desc: `Fase ${faseAtual.n} · ${concluidasFase}/${totalFase} ferramentas`,
+                    sub: proxNomeFase ? `Próxima: ${proxNomeFase}` : 'Fase concluída!',
+                  },
+                  {
+                    mes: mes2Label,
+                    label: 'Daqui a 30 dias',
+                    cor: '#a78bfa',
+                    desc: concluidasFase < totalFase
+                      ? `Fase ${faseAtual.n} concluída`
+                      : `Fase ${Math.min(faseAtual.n + 1, 4)} em progresso`,
+                    sub: 'Mantendo o ritmo atual',
+                  },
+                  {
+                    mes: mes3Label,
+                    label: 'Meta 90 dias',
+                    cor: '#22c55e',
+                    desc: concluidas.size + 4 >= 16
+                      ? 'Todas as 16 ferramentas'
+                      : `${Math.min(concluidas.size + 4, 16)} de 16 ferramentas`,
+                    sub: 'Se você não parar',
+                  },
+                ].map(({ mes, label, cor, desc, sub }, i) => (
+                  <div key={i} style={{
+                    background: BG_MID,
+                    border: `1px solid ${cor}33`,
+                    borderTop: `3px solid ${cor}`,
+                    borderRadius: 12,
+                    padding: '16px 14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                  }}>
+                    <div>
+                      <p style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 9, color: cor, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 2 }}>
+                        {label}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: CREAM, textTransform: 'capitalize' }}>
+                        {mes}
+                      </p>
+                    </div>
+                    <div style={{ width: '100%', height: 1, background: `${cor}22` }} />
+                    <div>
+                      <p style={{ margin: 0, fontSize: 12, color: CREAM, fontWeight: 600 }}>{desc}</p>
+                      <p style={{ margin: '3px 0 0', fontSize: 11, color: CREAM_DIM }}>{sub}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Frase motivacional */}
+              <div style={{
+                background: `linear-gradient(135deg, rgba(200,160,48,0.06) 0%, rgba(200,160,48,0.02) 100%)`,
+                border: `1px solid rgba(200,160,48,0.2)`,
+                borderLeft: `3px solid ${GOLD}`,
+                borderRadius: 12,
+                padding: '20px 22px',
+              }}>
+                <p style={{
+                  margin: 0,
+                  fontFamily: "'Playfair Display', Georgia, serif",
+                  fontSize: 16,
+                  color: CREAM,
+                  lineHeight: 1.65,
+                  fontStyle: 'italic',
+                }}>
+                  "{fraseMotivacional}"
+                </p>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* ══════════════════════════════════
+            ABA — MEU MAPA (conteúdo existente)
+        ══════════════════════════════════ */}
+        {abaAtiva === 'mapa' && <>
 
         {/* ══════════════════════════════════
             SEÇÃO 1 — QUEM SOU
@@ -866,6 +1275,8 @@ export default function MapaPage() {
             </div>
           </div>
         </section>
+
+        </>}
 
         {/* ══════════════════════════════════
             BOTÃO FLUTUANTE
