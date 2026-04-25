@@ -155,11 +155,13 @@ export function calcularBadges(params: CalcBadgesParams): BadgeStatus[] {
 export function calcularStreakDias(datas: string[]): number {
   if (datas.length === 0) return 0;
   let streak = 0;
-  const hoje = new Date();
   for (let i = 0; i < datas.length; i++) {
-    const esperado = new Date(hoje);
-    esperado.setDate(hoje.getDate() - i);
-    const esperadoStr = esperado.toISOString().split('T')[0];
+    const esperadoStr = new Date(Date.now() - i * 86_400_000)
+      .toLocaleDateString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+      })
+      .split('/').reverse().join('-');
     if (datas[i] === esperadoStr) {
       streak++;
     } else {

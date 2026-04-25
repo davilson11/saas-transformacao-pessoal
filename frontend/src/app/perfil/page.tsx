@@ -33,16 +33,16 @@ const TOOL_MAP: Record<string, ToolInfo> = {
   "feedback-360":         { codigo: "F04", emoji: "🔮", nome: "Feedback 360°",            descricao: "Colete perspectivas de pessoas próximas." },
   "okrs-pessoais":        { codigo: "F05", emoji: "📊", nome: "OKRs Pessoais",            descricao: "Objetivos ambiciosos com resultados-chave mensuráveis." },
   "design-vida":          { codigo: "F06", emoji: "📅", nome: "Design de Vida",           descricao: "Trace horizontes de 1, 5 e 10 anos com clareza." },
-  "dre-pessoal":          { codigo: "F07", emoji: "💰", nome: "DRE Pessoal",              descricao: "Demonstrativo financeiro pessoal com metas de patrimônio." },
+  "dre-pessoal":          { codigo: "F07", emoji: "💰", nome: "Mapa Financeiro Pessoal",   descricao: "Demonstrativo financeiro pessoal com metas de patrimônio." },
   "rotina-ideal":         { codigo: "F08", emoji: "🌅", nome: "Rotina Ideal",             descricao: "Monte blocos de tempo que maximizam energia e foco." },
   "auditoria-tempo":      { codigo: "F09", emoji: "⏱",  nome: "Auditoria de Tempo",       descricao: "Inventarie como você usa seu tempo e redesenhe sua semana." },
   "arquiteto-rotinas":    { codigo: "F10", emoji: "🏗",  nome: "Arquiteto de Rotinas",     descricao: "Construa rituais matinais e noturnos com rastreador." },
   "sprint-aprendizado":   { codigo: "F11", emoji: "🎓", nome: "Sprint de Aprendizado",    descricao: "Domine uma habilidade em 30 dias com tracker diário." },
   "energia-vitalidade":   { codigo: "F12", emoji: "⚡", nome: "Energia e Vitalidade",     descricao: "Diagnostique as 4 dimensões da energia." },
   "desconstrutor-crencas":{ codigo: "F13", emoji: "🧠", nome: "Desconstrutor de Crenças", descricao: "Desconstrua crenças limitantes com 9 perguntas socráticas." },
-  "crm-relacionamentos":  { codigo: "F14", emoji: "🤝", nome: "CRM de Relacionamentos",   descricao: "Mapeie contatos-chave e frequência ideal de contato." },
+  "crm-relacionamentos":  { codigo: "F14", emoji: "🤝", nome: "Mapa de Relacionamentos",   descricao: "Mapeie contatos-chave e frequência ideal de contato." },
   "diario-bordo":         { codigo: "F15", emoji: "📔", nome: "Diário de Bordo",          descricao: "Ritual matinal + noturno com revisão semanal." },
-  "prevencao-recaida":    { codigo: "F16", emoji: "🛡",  nome: "Prevenção de Recaída",     descricao: "Planos SE-ENTÃO para cenários de risco e recuperação." },
+  "prevencao-recaida":    { codigo: "F16", emoji: "🛡",  nome: "Plano de Continuidade",    descricao: "Planos SE-ENTÃO para cenários de risco e recuperação." },
 };
 
 // Ordem canônica F01→F16 para recomendação da próxima ferramenta
@@ -74,29 +74,6 @@ const RODA_AREAS: { key: RodaKey; label: string; emoji: string; cor: string }[] 
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function calcStreak(arr: FerramentasRespostas[]): number {
-  if (!arr.length) return 0;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const activeDays = new Set(
-    arr.map((r) => {
-      const d = new Date(r.updated_at);
-      d.setHours(0, 0, 0, 0);
-      return d.getTime();
-    })
-  );
-  let streak = 0;
-  for (let i = 0; ; i++) {
-    const day = today.getTime() - i * 86_400_000;
-    if (activeDays.has(day)) {
-      streak++;
-    } else if (i > 0) {
-      break;
-    }
-  }
-  return streak;
-}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR", {
@@ -564,31 +541,37 @@ export default function PerfilPage() {
     if (!isLoaded) return;
     if (!user?.id) { setLoading(false); return; }
     (async () => {
-      const client = await getClient();
-      const [r, v, w, diario] = await Promise.all([
-        buscarTodasRespostas(user.id, client),
-        buscarVisaoAncora(user.id, client),
-        buscarRodaVida(user.id, client),
-        client
-          .from('diario_kairos')
-          .select('data, nota_dia, missao_cumprida')
-          .eq('user_id', user.id)
-          .order('data', { ascending: false })
-          .limit(500),
-      ]);
-      setRespostas(r);
-      setVisao(v);
-      setRoda(w);
-      const diarioRows = diario.data ?? [];
-      const datas = diarioRows.map((d) => d.data as string);
-      setDiarioCount(datas.length);
-      setMissaoCumpridaCount(diarioRows.filter((d) => d.missao_cumprida).length);
-      setStreakDiario(calcularStreakDias(datas));
-      const notas = diarioRows
-        .map((d) => d.nota_dia as number | null)
-        .filter((n): n is number => typeof n === "number");
-      setNotaMedia(notas.length > 0 ? notas.reduce((a, b) => a + b, 0) / notas.length : null);
-      setLoading(false);
+      try {
+        const client = await getClient();
+        const [r, v, w, diario] = await Promise.all([
+          buscarTodasRespostas(user.id, client),
+          buscarVisaoAncora(user.id, client),
+          buscarRodaVida(user.id, client),
+          client
+            .from('diario_kairos')
+            .select('data, nota_dia, missao_cumprida')
+            .eq('user_id', user.id)
+            .or('tipo_entrada.neq.momento,tipo_entrada.is.null')
+            .order('data', { ascending: false })
+            .limit(500),
+        ]);
+        setRespostas(r);
+        setVisao(v);
+        setRoda(w);
+        const diarioRows = diario.data ?? [];
+        const datas = diarioRows.map((d) => d.data as string);
+        setDiarioCount(datas.length);
+        setMissaoCumpridaCount(diarioRows.filter((d) => d.missao_cumprida).length);
+        setStreakDiario(calcularStreakDias(datas));
+        const notas = diarioRows
+          .map((d) => d.nota_dia as number | null)
+          .filter((n): n is number => typeof n === "number");
+        setNotaMedia(notas.length > 0 ? notas.reduce((a, b) => a + b, 0) / notas.length : null);
+      } catch (err) {
+        console.error('[perfil] Erro ao carregar dados:', err);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [isLoaded, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -607,7 +590,7 @@ export default function PerfilPage() {
   const proximas3 = TOOL_ORDER.filter((s) => !slugsIniciadas.has(s)).slice(0, 3);
 
   // Stats da linha abaixo do header
-  const diasStreak = calcStreak(respostas);
+  const diasStreak = streakDiario;
   const ferramentasAbertas = respostas.length;
   const faseAtiva = (FASES.findIndex((f) => f.slugs.some((s) => !slugsConcluidas.has(s))) + 1) || 4;
   const diasMembro = user?.createdAt
