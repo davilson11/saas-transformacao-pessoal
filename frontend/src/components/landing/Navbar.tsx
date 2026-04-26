@@ -9,6 +9,9 @@ export function Navbar() {
         <Link href="#ferramentas">Ferramentas</Link>
         <Link href="#precos">Preços</Link>
         <Link href="/sign-in" className="nav-cta">Entrar</Link>
+        <Link href="/sign-up" className="btn-primary" style={{ padding: '0.45rem 1.1rem', fontSize: '0.85rem' }}>
+          Começar grátis
+        </Link>
       </div>
     </nav>
   )

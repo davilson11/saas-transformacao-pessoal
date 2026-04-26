@@ -52,9 +52,17 @@ export function Hero() {
       </div>
 
       <div className="hero-actions">
-        <Link href="/sign-up" className="btn-primary">Começar gratuitamente</Link>
-        <Link href="#como-funciona" className="btn-ghost">Ver como funciona →</Link>
+        <Link href="/sign-up" className="btn-primary">Começar 7 dias grátis →</Link>
+        <Link href="#como-funciona" className="btn-ghost">Ver como funciona</Link>
       </div>
+      <p style={{
+        fontSize: '0.78rem',
+        color: 'rgba(245,240,232,0.45)',
+        marginTop: '0.5rem',
+        letterSpacing: '0.02em',
+      }}>
+        ✓ Acesso completo · ✓ Sem cartão · ✓ Cancele quando quiser
+      </p>
 
       <div className="hero-stat-row">
         {[
