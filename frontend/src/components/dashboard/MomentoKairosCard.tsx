@@ -80,7 +80,7 @@ export default function MomentoKairosCard() {
         const client = await getClient();
         const [{ data: momentoData }, { data: diarioData }, { data: hist }] = await Promise.all([
           client.from('momento_kairos').select('*').eq('data', hoje).maybeSingle(),
-          client.from('diario_kairos').select('*').eq('user_id', user.id).eq('data', hoje).maybeSingle(),
+          client.from('diario_kairos').select('*').eq('user_id', user.id).eq('data', hoje).or('tipo_entrada.eq.momento,tipo_entrada.is.null').maybeSingle(),
           client.from('diario_kairos').select('*').eq('user_id', user.id).or('tipo_entrada.eq.momento,tipo_entrada.is.null').order('data', { ascending: false }).limit(60),
         ]);
         if (momentoData) setMomento(momentoData);
