@@ -427,6 +427,15 @@ export default function MapaPage() {
 
   return (
     <DashboardLayout>
+      <style>{`
+        @media (max-width: 639px) {
+          .mapa-header { padding: 28px 16px 24px !important; }
+          .mapa-abas { padding: 0 16px !important; overflow-x: auto; }
+          .mapa-abas button { padding: 12px 14px !important; flex-shrink: 0; min-height: 44px; }
+          .mapa-execucao-inner, .mapa-content-inner { padding: 24px 16px 80px !important; }
+          .mapa-roda-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
       <div style={{ minHeight: '100%', background: BG_PAGE, fontFamily: 'var(--font-body)', paddingBottom: 100 }}>
 
         {/* ══════════════════════════════════
@@ -467,7 +476,7 @@ export default function MapaPage() {
         {/* ══════════════════════════════════
             HEADER
         ══════════════════════════════════ */}
-        <div style={{
+        <div className="mapa-header" style={{
           padding: '48px 24px 40px',
           background: `linear-gradient(180deg, #0A0A0A 0%, ${BG_PAGE} 100%)`,
           borderBottom: `1px solid ${GOLD_DIM}`,
@@ -495,7 +504,7 @@ export default function MapaPage() {
         {/* ══════════════════════════════════
             ABAS
         ══════════════════════════════════ */}
-        <div style={{
+        <div className="mapa-abas" style={{
           padding: '0 24px',
           background: BG_DARK,
           borderBottom: `1px solid ${GOLD_DIM}`,
@@ -534,7 +543,7 @@ export default function MapaPage() {
             ABA — EXECUÇÃO
         ══════════════════════════════════ */}
         {abaAtiva === 'execucao' && (
-          <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 24px 120px' }}>
+          <div className="mapa-execucao-inner" style={{ maxWidth: 800, margin: '0 auto', padding: '40px 24px 120px' }}>
 
             {/* SEÇÃO 1 — ESTA SEMANA */}
             <div style={{ marginBottom: 48 }}>
@@ -691,7 +700,7 @@ export default function MapaPage() {
               </div>
 
               {/* Timeline */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 24 }}>
                 {[
                   {
                     mes: mes1Label,

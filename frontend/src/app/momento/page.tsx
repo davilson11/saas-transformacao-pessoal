@@ -134,7 +134,7 @@ function CardCompartilhar({ diario, streak, momento }: {
       </div>
       {mostrar && (
         <>
-          <div ref={cardRef} style={{ width: 400, background: 'linear-gradient(145deg, #0E0E0E 0%, #1a1a0a 100%)', borderRadius: 20, padding: '32px 28px', margin: '0 auto 16px', fontFamily: 'Georgia, serif', position: 'relative', overflow: 'hidden' }}>
+          <div ref={cardRef} style={{ width: '100%', maxWidth: 400, background: 'linear-gradient(145deg, #0E0E0E 0%, #1a1a0a 100%)', borderRadius: 20, padding: '32px 28px', margin: '0 auto 16px', fontFamily: 'Georgia, serif', position: 'relative', overflow: 'hidden', boxSizing: 'border-box' }}>
             <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(200,160,48,0.06)', pointerEvents: 'none' }} />
             <div style={{ position: 'absolute', bottom: -60, left: -30, width: 200, height: 200, borderRadius: '50%', background: 'rgba(200,160,48,0.04)', pointerEvents: 'none' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
@@ -192,7 +192,7 @@ function CardCompartilhar({ diario, streak, momento }: {
             </div>
           </div>
           <button onClick={baixarCard} disabled={gerando}
-            style={{ width: '100%', padding: 13, background: gerando ? 'rgba(200,160,48,0.5)' : '#C8A030', color: '#0E0E0E', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: gerando ? 'wait' : 'pointer', transition: 'background 0.2s', letterSpacing: '0.04em' }}>
+            style={{ width: '100%', padding: 13, background: gerando ? 'rgba(200,160,48,0.5)' : '#C8A030', color: '#0E0E0E', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: gerando ? 'wait' : 'pointer', transition: 'background 0.2s', letterSpacing: '0.04em', minHeight: 44 }}>
             {gerando ? 'Gerando imagem...' : '⬇ Baixar card para Instagram'}
           </button>
         </>
@@ -371,15 +371,15 @@ export default function MomentoPage() {
 
   return (
     <DashboardLayout>
-      <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20, padding: '0 0 24px' }}>
 
 
         {/* Header */}
         <div style={{ background: '#0E0E0E', borderRadius: 14, padding: '22px 24px', border: '1px solid rgba(200,160,48,0.18)' }}>
           {/* Linha decorativa dourada */}
           <div style={{ width: 36, height: 2, background: 'linear-gradient(90deg, #C8A030, rgba(200,160,48,0))', borderRadius: 1, marginBottom: 14 }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="momento-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+            <div className="momento-header-badges" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#C8A030', fontWeight: 700 }}>Momento Kairos</span>
               {(momento.trilha || momento.tom) && (
                 <span style={{ fontSize: 10, color: '#C8A030', background: 'rgba(200,160,48,0.12)', border: '1px solid rgba(200,160,48,0.28)', borderRadius: 99, padding: '2px 9px', fontWeight: 600, letterSpacing: '0.06em' }}>
@@ -422,13 +422,13 @@ export default function MomentoPage() {
 
         {/* Notificações */}
         {typeof window !== 'undefined' && 'Notification' in window && (
-          <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="momento-notif-row" style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-brand-dark-green)', margin: 0 }}>🔔 Lembrete diário</p>
               <p style={{ fontSize: 11, color: 'var(--color-brand-gray)', margin: '2px 0 0' }}>Receba um aviso todo dia às 7h</p>
             </div>
             <button onClick={ativarNotificacoes} disabled={notifAtiva}
-              style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: notifAtiva ? 'default' : 'pointer', background: notifAtiva ? '#27AE60' : '#0E0E0E', color: '#F5F0E8', border: 'none' }}>
+              style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: notifAtiva ? 'default' : 'pointer', background: notifAtiva ? '#27AE60' : '#0E0E0E', color: '#F5F0E8', border: 'none', minHeight: 44, flexShrink: 0 }}>
               {notifAtiva ? '✓ Ativado' : 'Ativar'}
             </button>
           </div>
@@ -472,6 +472,7 @@ export default function MomentoPage() {
             style={{
               width: '100%', padding: '14px', borderRadius: 10, fontSize: 14, fontWeight: 800,
               cursor: 'pointer', letterSpacing: '0.05em', border: 'none', transition: 'all 0.2s',
+              minHeight: 44,
               background: diario.missao_cumprida ? '#22c55e' : '#C8A030',
               color: '#0E0E0E',
               boxShadow: diario.missao_cumprida
@@ -527,15 +528,15 @@ export default function MomentoPage() {
           <div style={{ marginBottom: 14 }}>
             <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginBottom: 6, fontWeight: 500 }}>O que está pesando na sua mente hoje?</p>
             <textarea rows={3} value={diario.preocupacao ?? ''} onChange={e => setDiario(d => ({ ...d, preocupacao: e.target.value }))} placeholder="Escreva livremente..."
-              style={{ width: '100%', fontSize: 14, resize: 'none', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--color-brand-border)', fontFamily: 'var(--font-body)', color: 'var(--color-brand-dark-green)', background: 'rgba(30,57,42,0.02)', outline: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', fontSize: 16, resize: 'none', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--color-brand-border)', fontFamily: 'var(--font-body)', color: 'var(--color-brand-dark-green)', background: 'rgba(30,57,42,0.02)', outline: 'none', boxSizing: 'border-box' }} />
           </div>
           <div style={{ marginBottom: 20 }}>
             <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginBottom: 6, fontWeight: 500 }}>Pelo que sou grato hoje?</p>
             <textarea rows={3} value={diario.gratidao ?? ''} onChange={e => setDiario(d => ({ ...d, gratidao: e.target.value }))} placeholder="Pelo menos uma coisa..."
-              style={{ width: '100%', fontSize: 14, resize: 'none', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--color-brand-border)', fontFamily: 'var(--font-body)', color: 'var(--color-brand-dark-green)', background: 'rgba(30,57,42,0.02)', outline: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', fontSize: 16, resize: 'none', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--color-brand-border)', fontFamily: 'var(--font-body)', color: 'var(--color-brand-dark-green)', background: 'rgba(30,57,42,0.02)', outline: 'none', boxSizing: 'border-box' }} />
           </div>
           <button onClick={salvarDiario} disabled={salvando}
-            style={{ width: '100%', padding: 13, background: salvo ? '#27AE60' : '#0E0E0E', color: '#F5F0E8', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: salvando ? 'wait' : 'pointer', transition: 'background 0.2s', letterSpacing: '0.04em' }}>
+            style={{ width: '100%', padding: 13, background: salvo ? '#27AE60' : '#0E0E0E', color: '#F5F0E8', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: salvando ? 'wait' : 'pointer', transition: 'background 0.2s', letterSpacing: '0.04em', minHeight: 44 }}>
             {salvando ? 'Salvando...' : salvo ? '✓ Manhã registrada!' : 'Registrar manhã'}
           </button>
         </div>
@@ -550,12 +551,12 @@ export default function MomentoPage() {
           <div style={{ marginBottom: 14 }}>
             <p style={{ fontSize: 12, color: 'rgba(245,240,232,0.5)', marginBottom: 6, fontWeight: 500 }}>O que conquistei hoje?</p>
             <textarea rows={3} value={diario.conquista ?? ''} onChange={e => setDiario(d => ({ ...d, conquista: e.target.value }))} placeholder="Uma vitória, por menor que seja..."
-              style={{ width: '100%', fontSize: 14, resize: 'none', borderRadius: 8, padding: '10px 12px', border: '1px solid rgba(245,240,232,0.1)', fontFamily: 'var(--font-body)', color: '#F5F0E8', background: 'rgba(255,255,255,0.05)', outline: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', fontSize: 16, resize: 'none', borderRadius: 8, padding: '10px 12px', border: '1px solid rgba(245,240,232,0.1)', fontFamily: 'var(--font-body)', color: '#F5F0E8', background: 'rgba(255,255,255,0.05)', outline: 'none', boxSizing: 'border-box' }} />
           </div>
           <div style={{ marginBottom: 16 }}>
             <p style={{ fontSize: 12, color: 'rgba(245,240,232,0.5)', marginBottom: 6, fontWeight: 500 }}>O que aprendi hoje?</p>
             <textarea rows={3} value={diario.aprendizado ?? ''} onChange={e => setDiario(d => ({ ...d, aprendizado: e.target.value }))} placeholder="Uma lição, insight ou descoberta..."
-              style={{ width: '100%', fontSize: 14, resize: 'none', borderRadius: 8, padding: '10px 12px', border: '1px solid rgba(245,240,232,0.1)', fontFamily: 'var(--font-body)', color: '#F5F0E8', background: 'rgba(255,255,255,0.05)', outline: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', fontSize: 16, resize: 'none', borderRadius: 8, padding: '10px 12px', border: '1px solid rgba(245,240,232,0.1)', fontFamily: 'var(--font-body)', color: '#F5F0E8', background: 'rgba(255,255,255,0.05)', outline: 'none', boxSizing: 'border-box' }} />
           </div>
           <div style={{ marginBottom: 16 }}>
             <p style={{ fontSize: 12, color: 'rgba(245,240,232,0.5)', marginBottom: 8, fontWeight: 500 }}>Energia no fim do dia</p>
@@ -576,7 +577,7 @@ export default function MomentoPage() {
             </div>
           </div>
           <button onClick={salvarReflexaoNoite} disabled={salvandoNoite}
-            style={{ width: '100%', padding: 13, background: salvoNoite ? '#27AE60' : 'rgba(200,160,48,0.9)', color: '#0E0E0E', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: salvandoNoite ? 'wait' : 'pointer', transition: 'background 0.2s', letterSpacing: '0.04em' }}>
+            style={{ width: '100%', padding: 13, background: salvoNoite ? '#27AE60' : 'rgba(200,160,48,0.9)', color: '#0E0E0E', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: salvandoNoite ? 'wait' : 'pointer', transition: 'background 0.2s', letterSpacing: '0.04em', minHeight: 44 }}>
             {salvandoNoite ? 'Salvando...' : salvoNoite ? '✓ Noite registrada!' : 'Registrar reflexão da noite'}
           </button>
         </div>
@@ -650,6 +651,13 @@ export default function MomentoPage() {
         @keyframes fadeInDot {
           from { opacity: 0; transform: scale(0.7); }
           to   { opacity: 1; transform: scale(1); }
+        }
+        @media (max-width: 639px) {
+          .momento-notif-row { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
+          .momento-notif-row button { width: 100% !important; }
+          .momento-header-row { flex-direction: column !important; align-items: flex-start !important; gap: 6px !important; }
+          .momento-header-badges { flex-wrap: wrap !important; }
+          .momento-palavra-overflow { word-break: break-word; }
         }
       `}</style>
     </DashboardLayout>

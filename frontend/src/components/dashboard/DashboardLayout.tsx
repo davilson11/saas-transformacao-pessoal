@@ -444,7 +444,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* ══════════════════════════════════════════
             SIDEBAR
         ══════════════════════════════════════════ */}
-        <aside style={{
+        <aside className="dl-sidebar" style={{
           width: 72,
           flexShrink: 0,
           display: modoFoco ? 'none' : 'flex',
@@ -517,7 +517,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* ══════════════════════════════════════════
             MAIN COLUMN
         ══════════════════════════════════════════ */}
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+        <div className="dl-content-col" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
 
           {/* ── TOPBAR ───────────────────────────────── */}
           <header style={{
@@ -652,6 +652,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </div>
 
+      {/* ── Barra de navegação inferior (mobile only) ── */}
+      <nav className="dl-bottom-nav">
+        {[...PRIMARY_NAV, ...SECONDARY_NAV.slice(0,2)].slice(0,5).map(item => {
+          const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+          return (
+            <Link key={item.label} href={item.href} className={isActive ? 'active' : ''}>
+              {item.icon}
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 9, lineHeight: 1 }}>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
       <style>{`
         @keyframes dl-pulse {
           0%, 100% { opacity: 0.4 }
@@ -665,6 +678,55 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         }
         @media (max-width: 400px) {
           .dl-main { padding: 8px !important; }
+        }
+
+        /* ── Mobile: oculta sidebar, exibe barra inferior ── */
+        @media (max-width: 639px) {
+          .dl-sidebar {
+            display: none !important;
+          }
+          .dl-bottom-nav {
+            display: flex !important;
+          }
+          .dl-content-col {
+            padding-bottom: 64px;
+          }
+        }
+        @media (min-width: 640px) {
+          .dl-bottom-nav { display: none !important; }
+        }
+
+        /* Barra de navegação inferior mobile */
+        .dl-bottom-nav {
+          position: fixed;
+          bottom: 0; left: 0; right: 0;
+          background: #111111;
+          border-top: 1px solid rgba(200,160,48,0.15);
+          padding: 6px 0 max(6px, env(safe-area-inset-bottom, 6px));
+          z-index: 100;
+          align-items: stretch;
+          gap: 0;
+        }
+        .dl-bottom-nav a {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 3px;
+          padding: 6px 4px;
+          text-decoration: none;
+          min-height: 44px;
+          font-size: 9px;
+          font-weight: 500;
+          color: rgba(245,240,232,0.38);
+          border-top: 2px solid transparent;
+          transition: all 0.15s;
+        }
+        .dl-bottom-nav a.active {
+          color: #C8A030;
+          border-top-color: #C8A030;
+          background: rgba(200,160,48,0.07);
         }
       `}</style>
     </ModoFocoContext.Provider>

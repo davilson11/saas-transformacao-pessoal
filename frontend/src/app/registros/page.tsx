@@ -171,6 +171,7 @@ function Tabs({
             background: aba === t.id ? GOLD : 'transparent',
             color: aba === t.id ? DARK : 'rgba(245,240,232,0.45)',
             transition: 'all 0.2s',
+            minHeight: 44,
           }}>
           {t.emoji} {t.label}
         </button>
@@ -257,7 +258,7 @@ function CardDia({ entry, data }: { entry: Partial<DiarioKairos> | null; data: s
       {/* Conteúdo expandido */}
       {aberto && (
         <div style={{ padding: '0 18px 18px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginTop: 14 }}>
 
             {entry!.qualidade_sono && (
               <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 12px' }}>
@@ -490,7 +491,7 @@ function AbaPadroes({ historico }: { historico: Partial<DiarioKairos>[] }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
       {/* Emoção dominante + Palavra */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
         <div style={{ background: CARD, borderRadius: 14, padding: '18px', border: `1px solid rgba(200,160,48,0.18)` }}>
           <p style={{ fontSize: 10, color: 'rgba(245,240,232,0.45)', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Emoção da semana</p>
           {emocaoDominante ? (
@@ -540,7 +541,7 @@ function AbaPadroes({ historico }: { historico: Partial<DiarioKairos>[] }) {
 
       {/* Melhor e pior dia da semana */}
       {(melhorDia || piorDia) && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
           {melhorDia && (
             <div style={{ background: 'rgba(34,197,94,0.08)', borderRadius: 14, padding: '16px', border: '1px solid rgba(34,197,94,0.2)' }}>
               <p style={{ fontSize: 10, color: 'rgba(245,240,232,0.45)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Melhor dia</p>

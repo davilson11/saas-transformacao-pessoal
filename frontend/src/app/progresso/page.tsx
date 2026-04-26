@@ -372,7 +372,7 @@ function CardStreak({
 
   return (
     <div style={{ background: CARD, borderRadius: 16, padding: '22px', border: `1px solid rgba(200,160,48,0.18)` }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
         <div>
           <p style={{ fontSize: 10, color: 'rgba(245,240,232,0.45)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.15em' }}>
             Sequência de registros
@@ -690,7 +690,7 @@ export default function ProgressoPage() {
           </p>
 
           {/* Mini stats */}
-          <div style={{ display: 'flex', gap: 20, marginTop: 16 }}>
+          <div style={{ display: 'flex', gap: 16, marginTop: 16, flexWrap: 'wrap' }}>
             {FASES.map(fase => {
               const n = fase.ferramentas.filter(f => slugsConcluidos.has(f.slug)).length;
               return (
@@ -717,7 +717,7 @@ export default function ProgressoPage() {
         ))}
 
         {/* ── Streak + Conquistas ─────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
           <CardStreak datasRegistradas={datasRegistradas} streak={streak} />
           <CardConquistas badges={badges} />
         </div>

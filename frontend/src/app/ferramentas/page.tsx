@@ -336,7 +336,7 @@ function CardProximaFerramenta({ rec, concluidas }: { rec: ProximaRec; concluida
   const bloqueada = !isFaseDesbloqueada(FASES.indexOf(fase), concluidas);
 
   return (
-    <div style={{
+    <div className="ferr-proxima-card" style={{
       background: "linear-gradient(135deg, #111 0%, #1A1A0E 100%)",
       border: "1px solid rgba(200,160,48,0.30)",
       borderRadius: 16,
@@ -402,7 +402,9 @@ function CardProximaFerramenta({ rec, concluidas }: { rec: ProximaRec; concluida
       <Link
         href={`/ferramentas/${f.slug}`}
         style={{
-          display: "inline-block",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
           fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 700,
           color: "#0E0E0E",
           background: "linear-gradient(135deg, #C8A030, #e8c76a)",
@@ -412,6 +414,8 @@ function CardProximaFerramenta({ rec, concluidas }: { rec: ProximaRec; concluida
           whiteSpace: "nowrap" as const,
           boxShadow: "0 4px 20px rgba(200,160,48,0.30)",
           flexShrink: 0,
+          minHeight: 44,
+          width: "100%",
         }}
       >
         {bloqueada ? "Ver detalhes →" : "Continuar agora →"}
@@ -457,9 +461,18 @@ export default function FeramentasPage() {
 
   return (
     <div style={{ background: "#0E0E0E", minHeight: "100vh" }}>
+      <style>{`
+        @media (max-width: 639px) {
+          .ferr-header { padding: 32px 16px 24px !important; }
+          .ferr-proxima-wrap { padding: 20px 16px 0 !important; }
+          .ferr-proxima-card { flex-direction: column !important; align-items: flex-start !important; }
+          .ferr-fases-wrap { padding: 0 16px 48px !important; }
+          .ferr-fase-section { padding: 28px 0 !important; }
+        }
+      `}</style>
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
-      <div style={{ borderBottom: "1px solid rgba(200,160,48,0.12)", padding: "56px 24px 48px" }}>
+      <div className="ferr-header" style={{ borderBottom: "1px solid rgba(200,160,48,0.12)", padding: "56px 24px 48px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
 
           {/* Eyebrow */}
@@ -516,7 +529,7 @@ export default function FeramentasPage() {
         const rec = getProximaFerramenta(concluidas);
         if (!rec) return null;
         return (
-          <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 0" }}>
+          <div className="ferr-proxima-wrap" style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 0" }}>
             <div style={{
               fontFamily: "var(--font-mono)", fontSize: 10,
               letterSpacing: "0.14em", textTransform: "uppercase" as const,
@@ -533,7 +546,7 @@ export default function FeramentasPage() {
       {loading ? (
         <Skeleton />
       ) : (
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px 80px", display: "flex", flexDirection: "column", gap: 0 }}>
+        <div className="ferr-fases-wrap" style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px 80px", display: "flex", flexDirection: "column", gap: 0 }}>
           {FASES.map((fase, idx) => {
             const desbloqueada = isFaseDesbloqueada(idx, concluidas);
             const qtdConcluida = progressoPorFase(fase, concluidas);
@@ -662,7 +675,7 @@ export default function FeramentasPage() {
                 {/* ── Grid de cards ── */}
                 <div style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(min(230px, 100%), 1fr))",
                   gap: 14,
                 }}>
                   {fase.ferramentas.map((f) => (

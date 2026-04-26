@@ -164,6 +164,7 @@ function CardProximoPasso() {
   return (
     <Link href={cfg.btnHref} style={{ textDecoration: 'none', display: 'block' }}>
       <div
+        className="dash-card-proximo"
         style={{
           background: 'linear-gradient(135deg, #1A1200 0%, #0E0E0E 100%)',
           border: '1.5px solid rgba(200,160,48,0.32)',
@@ -213,13 +214,14 @@ function CardProximoPasso() {
         </div>
 
         {/* CTA */}
-        <span style={{
+        <span className="dash-cta-btn" style={{
           flexShrink: 0,
           display: 'inline-flex', alignItems: 'center',
           fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14,
           color: G, background: GOLD,
           padding: '12px 26px', borderRadius: 12,
           whiteSpace: 'nowrap',
+          minHeight: 44,
           boxShadow: '0 4px 20px rgba(200,160,48,0.35)',
         }}>
           {cfg.btnText}
@@ -607,6 +609,11 @@ export default function DashboardPage() {
       <style>{`
         @media (max-width: 640px) {
           .dash-fase-pct { display: none !important; }
+          .dash-card-proximo { flex-direction: column !important; align-items: flex-start !important; }
+          .dash-card-proximo .dash-cta-btn { width: 100% !important; justify-content: center !important; }
+          .dash-bottom-cta { flex-direction: column !important; align-items: flex-start !important; }
+          .dash-bottom-cta a { width: 100% !important; text-align: center !important; box-sizing: border-box !important; }
+          .dash-grid-roda { grid-template-columns: 1fr !important; }
         }
       `}</style>
       <RevisaoSemanal />
@@ -633,7 +640,7 @@ export default function DashboardPage() {
         {/* ════════════════════════════════════════════════════
             ZONA 4 — Insights + Roda da Vida
         ════════════════════════════════════════════════════ */}
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20, alignItems: 'start' }}>
+        <section className="dash-grid-roda" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20, alignItems: 'start' }}>
 
           {/* Roda da Vida */}
           <div
@@ -684,6 +691,7 @@ export default function DashboardPage() {
         {/* Bottom CTA */}
         <section>
           <div
+            className="dash-bottom-cta"
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               flexWrap: 'wrap', gap: 16,
@@ -714,9 +722,11 @@ export default function DashboardPage() {
             </div>
             <Link href="/ferramentas"
               style={{
-                display: 'inline-block', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700,
                 color: G, background: GOLD, padding: '9px 20px', borderRadius: 10,
                 textDecoration: 'none', flexShrink: 0, transition: 'opacity 0.2s, transform 0.2s',
+                minHeight: 44,
               }}
               onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}>
