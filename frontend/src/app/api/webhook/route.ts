@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // ─── Instância server-side ────────────────────────────────────────────────────
 
@@ -44,56 +45,117 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     switch (event.type) {
 
-      // Pagamento bem-sucedido (cobrança avulsa ou primeira cobrança da assinatura)
-      case 'payment_intent.succeeded': {
-        const pi = event.data.object as Stripe.PaymentIntent;
-        console.log('[webhook] payment_intent.succeeded:', pi.id, 'customer:', pi.customer);
-        // TODO: registrar pagamento no Supabase se necessário
+      // Checkout concluído — ativar subscription no Supabase
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        // userId enviado via client_reference_id e também em metadata
+        const userId = session.client_reference_id ?? session.metadata?.userId;
+        const customerId    = typeof session.customer === 'string' ? session.customer : null;
+        const subscriptionId = typeof session.subscription === 'string' ? session.subscription : null;
+        const plano = session.metadata?.plano ?? 'mensal';
+        console.log('[webhook] checkout.session.completed — userId:', userId, 'plano:', plano);
+        if (userId) {
+          const { error } = await supabaseAdmin
+            .from('subscriptions')
+            .update({
+              status:                 'active',
+              plan:                   plano,
+              stripe_customer_id:     customerId,
+              stripe_subscription_id: subscriptionId,
+            })
+            .eq('user_id', userId);
+          if (error) console.error('[webhook] Erro ao ativar subscription:', error.message);
+        }
         break;
       }
 
-      // Assinatura criada
+      // Assinatura criada (redundante ao checkout.session.completed, mas seguro manter)
       case 'customer.subscription.created': {
         const sub = event.data.object as Stripe.Subscription;
         const userId = sub.metadata?.userId;
         const plano  = sub.metadata?.plano ?? 'mensal';
         console.log('[webhook] subscription.created:', sub.id, 'userId:', userId, 'plano:', plano);
-        // TODO: atualizar perfil do usuário no Supabase (ex: profiles.plano = plano)
+        if (userId) {
+          const { error } = await supabaseAdmin
+            .from('subscriptions')
+            .update({
+              status:                 'active',
+              plan:                   plano,
+              stripe_subscription_id: sub.id,
+              stripe_customer_id:     typeof sub.customer === 'string' ? sub.customer : null,
+            })
+            .eq('user_id', userId);
+          if (error) console.error('[webhook] Erro ao criar subscription:', error.message);
+        }
         break;
       }
 
-      // Assinatura atualizada (upgrade/downgrade, renovação, etc.)
+      // Assinatura atualizada (upgrade/downgrade, renovação, inadimplência)
       case 'customer.subscription.updated': {
-        const sub = event.data.object as Stripe.Subscription;
-        const status = sub.status; // 'active' | 'past_due' | 'canceled' | ...
+        const sub    = event.data.object as Stripe.Subscription;
         const userId = sub.metadata?.userId;
-        console.log('[webhook] subscription.updated:', sub.id, 'status:', status, 'userId:', userId);
-        // TODO: sincronizar status no Supabase
+        console.log('[webhook] subscription.updated:', sub.id, 'status:', sub.status, 'userId:', userId);
+        if (userId) {
+          const statusMap: Record<string, string> = {
+            active:   'active',
+            past_due: 'past_due',
+            canceled: 'canceled',
+          };
+          const newStatus = statusMap[sub.status];
+          if (newStatus) {
+            const { error } = await supabaseAdmin
+              .from('subscriptions')
+              .update({ status: newStatus })
+              .eq('user_id', userId);
+            if (error) console.error('[webhook] Erro ao atualizar subscription:', error.message);
+          }
+        }
         break;
       }
 
-      // Assinatura cancelada / expirada
+      // Assinatura cancelada — rebaixar para trial expirado
       case 'customer.subscription.deleted': {
-        const sub = event.data.object as Stripe.Subscription;
+        const sub    = event.data.object as Stripe.Subscription;
         const userId = sub.metadata?.userId;
         console.log('[webhook] subscription.deleted:', sub.id, 'userId:', userId);
-        // TODO: rebaixar usuário para plano Grátis no Supabase
+        if (userId) {
+          const { error } = await supabaseAdmin
+            .from('subscriptions')
+            .update({ status: 'canceled', stripe_subscription_id: null })
+            .eq('user_id', userId);
+          if (error) console.error('[webhook] Erro ao cancelar subscription:', error.message);
+        }
         break;
       }
 
-      // Cobrança da assinatura bem-sucedida (renovação mensal/anual)
+      // Cobrança bem-sucedida (renovação) — garantir status active
       case 'invoice.payment_succeeded': {
         const inv = event.data.object as Stripe.Invoice;
-        console.log('[webhook] invoice.payment_succeeded:', inv.id, 'customer:', inv.customer);
-        // TODO: registrar renovação no histórico de pagamentos
+        const customerId = typeof inv.customer === 'string' ? inv.customer : null;
+        console.log('[webhook] invoice.payment_succeeded:', inv.id, 'customer:', customerId);
+        if (customerId) {
+          // Atualiza pelo stripe_customer_id (já salvo no checkout)
+          const { error } = await supabaseAdmin
+            .from('subscriptions')
+            .update({ status: 'active' })
+            .eq('stripe_customer_id', customerId);
+          if (error) console.error('[webhook] Erro ao renovar subscription:', error.message);
+        }
         break;
       }
 
-      // Cobrança falhou
+      // Cobrança falhou — marcar como inadimplente
       case 'invoice.payment_failed': {
         const inv = event.data.object as Stripe.Invoice;
-        console.warn('[webhook] invoice.payment_failed:', inv.id, 'customer:', inv.customer);
-        // TODO: notificar usuário para atualizar cartão
+        const customerId = typeof inv.customer === 'string' ? inv.customer : null;
+        console.warn('[webhook] invoice.payment_failed:', inv.id, 'customer:', customerId);
+        if (customerId) {
+          const { error } = await supabaseAdmin
+            .from('subscriptions')
+            .update({ status: 'past_due' })
+            .eq('stripe_customer_id', customerId);
+          if (error) console.error('[webhook] Erro ao marcar past_due:', error.message);
+        }
         break;
       }
 

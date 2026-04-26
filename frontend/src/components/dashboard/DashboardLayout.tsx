@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import { UserButton, useAuth, useUser } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
 import { buscarTodasRespostas } from '@/lib/queries';
+import { useSubscription } from '@/hooks/useSubscription';
+import PaywallScreen from '@/components/dashboard/PaywallScreen';
 
 // ─── Modo Foco Context ────────────────────────────────────────────────────────
 
@@ -296,6 +298,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user }     = useUser();
   const pathname     = usePathname();
   const { getClient } = useSupabaseClient();
+  const { hasAccess, loading: subLoading } = useSubscription();
 
   const [pendingCount,  setPendingCount]  = useState<number | null>(null);
   const [streakDiario,  setStreakDiario]  = useState(0);
@@ -337,6 +340,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isLoaded) return <DashboardSkeleton />;
+  if (!subLoading && !hasAccess) return <PaywallScreen />;
 
   const hora        = new Date().getHours();
   const saudacao    = getSaudacao(hora);

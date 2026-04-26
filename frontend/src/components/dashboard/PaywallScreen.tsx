@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { PRICE_IDS } from '@/lib/stripe';
 
 const GOLD  = '#C8A030';
 const DARK  = '#0E0E0E';
@@ -18,13 +17,10 @@ export default function PaywallScreen() {
     setErro(null);
     setLoading(plano);
     try {
-      const priceId = PRICE_IDS[plano];
-      if (!priceId) throw new Error(`Price ID para "${plano}" não configurado. Adicione NEXT_PUBLIC_STRIPE_PRICE_${plano.toUpperCase()} no .env.local`);
-
-      const res = await fetch('/api/stripe/checkout', {
+      const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ plano }),
       });
 
       if (!res.ok) {

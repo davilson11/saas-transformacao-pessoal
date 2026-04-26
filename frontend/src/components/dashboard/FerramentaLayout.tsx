@@ -7,6 +7,8 @@ import { useUser } from "@clerk/nextjs";
 import { useSupabaseClient } from "@/lib/useSupabaseClient";
 import { salvarRespostaFerramenta } from "@/lib/queries";
 import type { Json } from "@/lib/database.types";
+import { useSubscription } from "@/hooks/useSubscription";
+import PaywallScreen from "@/components/dashboard/PaywallScreen";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -157,6 +159,7 @@ export default function FerramentaLayout({
 }: FerramentaLayoutProps) {
   const { user } = useUser();
   const { getClient } = useSupabaseClient();
+  const { hasAccess, loading: subLoading } = useSubscription();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [concluido, setConcluido] = useState(false);
   const [autoSaveIndicator, setAutoSaveIndicator] = useState(false);
@@ -325,6 +328,8 @@ export default function FerramentaLayout({
   const R = 14;
   const CIRC = 2 * Math.PI * R;
   const ringOffset = CIRC * (1 - progresso / 100);
+
+  if (!subLoading && !hasAccess) return <PaywallScreen />;
 
   return (
     <>

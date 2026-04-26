@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { auth, currentUser } from '@clerk/nextjs/server';
 
 // ─── Instância server-side do Stripe ─────────────────────────────────────────
 
@@ -20,8 +21,17 @@ const PRICE_IDS: Record<string, string> = {
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
-    const body = await req.json() as { plano?: string; userId?: string; email?: string };
-    const { plano = 'mensal', userId, email } = body;
+    // Pegar userId e email do Clerk server-side (não confiar no cliente)
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    const clerkUser = await currentUser();
+    const email = clerkUser?.emailAddresses?.[0]?.emailAddress ?? undefined;
+
+    const body = await req.json() as { plano?: string };
+    const { plano = 'mensal' } = body;
 
     const priceId = PRICE_IDS[plano];
     if (!priceId) {
@@ -32,7 +42,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     const stripe = getStripeServer();
-
     const origin = req.headers.get('origin') ?? 'http://localhost:3000';
 
     const session = await stripe.checkout.sessions.create({
@@ -40,12 +49,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${origin}/dashboard?checkout=success&plano=${plano}`,
       cancel_url:  `${origin}/#precos`,
-      ...(email    ? { customer_email: email }               : {}),
-      ...(userId   ? { client_reference_id: userId }         : {}),
+      ...(email ? { customer_email: email } : {}),
+      client_reference_id: userId,
       subscription_data: {
-        metadata: { plano, userId: userId ?? '' },
+        metadata: { plano, userId },
       },
-      metadata: { plano, userId: userId ?? '' },
+      metadata: { plano, userId },
       allow_promotion_codes: true,
       billing_address_collection: 'auto',
     });

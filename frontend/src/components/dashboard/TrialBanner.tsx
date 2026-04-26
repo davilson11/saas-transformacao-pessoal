@@ -52,9 +52,19 @@ export default function TrialBanner() {
     };
   })();
 
-  function abrirCheckout() {
-    // Redireciona para a página de planos / checkout Stripe
-    window.location.href = '/assinar';
+  async function abrirCheckout() {
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plano: 'mensal' }),
+      });
+      if (!res.ok) throw new Error('Erro ao iniciar checkout');
+      const { url } = await res.json() as { url?: string };
+      if (url) window.location.href = url;
+    } catch {
+      window.location.href = '/#precos';
+    }
   }
 
   return (
