@@ -143,6 +143,8 @@ function ItemHistorico({ item }: { item: HistItem }) {
           border: `1px solid ${item.missao_cumprida ? C.greenBrd : 'rgba(255,255,255,0.08)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 14,
+          color: item.missao_cumprida ? C.green : C.muted,
+          fontWeight: 700,
         }}>
           {item.missao_cumprida ? '✓' : '·'}
         </div>
@@ -308,15 +310,20 @@ export default function MissoesPage() {
   async function salvarExecucao(texto: string) {
     if (!user?.id) return;
     setSalvando(true);
-    const client = await getClient();
-    const hoje   = getDiaStr();
-    await client.from('diario_kairos').upsert(
-      { user_id: user.id, data: hoje, missao_execucao: texto, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id,data' }
-    );
-    setSalvando(false);
-    setFeedbackSalvo(true);
-    setTimeout(() => setFeedbackSalvo(false), 1800);
+    try {
+      const client = await getClient();
+      const hoje   = getDiaStr();
+      await client.from('diario_kairos').upsert(
+        { user_id: user.id, data: hoje, missao_execucao: texto, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id,data' }
+      );
+      setFeedbackSalvo(true);
+      setTimeout(() => setFeedbackSalvo(false), 1800);
+    } catch (err) {
+      console.error('[missoes] salvarExecucao', err);
+    } finally {
+      setSalvando(false);
+    }
   }
 
   // ── Marcar como cumprida ──────────────────────────────────────────────────
@@ -326,35 +333,40 @@ export default function MissoesPage() {
     const novaCumprida = !cumprida;
     setCumprida(novaCumprida);
     setSalvandoCumprida(true);
-    const client = await getClient();
-    const hoje   = getDiaStr();
+    try {
+      const client = await getClient();
+      const hoje   = getDiaStr();
 
-    // Ao marcar como cumprida, persiste também missao_execucao no mesmo upsert
-    // para garantir que o texto não seja perdido caso o debounce ainda não tenha disparado.
-    if (novaCumprida) {
-      await client.from('diario_kairos').upsert(
-        {
-          user_id:         user.id,
-          data:            hoje,
-          missao_cumprida: true,
-          missao_execucao: execucao.trim() || null,
-          updated_at:      new Date().toISOString(),
-        },
-        { onConflict: 'user_id,data' }
-      );
-    } else {
-      await client.from('diario_kairos').upsert(
-        {
-          user_id:         user.id,
-          data:            hoje,
-          missao_cumprida: false,
-          updated_at:      new Date().toISOString(),
-        },
-        { onConflict: 'user_id,data' }
-      );
+      // Ao marcar como cumprida, persiste também missao_execucao no mesmo upsert
+      // para garantir que o texto não seja perdido caso o debounce ainda não tenha disparado.
+      if (novaCumprida) {
+        await client.from('diario_kairos').upsert(
+          {
+            user_id:         user.id,
+            data:            hoje,
+            missao_cumprida: true,
+            missao_execucao: execucao.trim() || null,
+            updated_at:      new Date().toISOString(),
+          },
+          { onConflict: 'user_id,data' }
+        );
+      } else {
+        await client.from('diario_kairos').upsert(
+          {
+            user_id:         user.id,
+            data:            hoje,
+            missao_cumprida: false,
+            updated_at:      new Date().toISOString(),
+          },
+          { onConflict: 'user_id,data' }
+        );
+      }
+    } catch (err) {
+      console.error('[missoes] toggleCumprida', err);
+      setCumprida(!novaCumprida); // reverte o estado visual em caso de erro
+    } finally {
+      setSalvandoCumprida(false);
     }
-
-    setSalvandoCumprida(false);
   }
 
   // ── Métricas de histórico ─────────────────────────────────────────────────
@@ -369,6 +381,8 @@ export default function MissoesPage() {
 
   return (
     <DashboardLayout>
+      {/* Wrapper escuro cobre todo o content area — evita texto creme sobre fundo creme do DashboardLayout */}
+      <div style={{ background: C.bg, minHeight: 'calc(100vh - 54px)' }}>
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 28 }}>
 
         {/* ── Cabeçalho ────────────────────────────────────────────────────── */}
@@ -490,7 +504,7 @@ export default function MissoesPage() {
                     background: '#0E0E0E',
                     border: `1.5px solid ${execucao.trim() ? C.goldBrd : 'rgba(255,255,255,0.08)'}`,
                     borderRadius: 12, padding: '14px 16px',
-                    fontFamily: 'var(--font-body)', fontSize: 14,
+                    fontFamily: 'var(--font-body)', fontSize: 16,
                     color: C.text, lineHeight: 1.7,
                     outline: 'none', resize: 'vertical',
                     transition: 'border-color 0.2s',
@@ -614,6 +628,7 @@ export default function MissoesPage() {
             )}
           </>
         )}
+      </div>
       </div>
     </DashboardLayout>
   );
