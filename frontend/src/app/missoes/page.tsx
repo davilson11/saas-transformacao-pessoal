@@ -240,7 +240,7 @@ export default function MissoesPage() {
           .from('momento_kairos')
           .select('*')
           .eq('data', hoje)
-          .single();
+          .maybeSingle();
         if (mom) setMomento(mom as MomentoKairos);
 
         // Diário de hoje
@@ -249,7 +249,7 @@ export default function MissoesPage() {
           .select('*')
           .eq('user_id', user.id)
           .eq('data', hoje)
-          .single();
+          .maybeSingle();
         if (dHoje) {
           setDiarioHoje(dHoje as DiarioKairos);
           setExecucao((dHoje as DiarioKairos).missao_execucao ?? '');
