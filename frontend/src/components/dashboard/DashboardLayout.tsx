@@ -654,12 +654,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* ── Barra de navegação inferior (mobile only) ── */}
       <nav className="dl-bottom-nav">
-        {[...PRIMARY_NAV, ...SECONDARY_NAV.slice(0,2)].slice(0,5).map(item => {
+        {[...PRIMARY_NAV, ...SECONDARY_NAV].map(item => {
           const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
           return (
-            <Link key={item.label} href={item.href} className={isActive ? 'active' : ''}>
+            <Link key={item.label} href={item.href} className={isActive ? 'dl-bottom-link active' : 'dl-bottom-link'}>
               {item.icon}
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 9, lineHeight: 1 }}>{item.label}</span>
+              <span>{item.label}</span>
             </Link>
           );
         })}
@@ -696,34 +696,50 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           .dl-bottom-nav { display: none !important; }
         }
 
-        /* Barra de navegação inferior mobile */
+        /* Barra de navegação inferior mobile — scrollável */
         .dl-bottom-nav {
           position: fixed;
           bottom: 0; left: 0; right: 0;
           background: #111111;
           border-top: 1px solid rgba(200,160,48,0.15);
-          padding: 6px 0 max(6px, env(safe-area-inset-bottom, 6px));
+          padding: 0 4px max(0px, env(safe-area-inset-bottom, 0px));
           z-index: 100;
           align-items: stretch;
           gap: 0;
+          /* scroll horizontal */
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          /* esconder scrollbar visualmente */
+          scrollbar-width: none;
         }
-        .dl-bottom-nav a {
-          flex: 1;
+        .dl-bottom-nav::-webkit-scrollbar {
+          display: none;
+        }
+        .dl-bottom-link {
+          flex-shrink: 0;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           gap: 3px;
-          padding: 6px 4px;
+          padding: 6px 14px;
           text-decoration: none;
-          min-height: 44px;
+          min-height: 56px;
+          min-width: 56px;
+          white-space: nowrap;
           font-size: 9px;
+          font-family: var(--font-body);
           font-weight: 500;
           color: rgba(245,240,232,0.38);
           border-top: 2px solid transparent;
-          transition: all 0.15s;
+          transition: color 0.15s, background 0.15s, border-color 0.15s;
         }
-        .dl-bottom-nav a.active {
+        .dl-bottom-link span {
+          font-size: 9px;
+          line-height: 1;
+          white-space: nowrap;
+        }
+        .dl-bottom-link.active {
           color: #C8A030;
           border-top-color: #C8A030;
           background: rgba(200,160,48,0.07);
