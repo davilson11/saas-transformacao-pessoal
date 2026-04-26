@@ -92,14 +92,14 @@ type MentorInsight = {
 const FERRAMENTAS: Record<string, FerramentaRec> = {
   energia:  { codigo: 'F12', nome: 'Energia e Vitalidade',    slug: 'energia-vitalidade',     motivo: 'seus registros mostram desgaste físico e mental acumulado' },
   crencas:  { codigo: 'F13', nome: 'Desconstrutor de Crenças',slug: 'desconstrutor-crencas',  motivo: 'há padrões emocionais recorrentes que merecem atenção profunda' },
-  okrs:     { codigo: 'F06', nome: 'OKRs Pessoais',           slug: 'okrs-pessoais',          motivo: 'sua energia está alta — ótimo momento para definir metas ousadas' },
+  okrs:     { codigo: 'F05', nome: 'OKRs Pessoais',           slug: 'okrs-pessoais',          motivo: 'sua energia está alta — ótimo momento para definir metas ousadas' },
   rotina:   { codigo: 'F08', nome: 'Rotina Ideal',            slug: 'rotina-ideal',           motivo: 'a variação entre seus dias sugere que uma rotina mais sólida te estabilizaria' },
   swot:     { codigo: 'F03', nome: 'SWOT Pessoal',            slug: 'swot-pessoal',           motivo: 'com a clareza acumulada, é hora de mapear forças e pontos cegos' },
-  raio:     { codigo: 'F01', nome: 'Raio-X da Vida',          slug: 'raio-x',                 motivo: 'uma avaliação completa de todas as áreas da sua vida te daria uma visão mais nítida agora' },
+  raio:     { codigo: 'F01', nome: 'Raio-X 360°',             slug: 'raio-x',                 motivo: 'uma avaliação completa de todas as áreas da sua vida te daria uma visão mais nítida agora' },
   habitos:  { codigo: 'F10', nome: 'Arquiteto de Rotinas',    slug: 'arquiteto-rotinas',      motivo: 'o padrão dos seus dias sugere que hábitos estratégicos fariam uma diferença real' },
   dre:      { codigo: 'F07', nome: 'DRE Pessoal',             slug: 'dre-pessoal',            motivo: 'preocupações financeiras aparecem com frequência nos seus registros' },
   bussola:  { codigo: 'F02', nome: 'Bússola de Valores',      slug: 'bussola-valores',        motivo: 'clarificar o que mais importa para você ajuda a sair do ciclo de ansiedade' },
-  prevencao:{ codigo: 'F16', nome: 'Prevenção de Recaída',    slug: 'prevencao-recaida',      motivo: 'planejar antes de cair é mais poderoso do que reagir depois' },
+  prevencao:{ codigo: 'F16', nome: 'Plano de Continuidade',   slug: 'prevencao-recaida',      motivo: 'planejar antes de cair é mais poderoso do que reagir depois' },
 };
 
 const DIAS_SEMANA = [
@@ -610,6 +610,7 @@ export default function AnaliseIA() {
         .from('diario_kairos')
         .select('id, data, emocao, preocupacao, gratidao, conquista, aprendizado, texto_livre, nota_dia')
         .eq('user_id', user.id)
+        .or('tipo_entrada.neq.momento,tipo_entrada.is.null')
         .order('data', { ascending: false })
         .limit(100);
       if (!error && data) {

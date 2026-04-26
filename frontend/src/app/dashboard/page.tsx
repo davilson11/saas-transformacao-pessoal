@@ -24,22 +24,22 @@ const CREAM   = '#F5F2EC';
 // ─── Ferramentas ordenadas ────────────────────────────────────────────────────
 
 const TODAS_FERRAMENTAS = [
-  { nome: 'Raio-X 360°',             slug: 'raio-x' },
-  { nome: 'Bússola de Valores',       slug: 'bussola-valores' },
-  { nome: 'SWOT Pessoal',             slug: 'swot-pessoal' },
-  { nome: 'Feedback 360°',            slug: 'feedback-360' },
-  { nome: 'OKRs Pessoais',            slug: 'okrs-pessoais' },
-  { nome: 'Design de Vida',           slug: 'design-vida' },
-  { nome: 'DRE Pessoal',              slug: 'dre-pessoal' },
-  { nome: 'Rotina Ideal',             slug: 'rotina-ideal' },
-  { nome: 'Auditoria de Tempo',       slug: 'auditoria-tempo' },
-  { nome: 'Arquiteto de Rotinas',     slug: 'arquiteto-rotinas' },
-  { nome: 'Sprint de Aprendizado',    slug: 'sprint-aprendizado' },
-  { nome: 'Energia e Vitalidade',     slug: 'energia-vitalidade' },
-  { nome: 'Desconstrutor de Crenças', slug: 'desconstrutor-crencas' },
-  { nome: 'CRM de Relacionamentos',   slug: 'crm-relacionamentos' },
-  { nome: 'Diário de Bordo',          slug: 'diario-bordo' },
-  { nome: 'Prevenção de Recaída',     slug: 'prevencao-recaida' },
+  { nome: 'Raio-X 360°',               slug: 'raio-x' },
+  { nome: 'Bússola de Valores',         slug: 'bussola-valores' },
+  { nome: 'SWOT Pessoal',               slug: 'swot-pessoal' },
+  { nome: 'Feedback 360°',              slug: 'feedback-360' },
+  { nome: 'OKRs Pessoais',              slug: 'okrs-pessoais' },
+  { nome: 'Design de Vida',             slug: 'design-vida' },
+  { nome: 'Mapa Financeiro Pessoal',    slug: 'dre-pessoal' },
+  { nome: 'Rotina Ideal',               slug: 'rotina-ideal' },
+  { nome: 'Auditoria de Tempo',         slug: 'auditoria-tempo' },
+  { nome: 'Arquiteto de Rotinas',       slug: 'arquiteto-rotinas' },
+  { nome: 'Sprint de Aprendizado',      slug: 'sprint-aprendizado' },
+  { nome: 'Energia e Vitalidade',       slug: 'energia-vitalidade' },
+  { nome: 'Desconstrutor de Crenças',   slug: 'desconstrutor-crencas' },
+  { nome: 'Mapa de Relacionamentos',    slug: 'crm-relacionamentos' },
+  { nome: 'Diário de Bordo',            slug: 'diario-bordo' },
+  { nome: 'Plano de Continuidade',      slug: 'prevencao-recaida' },
 ];
 
 // ─── Card único "Próximo Passo" ───────────────────────────────────────────────
@@ -61,46 +61,49 @@ function CardProximoPasso() {
   useEffect(() => {
     if (!user?.id) { setLoading(false); return; }
     (async () => {
-      const client = await getClient();
+      try {
+        const client = await getClient();
 
-      // Verifica se o usuário tem registro no diário hoje
-      const { data: diario } = await client
-        .from('diario_kairos')
-        .select('texto_livre, conquista, tipo_entrada')
-        .eq('user_id', user.id)
-        .eq('data', hoje)
-        .maybeSingle();
+        // Verifica se o usuário tem registro no diário hoje
+        const { data: diario } = await client
+          .from('diario_kairos')
+          .select('texto_livre, conquista, tipo_entrada')
+          .eq('user_id', user.id)
+          .eq('data', hoje)
+          .maybeSingle();
 
-      if (!diario) {
-        // Sem nenhum registro hoje → sugerir abrir o Momento
-        setEstado('sem-momento');
+        if (!diario) {
+          // Sem nenhum registro hoje → sugerir abrir o Momento
+          setEstado('sem-momento');
+          return;
+        }
+
+        // Tem registro, mas sem conteúdo do diário → sugerir registrar o dia
+        const temConteudoDiario = !!(diario.texto_livre || diario.conquista);
+        if (!temConteudoDiario) {
+          setEstado('sem-diario');
+          return;
+        }
+
+        // Tudo feito hoje → buscar próxima ferramenta incompleta
+        setEstado('completo');
+        const { data: respostas } = await client
+          .from('ferramentas_respostas')
+          .select('ferramenta_slug, concluida')
+          .eq('user_id', user.id);
+
+        const concluidas = new Set(
+          (respostas ?? [])
+            .filter((r: { concluida: boolean }) => r.concluida)
+            .map((r: { ferramenta_slug: string }) => r.ferramenta_slug)
+        );
+        const proxima = TODAS_FERRAMENTAS.find(t => !concluidas.has(t.slug));
+        setProximaFerramenta(proxima ?? null);
+      } catch (err) {
+        console.error('[CardProximoPasso]', err);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      // Tem registro, mas sem conteúdo do diário → sugerir registrar o dia
-      const temConteudoDiario = !!(diario.texto_livre || diario.conquista);
-      if (!temConteudoDiario) {
-        setEstado('sem-diario');
-        setLoading(false);
-        return;
-      }
-
-      // Tudo feito hoje → buscar próxima ferramenta incompleta
-      setEstado('completo');
-      const { data: respostas } = await client
-        .from('ferramentas_respostas')
-        .select('ferramenta_slug, concluida')
-        .eq('user_id', user.id);
-
-      const concluidas = new Set(
-        (respostas ?? [])
-          .filter((r: { concluida: boolean }) => r.concluida)
-          .map((r: { ferramenta_slug: string }) => r.ferramenta_slug)
-      );
-      const proxima = TODAS_FERRAMENTAS.find(t => !concluidas.has(t.slug));
-      setProximaFerramenta(proxima ?? null);
-      setLoading(false);
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -229,15 +232,15 @@ function CardProximoPasso() {
 // ─── Dados das fases ──────────────────────────────────────────────────────────
 
 const FASES = [
-  { num: '01', nome: 'Autoconhecimento',     slugs: ['raio-x','bussola-valores','swot-pessoal','feedback-360'],          cor: '#4a8c6a', pct: 75, tools: 4 },
-  { num: '02', nome: 'Visão e Estratégia',   slugs: ['okrs-pessoais','design-vida','dre-pessoal','rotina-ideal'],         cor: '#d4905a', pct: 40, tools: 4 },
-  { num: '03', nome: 'Hábitos e Produtividade', slugs: ['auditoria-tempo','arquiteto-rotinas','sprint-aprendizado','energia-vitalidade'], cor: '#5a7abf', pct: 20, tools: 4 },
-  { num: '04', nome: 'Mentalidade',          slugs: ['desconstrutor-crencas','crm-relacionamentos','diario-bordo','prevencao-recaida'], cor: '#9b6baf', pct: 5, tools: 4 },
+  { num: '01', nome: 'Autoconhecimento',        slugs: ['raio-x','bussola-valores','swot-pessoal','feedback-360'],                              cor: '#4a8c6a', tools: 4 },
+  { num: '02', nome: 'Visão e Estratégia',      slugs: ['okrs-pessoais','design-vida','dre-pessoal','rotina-ideal'],                            cor: '#d4905a', tools: 4 },
+  { num: '03', nome: 'Hábitos e Produtividade', slugs: ['auditoria-tempo','arquiteto-rotinas','sprint-aprendizado','energia-vitalidade'],        cor: '#5a7abf', tools: 4 },
+  { num: '04', nome: 'Mentalidade',             slugs: ['desconstrutor-crencas','crm-relacionamentos','diario-bordo','prevencao-recaida'],       cor: '#9b6baf', tools: 4 },
 ];
 
 // ─── Progresso das Fases ──────────────────────────────────────────────────────
 
-function FasesProgresso() {
+function FasesProgresso({ fasePcts }: { fasePcts: Record<string, number> }) {
   return (
     <div
       style={{
@@ -279,7 +282,9 @@ function FasesProgresso() {
 
       {/* Barras horizontais */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {FASES.map((fase, i) => (
+        {FASES.map((fase, i) => {
+          const pct = fasePcts[fase.num] ?? 0;
+          return (
           <Link key={fase.num} href="/ferramentas" style={{ textDecoration: 'none' }}>
             <div
               style={{ display: 'flex', alignItems: 'center', gap: 12, transition: 'opacity 0.2s' }}
@@ -312,7 +317,7 @@ function FasesProgresso() {
               }}>
                 <div style={{
                   height: '100%', borderRadius: 99,
-                  width: `${fase.pct}%`,
+                  width: `${pct}%`,
                   background: fase.cor,
                   animation: `barGrow 0.7s ease ${i * 100}ms both`,
                 }} />
@@ -321,14 +326,15 @@ function FasesProgresso() {
               {/* Percentual */}
               <span className="dash-fase-pct" style={{
                 fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700,
-                color: fase.pct >= 50 ? fase.cor : 'var(--color-brand-gray)',
+                color: pct >= 50 ? fase.cor : 'var(--color-brand-gray)',
                 flexShrink: 0, minWidth: 32, textAlign: 'right' as const,
               }}>
-                {fase.pct}%
+                {pct}%
               </span>
             </div>
           </Link>
-        ))}
+          );
+        })}
       </div>
 
       <style>{`@keyframes barGrow { from { width: 0 } }`}</style>
@@ -524,39 +530,55 @@ export default function DashboardPage() {
   const [declaracao,    setDeclaracao]    = useState<string | null>(null);
   const [heroLoading,   setHeroLoading]   = useState(true);
   const [faseConcluida, setFaseConcluida] = useState<number | null>(null);
+  const [fasePcts,      setFasePcts]      = useState<Record<string, number>>({ '01': 0, '02': 0, '03': 0, '04': 0 });
 
   useEffect(() => {
     if (!isLoaded) return;
     if (!user?.id) { setHeroLoading(false); return; }
     (async () => {
-      const client = await getClient();
+      try {
+        const client = await getClient();
 
-      // Visão Âncora
-      const visao = await buscarVisaoAncora(user.id, client);
-      setManchete(visao?.manchete   ?? null);
-      setDeclaracao(visao?.declaracao ?? null);
-      setHeroLoading(false);
+        // Visão Âncora
+        const visao = await buscarVisaoAncora(user.id, client);
+        setManchete(visao?.manchete   ?? null);
+        setDeclaracao(visao?.declaracao ?? null);
+        setHeroLoading(false);
 
-      // Detecção de fase concluída (não celebrada ainda)
-      const { data: respostas } = await client
-        .from('ferramentas_respostas')
-        .select('ferramenta_slug, concluida')
-        .eq('user_id', user.id);
+        // Ferramentas concluídas — progresso real das fases + detecção de celebração
+        const { data: respostas } = await client
+          .from('ferramentas_respostas')
+          .select('ferramenta_slug, concluida')
+          .eq('user_id', user.id);
 
-      if (respostas && respostas.length > 0) {
-        const concluidas = new Set(
-          respostas
-            .filter((r: { concluida: boolean }) => r.concluida)
-            .map((r: { ferramenta_slug: string }) => r.ferramenta_slug)
-        );
-        for (const [fase, slugs] of Object.entries(FASES_SLUGS)) {
-          const faseNum = Number(fase);
-          const key = `kairos_fase_${faseNum}_celebrada`;
-          if (slugs.every(s => concluidas.has(s)) && !localStorage.getItem(key)) {
-            setFaseConcluida(faseNum);
-            break;
+        if (respostas && respostas.length > 0) {
+          const concluidas = new Set(
+            respostas
+              .filter((r: { concluida: boolean }) => r.concluida)
+              .map((r: { ferramenta_slug: string }) => r.ferramenta_slug)
+          );
+
+          // Calcular % real por fase
+          const pcts: Record<string, number> = {};
+          for (const fase of FASES) {
+            const done = fase.slugs.filter(s => concluidas.has(s)).length;
+            pcts[fase.num] = Math.round((done / fase.slugs.length) * 100);
+          }
+          setFasePcts(pcts);
+
+          // Detectar fase recém-concluída (não celebrada ainda)
+          for (const [fase, slugs] of Object.entries(FASES_SLUGS)) {
+            const faseNum = Number(fase);
+            const key = `kairos_fase_${faseNum}_celebrada`;
+            if (slugs.every(s => concluidas.has(s)) && !localStorage.getItem(key)) {
+              setFaseConcluida(faseNum);
+              break;
+            }
           }
         }
+      } catch (err) {
+        console.error('[DashboardPage]', err);
+        setHeroLoading(false);
       }
     })();
   }, [isLoaded, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -605,7 +627,7 @@ export default function DashboardPage() {
             ZONA 2 — Progresso das 4 Fases (horizontal)
         ════════════════════════════════════════════════════ */}
         <section>
-          <FasesProgresso />
+          <FasesProgresso fasePcts={fasePcts} />
         </section>
 
         {/* ════════════════════════════════════════════════════

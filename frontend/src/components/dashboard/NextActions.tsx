@@ -16,9 +16,9 @@ const ACTIONS_INICIAL: Action[] = [
   { id: 1, icon: '🎯', texto: 'Completar as 3 últimas perguntas do SWOT Pessoal',        badge: 'F03', slug: 'swot-pessoal',        prioridade: 'alta'  },
   { id: 2, icon: '🌅', texto: 'Definir o bloco de manhã da sua Rotina Ideal',            badge: 'F08', slug: 'rotina-ideal',         prioridade: 'alta'  },
   { id: 3, icon: '📊', texto: 'Revisar os OKRs do mês e ajustar metas',                 badge: 'F05', slug: 'okrs-pessoais',         prioridade: 'media' },
-  { id: 4, icon: '💰', texto: 'Lançar os gastos da semana no DRE Pessoal',              badge: 'F07', slug: 'dre-pessoal',           prioridade: 'media' },
+  { id: 4, icon: '💰', texto: 'Lançar os gastos da semana no Mapa Financeiro Pessoal', badge: 'F07', slug: 'dre-pessoal',           prioridade: 'media' },
   { id: 5, icon: '📔', texto: 'Fazer o registro de hoje no Diário de Bordo',            badge: 'F15', slug: 'diario-bordo',          prioridade: 'baixa' },
-  { id: 6, icon: '🛡', texto: 'Revisar seus planos SE-ENTÃO de Prevenção de Recaída',   badge: 'F16', slug: 'prevencao-recaida',     prioridade: 'baixa' },
+  { id: 6, icon: '🛡', texto: 'Revisar seu Plano de Continuidade e planos SE-ENTÃO',    badge: 'F16', slug: 'prevencao-recaida',     prioridade: 'baixa' },
 ];
 
 const PRIORIDADE_CONFIG = {

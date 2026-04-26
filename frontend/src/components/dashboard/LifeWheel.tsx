@@ -149,15 +149,19 @@ export default function LifeWheel() {
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
-      const client = await getClient();
-      const data = await buscarRodaVida(user.id, client);
-      if (!data) return;
-      setAreas((prev) =>
-        prev.map((a) => {
-          const key = AREA_DB_KEY[a.label];
-          return key ? { ...a, valor: data[key] as number } : a;
-        })
-      );
+      try {
+        const client = await getClient();
+        const data = await buscarRodaVida(user.id, client);
+        if (!data) return;
+        setAreas((prev) =>
+          prev.map((a) => {
+            const key = AREA_DB_KEY[a.label];
+            return key ? { ...a, valor: data[key] as number } : a;
+          })
+        );
+      } catch (err) {
+        console.error('[LifeWheel] carregar roda', err);
+      }
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -166,10 +170,15 @@ export default function LifeWheel() {
     if (view !== 'historico' || !user?.id || historico.length > 0) return;
     (async () => {
       setLoadingHistorico(true);
-      const client = await getClient();
-      const data = await buscarHistoricoRodaVida(user.id, 30, client);
-      setHistorico(data);
-      setLoadingHistorico(false);
+      try {
+        const client = await getClient();
+        const data = await buscarHistoricoRodaVida(user.id, 30, client);
+        setHistorico(data);
+      } catch (err) {
+        console.error('[LifeWheel] carregar histórico', err);
+      } finally {
+        setLoadingHistorico(false);
+      }
     })();
   }, [view, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -186,23 +195,28 @@ export default function LifeWheel() {
   async function handleSalvar() {
     if (!user?.id) return;
     setSaveStatus('saving');
-    const scores = {
-      saude:           areas.find((a) => a.label === 'Saúde')?.valor           ?? 5,
-      carreira:        areas.find((a) => a.label === 'Carreira')?.valor        ?? 5,
-      financas:        areas.find((a) => a.label === 'Finanças')?.valor        ?? 5,
-      relacionamentos: areas.find((a) => a.label === 'Relacionamentos')?.valor ?? 5,
-      crescimento:     areas.find((a) => a.label === 'Crescimento')?.valor     ?? 5,
-      lazer:           areas.find((a) => a.label === 'Lazer')?.valor           ?? 5,
-      familia:         areas.find((a) => a.label === 'Família')?.valor         ?? 5,
-      espiritualidade: areas.find((a) => a.label === 'Espiritualidade')?.valor ?? 5,
-    };
-    const client = await getClient();
-    const result = await salvarRodaVida(user.id, scores, client);
-    setSaveStatus(result ? 'saved' : 'error');
-    if (result) {
-      // Invalida o cache do histórico para forçar recarga na próxima visita
-      setHistorico([]);
-      setTimeout(() => setSaveStatus('idle'), 3000);
+    try {
+      const scores = {
+        saude:           areas.find((a) => a.label === 'Saúde')?.valor           ?? 5,
+        carreira:        areas.find((a) => a.label === 'Carreira')?.valor        ?? 5,
+        financas:        areas.find((a) => a.label === 'Finanças')?.valor        ?? 5,
+        relacionamentos: areas.find((a) => a.label === 'Relacionamentos')?.valor ?? 5,
+        crescimento:     areas.find((a) => a.label === 'Crescimento')?.valor     ?? 5,
+        lazer:           areas.find((a) => a.label === 'Lazer')?.valor           ?? 5,
+        familia:         areas.find((a) => a.label === 'Família')?.valor         ?? 5,
+        espiritualidade: areas.find((a) => a.label === 'Espiritualidade')?.valor ?? 5,
+      };
+      const client = await getClient();
+      const result = await salvarRodaVida(user.id, scores, client);
+      setSaveStatus(result ? 'saved' : 'error');
+      if (result) {
+        // Invalida o cache do histórico para forçar recarga na próxima visita
+        setHistorico([]);
+        setTimeout(() => setSaveStatus('idle'), 3000);
+      }
+    } catch (err) {
+      console.error('[LifeWheel] salvar', err);
+      setSaveStatus('error');
     }
   }
 

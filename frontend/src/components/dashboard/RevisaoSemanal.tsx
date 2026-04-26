@@ -92,41 +92,46 @@ export default function RevisaoSemanal() {
     if (!visivel || !user?.id) return;
     (async () => {
       setCarregando(true);
-      const client            = await getClient();
-      const { inicio, fim }   = getLastWeekRange();
+      try {
+        const client            = await getClient();
+        const { inicio, fim }   = getLastWeekRange();
 
-      const { data } = await client
-        .from('diario_kairos')
-        .select('data, missao_cumprida, nota_dia, texto_livre, conquista, preocupacao, gratidao')
-        .eq('user_id', user.id)
-        .gte('data', inicio)
-        .lte('data', fim);
+        const { data } = await client
+          .from('diario_kairos')
+          .select('data, missao_cumprida, nota_dia, texto_livre, conquista, preocupacao, gratidao')
+          .eq('user_id', user.id)
+          .gte('data', inicio)
+          .lte('data', fim);
 
-      if (!data || data.length === 0) {
+        if (!data || data.length === 0) {
+          setDados({ diasRegistrados: 0, missoesCumpridas: 0, notaMedia: null, palavraFrequente: null });
+          return;
+        }
+
+        // Deduplicar por data (cumprida tem prioridade)
+        const porDia = new Map<string, typeof data[0]>();
+        for (const row of data) {
+          const prev = porDia.get(row.data);
+          if (!prev || (row.missao_cumprida && !prev.missao_cumprida)) porDia.set(row.data, row);
+        }
+        const rows = [...porDia.values()];
+
+        const diasRegistrados  = rows.length;
+        const missoesCumpridas = rows.filter(r => r.missao_cumprida).length;
+        const notas = rows.map(r => r.nota_dia).filter((n): n is number => n !== null);
+        const notaMedia = notas.length > 0
+          ? Math.round((notas.reduce((a, b) => a + b, 0) / notas.length) * 10) / 10
+          : null;
+        const textos = rows.flatMap(r => [r.texto_livre, r.conquista, r.preocupacao, r.gratidao]);
+        const palavraFrequente = palavraMaisFrequente(textos);
+
+        setDados({ diasRegistrados, missoesCumpridas, notaMedia, palavraFrequente });
+      } catch (err) {
+        console.error('[RevisaoSemanal]', err);
         setDados({ diasRegistrados: 0, missoesCumpridas: 0, notaMedia: null, palavraFrequente: null });
+      } finally {
         setCarregando(false);
-        return;
       }
-
-      // Deduplicar por data (cumprida tem prioridade)
-      const porDia = new Map<string, typeof data[0]>();
-      for (const row of data) {
-        const prev = porDia.get(row.data);
-        if (!prev || (row.missao_cumprida && !prev.missao_cumprida)) porDia.set(row.data, row);
-      }
-      const rows = [...porDia.values()];
-
-      const diasRegistrados  = rows.length;
-      const missoesCumpridas = rows.filter(r => r.missao_cumprida).length;
-      const notas = rows.map(r => r.nota_dia).filter((n): n is number => n !== null);
-      const notaMedia = notas.length > 0
-        ? Math.round((notas.reduce((a, b) => a + b, 0) / notas.length) * 10) / 10
-        : null;
-      const textos = rows.flatMap(r => [r.texto_livre, r.conquista, r.preocupacao, r.gratidao]);
-      const palavraFrequente = palavraMaisFrequente(textos);
-
-      setDados({ diasRegistrados, missoesCumpridas, notaMedia, palavraFrequente });
-      setCarregando(false);
     })();
   }, [visivel, user?.id, getClient]);
 
