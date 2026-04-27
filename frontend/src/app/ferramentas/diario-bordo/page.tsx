@@ -9,7 +9,7 @@
 */
 
 import { useState, useEffect, useRef } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useAuth } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import type { DiarioKairos } from '@/lib/database.types';
@@ -146,18 +146,21 @@ function ModalEntradaLivre({
   const [texto,    setTexto]    = useState('');
   const [emoji,    setEmoji]    = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [erro,     setErro]     = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => { textareaRef.current?.focus(); }, []);
 
   async function salvar() {
     if (!texto.trim() || salvando) return;
+    setErro(null);
     setSalvando(true);
     try {
       await onSalvar(texto.trim(), emoji);
       onFechar();
-    } catch {
+    } catch (e) {
       setSalvando(false);
+      setErro(mensagemErro(e));
     }
   }
 
@@ -285,19 +288,34 @@ function ModalEntradaLivre({
               onClick={salvar}
               disabled={!podeAvancar}
               style={{
-                background: podeAvancar ? '#C8A030' : 'rgba(200,160,48,0.15)',
+                background: erro ? 'rgba(239,68,68,0.85)' : podeAvancar ? '#C8A030' : 'rgba(200,160,48,0.15)',
                 border: 'none', borderRadius: 8,
                 padding: '8px 22px',
                 cursor: podeAvancar ? 'pointer' : 'not-allowed',
-                color: podeAvancar ? '#0E0E0E' : 'rgba(200,160,48,0.35)',
+                color: erro ? '#fff' : podeAvancar ? '#0E0E0E' : 'rgba(200,160,48,0.35)',
                 fontSize: 13, fontWeight: 700,
                 transition: 'all 0.15s',
               }}
             >
-              {salvando ? 'Salvando…' : 'Salvar'}
+              {salvando ? 'Salvando…' : erro ? '✗ Erro — toque para tentar novamente' : 'Salvar'}
             </button>
           </div>
         </div>
+        {/* Mensagem de erro visível */}
+        {erro && (
+          <div style={{
+            marginTop: 12,
+            padding: '10px 14px',
+            background: 'rgba(239,68,68,0.12)',
+            border: '1px solid rgba(239,68,68,0.3)',
+            borderRadius: 8,
+            fontSize: 12,
+            color: '#fca5a5',
+            lineHeight: 1.5,
+          }}>
+            ⚠️ {erro}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -317,10 +335,12 @@ function CardDiario({
   const [missaoExecucao, setMissaoExecucao] = useState('');
   const [salvando,       setSalvando]       = useState(false);
   const [salvo,          setSalvo]          = useState(false);
+  const [erro,           setErro]           = useState<string | null>(null);
 
   async function salvar() {
     const algum = conquista || preocupacao || gratidao || aprendizado || missaoExecucao;
     if (salvando || !algum.trim()) return;
+    setErro(null);
     setSalvando(true);
     try {
       await onSalvar({
@@ -331,8 +351,9 @@ function CardDiario({
         missao_execucao: missaoExecucao.trim(),
       });
       setSalvo(true);
-    } catch {
+    } catch (e) {
       setSalvando(false);
+      setErro(mensagemErro(e));
     }
   }
 
@@ -391,22 +412,27 @@ function CardDiario({
         ))}
       </div>
 
-      {/* Botão salvar */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      {/* Botão salvar + erro */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
         <button
           onClick={salvar}
           disabled={!algumPreenchido || salvando}
           style={{
-            background: algumPreenchido ? '#C8A030' : 'rgba(200,160,48,0.15)',
+            background: erro ? 'rgba(239,68,68,0.85)' : algumPreenchido ? '#C8A030' : 'rgba(200,160,48,0.15)',
             border: 'none', borderRadius: 8,
-            padding: '9px 24px', cursor: algumPreenchido ? 'pointer' : 'not-allowed',
-            color: algumPreenchido ? '#0E0E0E' : 'rgba(200,160,48,0.35)',
+            padding: '9px 24px', cursor: (algumPreenchido && !salvando) ? 'pointer' : 'not-allowed',
+            color: erro ? '#fff' : algumPreenchido ? '#0E0E0E' : 'rgba(200,160,48,0.35)',
             fontSize: 13, fontWeight: 700,
             transition: 'all 0.15s',
           }}
         >
-          {salvando ? 'Salvando…' : 'Salvar reflexão'}
+          {salvando ? 'Salvando…' : erro ? '✗ Erro — toque para tentar novamente' : '✓ Salvar reflexão'}
         </button>
+        {erro && (
+          <p style={{ fontSize: 12, color: '#fca5a5', margin: 0, textAlign: 'right', lineHeight: 1.5 }}>
+            ⚠️ {erro}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -425,10 +451,12 @@ function CardReflexaoProfunda({
   const [drenando,   setDrenando]   = useState('');
   const [salvando,   setSalvando]   = useState(false);
   const [salvo,      setSalvo]      = useState(false);
+  const [erro,       setErro]       = useState<string | null>(null);
 
   async function salvar() {
     const algum = padrao || desafio || crescendo || drenando;
     if (salvando || !algum.trim()) return;
+    setErro(null);
     setSalvando(true);
     try {
       await onSalvar({
@@ -438,8 +466,9 @@ function CardReflexaoProfunda({
         preocupacao:  drenando.trim(),
       });
       setSalvo(true);
-    } catch {
+    } catch (e) {
       setSalvando(false);
+      setErro(mensagemErro(e));
     }
   }
 
@@ -502,16 +531,21 @@ function CardReflexaoProfunda({
           onClick={salvar}
           disabled={!algumPreenchido || salvando}
           style={{
-            background: algumPreenchido ? '#a78bfa' : 'rgba(109,40,217,0.15)',
+            background: erro ? 'rgba(239,68,68,0.85)' : algumPreenchido ? '#a78bfa' : 'rgba(109,40,217,0.15)',
             border: 'none', borderRadius: 8,
-            padding: '9px 24px', cursor: algumPreenchido ? 'pointer' : 'not-allowed',
-            color: algumPreenchido ? '#0E0E0E' : 'rgba(167,139,250,0.35)',
+            padding: '9px 24px', cursor: (algumPreenchido && !salvando) ? 'pointer' : 'not-allowed',
+            color: erro ? '#fff' : algumPreenchido ? '#0E0E0E' : 'rgba(167,139,250,0.35)',
             fontSize: 13, fontWeight: 700,
             transition: 'all 0.15s',
           }}
         >
-          {salvando ? 'Salvando…' : 'Salvar reflexão'}
+          {salvando ? 'Salvando…' : erro ? '✗ Erro — toque para tentar novamente' : '✓ Salvar reflexão'}
         </button>
+        {erro && (
+          <p style={{ fontSize: 12, color: '#fca5a5', margin: 0, textAlign: 'right', lineHeight: 1.5 }}>
+            ⚠️ {erro}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -806,8 +840,36 @@ function BotaoFlutuante({ onClick }: { onClick: () => void }) {
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 
+// ─── Helper: retry 1× após 2 s ────────────────────────────────────────────────
+
+async function comRetry<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch {
+    await new Promise<void>(r => setTimeout(r, 2000));
+    return fn();
+  }
+}
+
+// ─── Mensagem legível para erros Supabase/Clerk ────────────────────────────────
+
+function mensagemErro(err: unknown): string {
+  if (err instanceof Error) {
+    const msg = err.message;
+    if (msg.includes('JWT') || msg.includes('token') || msg.includes('session') || msg.includes('auth'))
+      return 'Sessão expirada — recarregue a página e tente novamente.';
+    if (msg.includes('network') || msg.includes('fetch') || msg.includes('ERR_CONNECTION'))
+      return 'Sem conexão. Verifique sua internet e tente novamente.';
+    if (msg.includes('permission') || msg.includes('policy') || msg.includes('42501'))
+      return 'Erro de permissão — recarregue a página.';
+    return msg.slice(0, 120);
+  }
+  return 'Erro inesperado. Tente novamente.';
+}
+
 export default function DiarioBordoPage() {
   const { user }       = useUser();
+  const { getToken }   = useAuth();
   const { getClient }  = useSupabaseClient();
 
   const [entradas,    setEntradas]    = useState<Entrada[]>([]);
@@ -855,85 +917,104 @@ export default function DiarioBordoPage() {
     }, {})
   );
 
+  // ── Verificar token JWT antes de qualquer escrita ─────────────────────────
+  async function verificarToken(): Promise<void> {
+    let t: string | null = null;
+    try {
+      t = await getToken({ template: 'supabase' });
+    } catch {
+      // Clerk com instabilidade — aguarda 2 s e tenta uma vez mais
+      console.warn('[diario-bordo] getToken falhou — aguardando 2 s para retry');
+      await new Promise<void>(r => setTimeout(r, 2000));
+      try { t = await getToken({ template: 'supabase' }); } catch { /* ignora */ }
+    }
+    if (!t) throw new Error('Não foi possível conectar ao servidor de autenticação. Verifique sua conexão e tente novamente.');
+  }
+
   // ── Salvar entrada livre ───────────────────────────────────────────────────
-  // Upsert por user_id+data: atualiza apenas texto_livre e emocao; colunas como
-  // conquista/preocupacao/gratidao não constam no payload e permanecem intactas.
   async function salvarLivre(texto: string, emoji: string) {
-    if (!user?.id) return;
+    if (!user?.id) throw new Error('Usuário não autenticado.');
+    await verificarToken();
     const client = await getClient();
-    const { data, error } = await client
-      .from('diario_kairos')
-      .upsert(
-        {
-          user_id:      user.id,
-          data:         hoje,
-          tipo_entrada: 'livre',
-          texto_livre:  texto,
-          emocao:       emoji || null,
-        },
-        { onConflict: 'user_id,data' }
-      )
-      .select()
-      .single();
-    if (error) throw error;
-    if (data) {
-      const nova = data as Entrada;
+    const result = await comRetry(async () =>
+      client
+        .from('diario_kairos')
+        .upsert(
+          { user_id: user.id, data: hoje, tipo_entrada: 'livre', texto_livre: texto, emocao: emoji || null },
+          { onConflict: 'user_id,data' }
+        )
+        .select()
+        .single()
+    );
+    if (result.error) {
+      console.error('[diario-bordo] salvarLivre:', result.error);
+      throw new Error(result.error.message);
+    }
+    if (result.data) {
+      const nova = result.data as Entrada;
       setEntradas(prev => [nova, ...prev.filter(e => e.id !== nova.id)]);
     }
   }
 
   // ── Salvar registro diário ─────────────────────────────────────────────────
-  // Upsert por user_id+data: atualiza apenas conquista, preocupacao e gratidao;
-  // texto_livre e emocao não constam no payload e permanecem intactos.
   async function salvarDiario(dados: { conquista: string; preocupacao: string; gratidao: string; aprendizado: string; missao_execucao: string }) {
-    if (!user?.id) return;
+    if (!user?.id) throw new Error('Usuário não autenticado.');
+    await verificarToken();
     const client = await getClient();
-    const { data, error } = await client
-      .from('diario_kairos')
-      .upsert(
-        {
-          user_id:         user.id,
-          data:            hoje,
-          tipo_entrada:    'diario',
-          conquista:       dados.conquista       || null,
-          preocupacao:     dados.preocupacao     || null,
-          gratidao:        dados.gratidao        || null,
-          aprendizado:     dados.aprendizado     || null,
-          missao_execucao: dados.missao_execucao || null,
-        },
-        { onConflict: 'user_id,data' }
-      )
-      .select()
-      .single();
-    if (error) throw error;
-    if (data) {
-      const nova = data as Entrada;
+    const result = await comRetry(async () =>
+      client
+        .from('diario_kairos')
+        .upsert(
+          {
+            user_id: user.id, data: hoje, tipo_entrada: 'diario',
+            conquista:       dados.conquista       || null,
+            preocupacao:     dados.preocupacao     || null,
+            gratidao:        dados.gratidao        || null,
+            aprendizado:     dados.aprendizado     || null,
+            missao_execucao: dados.missao_execucao || null,
+          },
+          { onConflict: 'user_id,data' }
+        )
+        .select()
+        .single()
+    );
+    if (result.error) {
+      console.error('[diario-bordo] salvarDiario:', result.error);
+      throw new Error(result.error.message);
+    }
+    if (result.data) {
+      const nova = result.data as Entrada;
       setEntradas(prev => [nova, ...prev.filter(e => e.id !== nova.id)]);
     }
   }
 
+  // ── Salvar reflexão profunda ───────────────────────────────────────────────
   async function salvarProfunda(dados: { texto_livre: string; conquista: string; aprendizado: string; preocupacao: string }) {
-    if (!user?.id) return;
+    if (!user?.id) throw new Error('Usuário não autenticado.');
+    await verificarToken();
     const client = await getClient();
-    const { data, error } = await client
-      .from('diario_kairos')
-      .upsert(
-        {
-          user_id:      user.id,
-          data:         hoje,
-          tipo_entrada: 'profunda',
-          texto_livre:  dados.texto_livre || null,
-          conquista:    dados.conquista   || null,
-          aprendizado:  dados.aprendizado || null,
-          preocupacao:  dados.preocupacao || null,
-        },
-        { onConflict: 'user_id,data' }
-      )
-      .select()
-      .single();
-    if (error) throw error;
-    if (data) {
-      const nova = data as Entrada;
+    const result = await comRetry(async () =>
+      client
+        .from('diario_kairos')
+        .upsert(
+          {
+            user_id: user.id, data: hoje, tipo_entrada: 'profunda',
+            texto_livre:  dados.texto_livre || null,
+            conquista:    dados.conquista   || null,
+            aprendizado:  dados.aprendizado || null,
+            preocupacao:  dados.preocupacao || null,
+          },
+          { onConflict: 'user_id,data' }
+        )
+        .select()
+        .single()
+    );
+    if (result.error) {
+      console.error('[diario-bordo] salvarProfunda:', result.error);
+      throw new Error(result.error.message);
+    }
+    if (result.data) {
+      const nova = result.data as Entrada;
       setEntradas(prev => [nova, ...prev.filter(e => e.id !== nova.id)]);
     }
   }
