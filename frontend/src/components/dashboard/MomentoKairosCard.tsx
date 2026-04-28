@@ -1,9 +1,34 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useAuth } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
 import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
+
+// ─── Helpers de resiliência ───────────────────────────────────────────────────
+
+async function comRetry<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch {
+    await new Promise<void>(r => setTimeout(r, 2000));
+    return fn();
+  }
+}
+
+function mensagemErro(err: unknown): string {
+  if (err instanceof Error) {
+    const m = err.message;
+    if (m.includes('JWT') || m.includes('token') || m.includes('session') || m.includes('auth'))
+      return 'Sessão expirada — recarregue a página.';
+    if (m.includes('network') || m.includes('fetch') || m.includes('ERR_CONNECTION'))
+      return 'Sem conexão. Verifique sua internet.';
+    if (m.includes('permission') || m.includes('policy') || m.includes('42501'))
+      return 'Erro de permissão — recarregue a página.';
+    return m.slice(0, 120);
+  }
+  return 'Erro inesperado. Tente novamente.';
+}
 
 const EMOCOES = ['animado', 'focado', 'grato', 'cansado', 'ansioso', 'tranquilo'];
 
@@ -53,7 +78,8 @@ const DARK = '#0E0E0E';
 const CREAM = '#F5F0E8';
 
 export default function MomentoKairosCard() {
-  const { user } = useUser();
+  const { user }     = useUser();
+  const { getToken } = useAuth();
   const { getClient } = useSupabaseClient();
 
   const [momento, setMomento] = useState<MomentoKairos | null>(null);
@@ -65,6 +91,8 @@ export default function MomentoKairosCard() {
   const [salvo, setSalvo] = useState(false);
   const [salvandoNoite, setSalvandoNoite] = useState(false);
   const [salvoNoite, setSalvoNoite] = useState(false);
+  const [erroManha, setErroManha] = useState<string | null>(null);
+  const [erroNoite, setErroNoite] = useState<string | null>(null);
   const [historico, setHistorico] = useState<Partial<DiarioKairos>[]>([]);
   const [mostrarHistorico, setMostrarHistorico] = useState(false);
 
@@ -112,26 +140,43 @@ export default function MomentoKairosCard() {
     })();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  async function verificarToken(): Promise<void> {
+    let t: string | null = null;
+    try {
+      t = await getToken({ template: 'supabase' });
+    } catch {
+      console.warn('[MomentoKairosCard] getToken falhou — aguardando 2 s para retry');
+      await new Promise<void>(r => setTimeout(r, 2000));
+      try { t = await getToken({ template: 'supabase' }); } catch { /* ignora */ }
+    }
+    if (!t) throw new Error('Não foi possível conectar ao servidor de autenticação. Verifique sua conexão.');
+  }
+
   async function salvarMatinal() {
     if (!user?.id) return;
+    setErroManha(null);
     setSalvando(true);
     try {
+      await verificarToken();
       const client = await getClient();
-      const { error } = await client.from('diario_kairos').upsert({
-        user_id:         user.id,
-        data:            hoje,
-        tipo_entrada:    'momento',
-        qualidade_sono:  diario.qualidade_sono  ?? null,
-        emocao:          diario.emocao          ?? null,
-        preocupacao:     diario.preocupacao     ?? null,
-        gratidao:        diario.gratidao        ?? null,
-        missao_cumprida: diario.missao_cumprida ?? false,
-      }, { onConflict: 'user_id,data' });
-      if (error) throw error;
+      const result = await comRetry(async () =>
+        await client.from('diario_kairos').upsert({
+          user_id:         user.id,
+          data:            hoje,
+          tipo_entrada:    'momento',
+          qualidade_sono:  diario.qualidade_sono  ?? null,
+          emocao:          diario.emocao          ?? null,
+          preocupacao:     diario.preocupacao     ?? null,
+          gratidao:        diario.gratidao        ?? null,
+          missao_cumprida: diario.missao_cumprida ?? false,
+        }, { onConflict: 'user_id,data' })
+      );
+      if (result.error) throw new Error(result.error.message);
       setSalvo(true);
       setTimeout(() => setSalvo(false), 3000);
     } catch (e) {
-      console.error('[salvarMatinal]', e);
+      console.error('[MomentoKairosCard] salvarMatinal:', e);
+      setErroManha(mensagemErro(e));
     } finally {
       setSalvando(false);
     }
@@ -139,23 +184,28 @@ export default function MomentoKairosCard() {
 
   async function salvarNoturno() {
     if (!user?.id) return;
+    setErroNoite(null);
     setSalvandoNoite(true);
     try {
+      await verificarToken();
       const client = await getClient();
-      const { error } = await client.from('diario_kairos').upsert({
-        user_id:      user.id,
-        data:         hoje,
-        tipo_entrada: 'momento',
-        conquista:    diario.conquista   ?? null,
-        aprendizado:  diario.aprendizado ?? null,
-        energia_fim:  diario.energia_fim ?? null,
-        nota_dia:     diario.nota_dia    ?? null,
-      }, { onConflict: 'user_id,data' });
-      if (error) throw error;
+      const result = await comRetry(async () =>
+        await client.from('diario_kairos').upsert({
+          user_id:      user.id,
+          data:         hoje,
+          tipo_entrada: 'momento',
+          conquista:    diario.conquista   ?? null,
+          aprendizado:  diario.aprendizado ?? null,
+          energia_fim:  diario.energia_fim ?? null,
+          nota_dia:     diario.nota_dia    ?? null,
+        }, { onConflict: 'user_id,data' })
+      );
+      if (result.error) throw new Error(result.error.message);
       setSalvoNoite(true);
       setTimeout(() => setSalvoNoite(false), 3000);
     } catch (e) {
-      console.error('[salvarNoturno]', e);
+      console.error('[MomentoKairosCard] salvarNoturno:', e);
+      setErroNoite(mensagemErro(e));
     } finally {
       setSalvandoNoite(false);
     }
@@ -404,10 +454,16 @@ export default function MomentoKairosCard() {
             style={{
               width: '100%', padding: 13, border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600,
               cursor: salvando ? 'wait' : 'pointer', transition: 'background 0.2s', letterSpacing: '0.04em',
-              background: salvo ? '#27AE60' : DARK, color: CREAM,
+              background: erroManha ? 'rgba(239,68,68,0.85)' : salvo ? '#27AE60' : DARK,
+              color: erroManha ? '#fff' : CREAM,
             }}>
-            {salvando ? 'Salvando...' : salvo ? '✓ Manhã registrada!' : 'Registrar manhã'}
+            {salvando ? 'Salvando...' : erroManha ? '✗ Erro — toque para tentar novamente' : salvo ? '✓ Manhã registrada!' : 'Registrar manhã'}
           </button>
+          {erroManha && (
+            <p style={{ fontSize: 12, color: '#fca5a5', margin: '8px 0 0', padding: '8px 12px', background: 'rgba(239,68,68,0.1)', borderRadius: 8, border: '1px solid rgba(239,68,68,0.25)', lineHeight: 1.5 }}>
+              ⚠️ {erroManha}
+            </p>
+          )}
         </div>
       )}
 
@@ -483,10 +539,16 @@ export default function MomentoKairosCard() {
             style={{
               width: '100%', padding: 13, border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600,
               cursor: salvandoNoite ? 'wait' : 'pointer', transition: 'background 0.2s', letterSpacing: '0.04em',
-              background: salvoNoite ? '#27AE60' : 'rgba(200,160,48,0.9)', color: DARK,
+              background: erroNoite ? 'rgba(239,68,68,0.85)' : salvoNoite ? '#27AE60' : 'rgba(200,160,48,0.9)',
+              color: erroNoite ? '#fff' : DARK,
             }}>
-            {salvandoNoite ? 'Salvando...' : salvoNoite ? '✓ Noite registrada!' : 'Registrar reflexão da noite'}
+            {salvandoNoite ? 'Salvando...' : erroNoite ? '✗ Erro — toque para tentar novamente' : salvoNoite ? '✓ Noite registrada!' : 'Registrar reflexão da noite'}
           </button>
+          {erroNoite && (
+            <p style={{ fontSize: 12, color: '#fca5a5', margin: '8px 0 0', padding: '8px 12px', background: 'rgba(239,68,68,0.1)', borderRadius: 8, border: '1px solid rgba(239,68,68,0.25)', lineHeight: 1.5 }}>
+              ⚠️ {erroNoite}
+            </p>
+          )}
         </div>
       )}
 
