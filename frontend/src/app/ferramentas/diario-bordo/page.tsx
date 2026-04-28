@@ -55,7 +55,11 @@ function dataHoje(): string {
 }
 
 function formatarHora(ts: string): string {
-  return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return new Date(ts).toLocaleTimeString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 function formatarData(data: string): string {
@@ -72,7 +76,7 @@ function formatarData(data: string): string {
 
 function palavraFrequente(entradas: Entrada[]): string {
   const freq: Record<string, number> = {};
-  for (const e of entradas) {
+  for (const e of (entradas ?? [])) {
     // Incluir todos os campos de texto de todos os tipos de entrada
     const textos = [
       e.texto_livre,
@@ -97,7 +101,7 @@ function palavraFrequente(entradas: Entrada[]): string {
 
 function humorDominante(entradas: Entrada[]): string {
   const freq: Record<string, number> = {};
-  for (const e of entradas.slice(0, 7)) {
+  for (const e of (entradas ?? []).slice(0, 7)) {
     if (!e.emocao) continue;
     freq[e.emocao] = (freq[e.emocao] ?? 0) + 1;
   }
@@ -900,7 +904,8 @@ export default function DiarioBordoPage() {
       }
     })();
     return () => { cancelado = true; };
-  }, [user?.id, getClient]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // ── Estado derivado ────────────────────────────────────────────────────────
   const hoje           = dataHoje();
@@ -911,7 +916,7 @@ export default function DiarioBordoPage() {
 
   // Agrupa por data (já vêm ordenados por created_at desc)
   const grupos = Object.entries(
-    entradas.reduce<Record<string, Entrada[]>>((acc, e) => {
+    (entradas ?? []).reduce<Record<string, Entrada[]>>((acc, e) => {
       (acc[e.data] ??= []).push(e);
       return acc;
     }, {})
@@ -1107,7 +1112,7 @@ export default function DiarioBordoPage() {
 
                     {/* Entradas do dia */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {grupo.map(e => <CardEntrada key={e.id} entrada={e} />)}
+                      {(grupo ?? []).map(e => <CardEntrada key={e.id} entrada={e} />)}
                     </div>
                   </div>
                 ))}
