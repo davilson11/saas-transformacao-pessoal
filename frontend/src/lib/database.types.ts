@@ -94,6 +94,7 @@ export type DiarioKairos = {
   gratidao:         string | null;
   missao_cumprida:  boolean;
   missao_execucao:  string | null;
+  hora_registro:    string | null;  // "HH:MM" em fuso America/Sao_Paulo — salvo no momento do save
   created_at:       string;
   updated_at:       string;
   conquista:        string | null;
@@ -257,6 +258,7 @@ export type Database = {
           gratidao?:         string | null;
           missao_cumprida?:  boolean;
           missao_execucao?:  string | null;
+          hora_registro?:    string | null;
           conquista?:        string | null;
           aprendizado?:      string | null;
           energia_fim?:      number | null;
@@ -276,6 +278,7 @@ export type Database = {
           gratidao?:         string | null;
           missao_cumprida?:  boolean;
           missao_execucao?:  string | null;
+          hora_registro?:    string | null;
           conquista?:        string | null;
           aprendizado?:      string | null;
           energia_fim?:      number | null;

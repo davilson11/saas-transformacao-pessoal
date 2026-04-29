@@ -326,9 +326,20 @@ export default function MomentoPage() {
           preocupacao:     diario.preocupacao     ?? null,
           gratidao:        diario.gratidao        ?? null,
           missao_cumprida: diario.missao_cumprida ?? false,
-        }, { onConflict: 'user_id,data' })
+        }, { onConflict: 'user_id,data' }).select().single()
       );
       if (result.error) throw new Error(result.error.message);
+      // Atualiza historico e streak localmente sem precisar de reload
+      if (result.data) {
+        const salvo = result.data as import('@/lib/database.types').DiarioKairos;
+        setDiario(salvo);
+        setHistorico(prev => {
+          const sem = prev.filter(h => h.data !== hoje);
+          const atualizado = [salvo, ...sem].sort((a, b) => (b.data ?? '').localeCompare(a.data ?? ''));
+          setStreak(calcularStreak(atualizado));
+          return atualizado;
+        });
+      }
       setSalvo(true);
       setTimeout(() => setSalvo(false), 3000);
     } catch (e) {
@@ -355,9 +366,20 @@ export default function MomentoPage() {
           aprendizado:  diario.aprendizado ?? null,
           energia_fim:  diario.energia_fim ?? null,
           nota_dia:     diario.nota_dia    ?? null,
-        }, { onConflict: 'user_id,data' })
+        }, { onConflict: 'user_id,data' }).select().single()
       );
       if (result.error) throw new Error(result.error.message);
+      // Atualiza historico e streak localmente sem precisar de reload
+      if (result.data) {
+        const salvo = result.data as import('@/lib/database.types').DiarioKairos;
+        setDiario(salvo);
+        setHistorico(prev => {
+          const sem = prev.filter(h => h.data !== hoje);
+          const atualizado = [salvo, ...sem].sort((a, b) => (b.data ?? '').localeCompare(a.data ?? ''));
+          setStreak(calcularStreak(atualizado));
+          return atualizado;
+        });
+      }
       setSalvoNoite(true);
       setTimeout(() => setSalvoNoite(false), 3000);
     } catch (e) {

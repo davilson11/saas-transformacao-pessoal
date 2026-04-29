@@ -54,8 +54,17 @@ function dataHoje(): string {
     .join('-');
 }
 
-function formatarHora(ts: string): string {
-  return new Date(ts).toLocaleTimeString('pt-BR', {
+function horaAgora(): string {
+  return new Date().toLocaleTimeString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function formatarHora(entrada: Entrada): string {
+  if (entrada.hora_registro) return entrada.hora_registro;
+  return new Date(entrada.created_at).toLocaleTimeString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
     hour: '2-digit',
     minute: '2-digit',
@@ -638,7 +647,7 @@ function CardPadroes({ entradas }: { entradas: Entrada[] }) {
 
 function CardEntrada({ entrada }: { entrada: Entrada }) {
   const tipo = getTipo(entrada);
-  const hora = formatarHora(entrada.created_at);
+  const hora = formatarHora(entrada);
 
   if (tipo === 'livre') {
     return (
@@ -945,7 +954,7 @@ export default function DiarioBordoPage() {
       client
         .from('diario_kairos')
         .upsert(
-          { user_id: user.id, data: hoje, tipo_entrada: 'livre', texto_livre: texto, emocao: emoji || null },
+          { user_id: user.id, data: hoje, tipo_entrada: 'livre', texto_livre: texto, emocao: emoji || null, hora_registro: horaAgora() },
           { onConflict: 'user_id,data' }
         )
         .select()
@@ -977,6 +986,7 @@ export default function DiarioBordoPage() {
             gratidao:        dados.gratidao        || null,
             aprendizado:     dados.aprendizado     || null,
             missao_execucao: dados.missao_execucao || null,
+            hora_registro:   horaAgora(),
           },
           { onConflict: 'user_id,data' }
         )
@@ -1004,10 +1014,11 @@ export default function DiarioBordoPage() {
         .upsert(
           {
             user_id: user.id, data: hoje, tipo_entrada: 'profunda',
-            texto_livre:  dados.texto_livre || null,
-            conquista:    dados.conquista   || null,
-            aprendizado:  dados.aprendizado || null,
-            preocupacao:  dados.preocupacao || null,
+            texto_livre:   dados.texto_livre || null,
+            conquista:     dados.conquista   || null,
+            aprendizado:   dados.aprendizado || null,
+            preocupacao:   dados.preocupacao || null,
+            hora_registro: horaAgora(),
           },
           { onConflict: 'user_id,data' }
         )
