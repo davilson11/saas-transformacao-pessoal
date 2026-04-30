@@ -247,12 +247,8 @@ export default function MomentoPage() {
   const [notifAtiva, setNotifAtiva] = useState(false);
   const [emocaoHover, setEmocaoHover] = useState<string | null>(null);
   const [faseUsuario, setFaseUsuario] = useState(1);
-  const hoje = new Date().toLocaleDateString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).split('/').reverse().join('-');
+  // Usa getDiaStr(0) — data BRT avaliada a cada render, evitando stale closure ao salvar
+  const hoje = getDiaStr(0);
 
 
   useEffect(() => {
@@ -316,10 +312,11 @@ export default function MomentoPage() {
     try {
       await verificarToken();
       const client = await getClient();
+      const dataBRT = getDiaStr(0); // avaliado no momento do clique, não no render
       const result = await comRetry(async () =>
         await client.from('diario_kairos').upsert({
           user_id:         user.id,
-          data:            hoje,
+          data:            dataBRT,
           tipo_entrada:    'momento',
           qualidade_sono:  diario.qualidade_sono  ?? null,
           emocao:          diario.emocao          ?? null,
@@ -334,7 +331,7 @@ export default function MomentoPage() {
         const salvo = result.data as import('@/lib/database.types').DiarioKairos;
         setDiario(salvo);
         setHistorico(prev => {
-          const sem = prev.filter(h => h.data !== hoje);
+          const sem = prev.filter(h => h.data !== dataBRT);
           const atualizado = [salvo, ...sem].sort((a, b) => (b.data ?? '').localeCompare(a.data ?? ''));
           setStreak(calcularStreak(atualizado));
           return atualizado;
@@ -357,10 +354,11 @@ export default function MomentoPage() {
     try {
       await verificarToken();
       const client = await getClient();
+      const dataBRT = getDiaStr(0); // avaliado no momento do clique
       const result = await comRetry(async () =>
         await client.from('diario_kairos').upsert({
           user_id:      user.id,
-          data:         hoje,
+          data:         dataBRT,
           tipo_entrada: 'momento',
           conquista:    diario.conquista   ?? null,
           aprendizado:  diario.aprendizado ?? null,
@@ -374,7 +372,7 @@ export default function MomentoPage() {
         const salvo = result.data as import('@/lib/database.types').DiarioKairos;
         setDiario(salvo);
         setHistorico(prev => {
-          const sem = prev.filter(h => h.data !== hoje);
+          const sem = prev.filter(h => h.data !== dataBRT);
           const atualizado = [salvo, ...sem].sort((a, b) => (b.data ?? '').localeCompare(a.data ?? ''));
           setStreak(calcularStreak(atualizado));
           return atualizado;

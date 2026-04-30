@@ -32,13 +32,6 @@ function mensagemErro(err: unknown): string {
 
 const EMOCOES = ['animado', 'focado', 'grato', 'cansado', 'ansioso', 'tranquilo'];
 
-function hojeStr(): string {
-  return new Date().toLocaleDateString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-  }).split('/').reverse().join('-');
-}
-
 function horaAtual(): number {
   return parseInt(
     new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', hour12: false }),
@@ -97,7 +90,7 @@ export default function MomentoKairosCard() {
   const [mostrarHistorico, setMostrarHistorico] = useState(false);
 
   const hora = horaAtual();
-  const hoje = hojeStr();
+  const hoje = getDiaStr(0); // data BRT avaliada a cada render
   const mostrarMatinal = hora < 18;
   const mostrarNoturno = hora >= 12;
 
@@ -159,19 +152,30 @@ export default function MomentoKairosCard() {
     try {
       await verificarToken();
       const client = await getClient();
+      const dataBRT = getDiaStr(0); // avaliado no momento do clique
       const result = await comRetry(async () =>
         await client.from('diario_kairos').upsert({
           user_id:         user.id,
-          data:            hoje,
+          data:            dataBRT,
           tipo_entrada:    'momento',
           qualidade_sono:  diario.qualidade_sono  ?? null,
           emocao:          diario.emocao          ?? null,
           preocupacao:     diario.preocupacao     ?? null,
           gratidao:        diario.gratidao        ?? null,
           missao_cumprida: diario.missao_cumprida ?? false,
-        }, { onConflict: 'user_id,data' })
+        }, { onConflict: 'user_id,data' }).select().single()
       );
       if (result.error) throw new Error(result.error.message);
+      if (result.data) {
+        const salvo = result.data as DiarioKairos;
+        setDiario(salvo);
+        setHistorico(prev => {
+          const sem = prev.filter(h => h.data !== dataBRT);
+          const atualizado = [salvo, ...sem].sort((a, b) => (b.data ?? '').localeCompare(a.data ?? ''));
+          setStreak(calcularStreak(atualizado));
+          return atualizado;
+        });
+      }
       setSalvo(true);
       setTimeout(() => setSalvo(false), 3000);
     } catch (e) {
@@ -189,18 +193,29 @@ export default function MomentoKairosCard() {
     try {
       await verificarToken();
       const client = await getClient();
+      const dataBRT = getDiaStr(0); // avaliado no momento do clique
       const result = await comRetry(async () =>
         await client.from('diario_kairos').upsert({
           user_id:      user.id,
-          data:         hoje,
+          data:         dataBRT,
           tipo_entrada: 'momento',
           conquista:    diario.conquista   ?? null,
           aprendizado:  diario.aprendizado ?? null,
           energia_fim:  diario.energia_fim ?? null,
           nota_dia:     diario.nota_dia    ?? null,
-        }, { onConflict: 'user_id,data' })
+        }, { onConflict: 'user_id,data' }).select().single()
       );
       if (result.error) throw new Error(result.error.message);
+      if (result.data) {
+        const salvo = result.data as DiarioKairos;
+        setDiario(salvo);
+        setHistorico(prev => {
+          const sem = prev.filter(h => h.data !== dataBRT);
+          const atualizado = [salvo, ...sem].sort((a, b) => (b.data ?? '').localeCompare(a.data ?? ''));
+          setStreak(calcularStreak(atualizado));
+          return atualizado;
+        });
+      }
       setSalvoNoite(true);
       setTimeout(() => setSalvoNoite(false), 3000);
     } catch (e) {
