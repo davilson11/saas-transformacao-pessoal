@@ -335,7 +335,7 @@ export default function MomentoKairosCard() {
           fontSize: 17, fontFamily: 'var(--font-heading)', fontStyle: 'italic',
           color: CREAM, lineHeight: 1.75, margin: 0,
         }}>
-          &ldquo;{momento.voz_texto}&rdquo;
+          &ldquo;{momento.voz_do_dia}&rdquo;
         </p>
       </div>
 
@@ -398,9 +398,9 @@ export default function MomentoKairosCard() {
         }}>
           <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: GOLD, margin: '0 0 8px' }}>✝ Versículo</p>
           <p style={{ fontSize: 12, color: 'rgba(245,240,232,0.75)', lineHeight: 1.6, margin: '0 0 8px' }}>
-            {momento.versiculo}
+            {momento.versiculo_texto}
           </p>
-          <p style={{ fontSize: 11, color: GOLD, fontWeight: 600, margin: 0 }}>{momento.versiculo_ref}</p>
+          <p style={{ fontSize: 11, color: GOLD, fontWeight: 600, margin: 0 }}>{momento.versiculo_referencia}</p>
         </div>
       </div>
 

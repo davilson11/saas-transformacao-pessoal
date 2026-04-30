@@ -66,20 +66,24 @@ export type RodaVida = {
 };
 
 export type MomentoKairos = {
-  id:            string;
-  data:          string;
-  fase:          number;
-  voz_texto:     string;
-  versiculo:     string;
-  versiculo_ref: string;
-  missao:        string;
-  missao_fase1:  string | null;
-  missao_fase2:  string | null;
-  missao_fase3:  string | null;
-  missao_fase4:  string | null;
-  trilha:        string | null;
-  tom:           string | null;
-  created_at:    string;
+  id:                   string;
+  data:                 string;
+  mes:                  number | null;
+  dia_do_mes:           number | null;
+  tema_mensal:          string | null;
+  voz_do_dia:           string;        // coluna real no banco
+  missao:               string;
+  versiculo_texto:      string;        // coluna real no banco
+  versiculo_referencia: string;        // coluna real no banco
+  // Colunas opcionais adicionadas posteriormente:
+  fase:                 number | null;
+  missao_fase1:         string | null;
+  missao_fase2:         string | null;
+  missao_fase3:         string | null;
+  missao_fase4:         string | null;
+  trilha:               string | null;
+  tom:                  string | null;
+  created_at:           string;
 };
 
 export type DiarioKairos = {

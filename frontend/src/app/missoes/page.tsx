@@ -450,7 +450,7 @@ export default function MissoesPage() {
           <>
             {/* ── Missão do dia ────────────────────────────────────────────── */}
             {momento ? (
-              <CartaoMissaoHoje missao={momento.missao} fase={momento.fase} />
+              <CartaoMissaoHoje missao={momento.missao} fase={momento.fase ?? 1} />
             ) : (
               <div style={{
                 background: C.card, border: `1.5px dashed ${C.border}`,

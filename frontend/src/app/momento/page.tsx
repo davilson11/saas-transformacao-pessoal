@@ -176,7 +176,7 @@ function CardCompartilhar({ diario, streak, momento }: {
             </div>
             <div style={{ borderLeft: '2px solid rgba(200,160,48,0.4)', paddingLeft: 16, marginBottom: 24 }}>
               <p style={{ fontSize: 13, color: 'rgba(245,240,232,0.7)', lineHeight: 1.7, margin: 0, fontStyle: 'italic' }}>
-                "{momento.voz_texto?.slice(0, 120)}{(momento.voz_texto?.length ?? 0) > 120 ? '...' : ''}"
+                "{momento.voz_do_dia?.slice(0, 120)}{(momento.voz_do_dia?.length ?? 0) > 120 ? '...' : ''}"
               </p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
@@ -510,7 +510,7 @@ export default function MomentoPage() {
           <div style={{ position: 'relative' }}>
             <span style={{ position: 'absolute', top: -8, left: -4, fontSize: 48, color: '#C8A030', lineHeight: 1, opacity: 0.5, fontFamily: 'Georgia, serif', pointerEvents: 'none' }}>&ldquo;</span>
             <p style={{ fontSize: 18, color: '#F5F0E8', lineHeight: 1.9, fontFamily: 'var(--font-heading)', fontStyle: 'italic', margin: 0, paddingLeft: 20 }}>
-              {momento.voz_texto}
+              {momento.voz_do_dia}
             </p>
             <span style={{ float: 'right', fontSize: 48, color: '#C8A030', lineHeight: 0.5, opacity: 0.5, fontFamily: 'Georgia, serif', marginTop: 8 }}>&rdquo;</span>
           </div>
@@ -524,8 +524,8 @@ export default function MomentoPage() {
           </div>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(200,160,48,0.6)', marginBottom: 8 }}>Versículo do dia</p>
-            <p style={{ fontSize: 14, color: '#F5F0E8', lineHeight: 1.75, margin: 0, fontStyle: 'italic', opacity: 0.9 }}>{momento.versiculo}</p>
-            <p style={{ fontSize: 12, color: 'rgba(200,160,48,0.75)', marginTop: 8, fontWeight: 600, letterSpacing: '0.04em' }}>{momento.versiculo_ref}</p>
+            <p style={{ fontSize: 14, color: '#F5F0E8', lineHeight: 1.75, margin: 0, fontStyle: 'italic', opacity: 0.9 }}>{momento.versiculo_texto}</p>
+            <p style={{ fontSize: 12, color: 'rgba(200,160,48,0.75)', marginTop: 8, fontWeight: 600, letterSpacing: '0.04em' }}>{momento.versiculo_referencia}</p>
           </div>
         </div>
 
