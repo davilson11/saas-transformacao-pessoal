@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useAuth } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
 import {
   getSubscription,
@@ -23,9 +23,10 @@ export type UseSubscriptionResult = {
 };
 
 export function useSubscription(): UseSubscriptionResult {
-  const { user, isLoaded }  = useUser();
-  const { getClient }       = useSupabaseClient();
-  const [sub, setSub]       = useState<Subscription | null>(null);
+  const { user, isLoaded }    = useUser();
+  const { getToken }          = useAuth();
+  const { getClient }         = useSupabaseClient();
+  const [sub, setSub]         = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,6 +34,9 @@ export function useSubscription(): UseSubscriptionResult {
     if (!user?.id) { setLoading(false); return; }
 
     (async () => {
+      const token = await getToken({ template: 'supabase' });
+      if (!token) { setLoading(false); return; }
+
       const client = await getClient();
       let found = await getSubscription(user.id, client);
 
