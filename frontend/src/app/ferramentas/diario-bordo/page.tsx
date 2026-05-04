@@ -3,9 +3,20 @@
 /*
   MIGRAÇÃO SUPABASE — execute no SQL Editor antes de usar:
 
+  -- Colunas adicionadas anteriormente (idempotente):
   ALTER TABLE diario_kairos
     ADD COLUMN IF NOT EXISTS tipo_entrada TEXT NOT NULL DEFAULT 'livre',
     ADD COLUMN IF NOT EXISTS texto_livre  TEXT;
+
+  -- Permitir múltiplas entradas por dia:
+  -- 1. Remove constraint única antiga (1 linha por user_id+data, qualquer tipo)
+  ALTER TABLE diario_kairos
+    DROP CONSTRAINT IF EXISTS diario_kairos_user_id_data_key;
+
+  -- 2. Índice único parcial: apenas 'diario' fica limitado a 1 por dia
+  CREATE UNIQUE INDEX IF NOT EXISTS diario_kairos_diario_por_dia
+    ON diario_kairos (user_id, data)
+    WHERE tipo_entrada = 'diario';
 */
 
 import { useState, useEffect, useRef } from 'react';
@@ -945,7 +956,7 @@ export default function DiarioBordoPage() {
     if (!t) throw new Error('Não foi possível conectar ao servidor de autenticação. Verifique sua conexão e tente novamente.');
   }
 
-  // ── Salvar entrada livre ───────────────────────────────────────────────────
+  // ── Salvar entrada livre (INSERT sempre — múltiplas por dia permitidas) ────
   async function salvarLivre(texto: string, emoji: string) {
     if (!user?.id) throw new Error('Usuário não autenticado.');
     await verificarToken();
@@ -953,10 +964,14 @@ export default function DiarioBordoPage() {
     const result = await comRetry(async () =>
       client
         .from('diario_kairos')
-        .upsert(
-          { user_id: user.id, data: hoje, tipo_entrada: 'livre', texto_livre: texto, emocao: emoji || null, hora_registro: horaAgora() },
-          { onConflict: 'user_id,data' }
-        )
+        .insert({
+          user_id:       user.id,
+          data:          hoje,
+          tipo_entrada:  'livre',
+          texto_livre:   texto,
+          emocao:        emoji || null,
+          hora_registro: horaAgora(),
+        })
         .select()
         .single()
     );
@@ -965,34 +980,38 @@ export default function DiarioBordoPage() {
       throw new Error(result.error.message);
     }
     if (result.data) {
-      const nova = result.data as Entrada;
-      setEntradas(prev => [nova, ...prev.filter(e => e.id !== nova.id)]);
+      setEntradas(prev => [result.data as Entrada, ...prev]);
     }
   }
 
-  // ── Salvar registro diário ─────────────────────────────────────────────────
+  // ── Salvar registro diário (1 por dia — INSERT ou UPDATE via check-then-act)
   async function salvarDiario(dados: { conquista: string; preocupacao: string; gratidao: string; aprendizado: string; missao_execucao: string }) {
     if (!user?.id) throw new Error('Usuário não autenticado.');
     await verificarToken();
     const client = await getClient();
-    const result = await comRetry(async () =>
-      client
+
+    const result = await comRetry(async () => {
+      const campos = {
+        conquista:       dados.conquista       || null,
+        preocupacao:     dados.preocupacao     || null,
+        gratidao:        dados.gratidao        || null,
+        aprendizado:     dados.aprendizado     || null,
+        missao_execucao: dados.missao_execucao || null,
+        hora_registro:   horaAgora(),
+      };
+      const { data: existente } = await client
         .from('diario_kairos')
-        .upsert(
-          {
-            user_id: user.id, data: hoje, tipo_entrada: 'diario',
-            conquista:       dados.conquista       || null,
-            preocupacao:     dados.preocupacao     || null,
-            gratidao:        dados.gratidao        || null,
-            aprendizado:     dados.aprendizado     || null,
-            missao_execucao: dados.missao_execucao || null,
-            hora_registro:   horaAgora(),
-          },
-          { onConflict: 'user_id,data' }
-        )
-        .select()
-        .single()
-    );
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('data', hoje)
+        .eq('tipo_entrada', 'diario')
+        .maybeSingle();
+
+      return existente?.id
+        ? client.from('diario_kairos').update(campos).eq('id', existente.id).select().single()
+        : client.from('diario_kairos').insert({ user_id: user.id, data: hoje, tipo_entrada: 'diario', ...campos }).select().single();
+    });
+
     if (result.error) {
       console.error('[diario-bordo] salvarDiario:', result.error);
       throw new Error(result.error.message);
@@ -1003,7 +1022,7 @@ export default function DiarioBordoPage() {
     }
   }
 
-  // ── Salvar reflexão profunda ───────────────────────────────────────────────
+  // ── Salvar reflexão profunda (INSERT sempre — múltiplas por semana OK) ─────
   async function salvarProfunda(dados: { texto_livre: string; conquista: string; aprendizado: string; preocupacao: string }) {
     if (!user?.id) throw new Error('Usuário não autenticado.');
     await verificarToken();
@@ -1011,17 +1030,16 @@ export default function DiarioBordoPage() {
     const result = await comRetry(async () =>
       client
         .from('diario_kairos')
-        .upsert(
-          {
-            user_id: user.id, data: hoje, tipo_entrada: 'profunda',
-            texto_livre:   dados.texto_livre || null,
-            conquista:     dados.conquista   || null,
-            aprendizado:   dados.aprendizado || null,
-            preocupacao:   dados.preocupacao || null,
-            hora_registro: horaAgora(),
-          },
-          { onConflict: 'user_id,data' }
-        )
+        .insert({
+          user_id:       user.id,
+          data:          hoje,
+          tipo_entrada:  'profunda',
+          texto_livre:   dados.texto_livre || null,
+          conquista:     dados.conquista   || null,
+          aprendizado:   dados.aprendizado || null,
+          preocupacao:   dados.preocupacao || null,
+          hora_registro: horaAgora(),
+        })
         .select()
         .single()
     );
@@ -1030,8 +1048,7 @@ export default function DiarioBordoPage() {
       throw new Error(result.error.message);
     }
     if (result.data) {
-      const nova = result.data as Entrada;
-      setEntradas(prev => [nova, ...prev.filter(e => e.id !== nova.id)]);
+      setEntradas(prev => [result.data as Entrada, ...prev]);
     }
   }
 
