@@ -152,26 +152,30 @@ export default function MomentoKairosCard() {
     try {
       await verificarToken();
       const client = await getClient();
-      const dataBRT = getDiaStr(0); // avaliado no momento do clique
-      const result = await comRetry(async () =>
-        await client.from('diario_kairos').upsert({
-          user_id:         user.id,
-          data:            dataBRT,
-          tipo_entrada:    'momento',
+      const dataBRT = getDiaStr(0);
+      const result = await comRetry(async () => {
+        const campos = {
           qualidade_sono:  diario.qualidade_sono  ?? null,
           emocao:          diario.emocao          ?? null,
           preocupacao:     diario.preocupacao     ?? null,
           gratidao:        diario.gratidao        ?? null,
           missao_cumprida: diario.missao_cumprida ?? false,
-        }, { onConflict: 'user_id,data' }).select().single()
-      );
+        };
+        const { data: existente } = await client
+          .from('diario_kairos').select('id')
+          .eq('user_id', user.id).eq('data', dataBRT).eq('tipo_entrada', 'momento')
+          .maybeSingle();
+        return existente?.id
+          ? client.from('diario_kairos').update(campos).eq('id', existente.id).select().single()
+          : client.from('diario_kairos').insert({ user_id: user.id, data: dataBRT, tipo_entrada: 'momento', ...campos }).select().single();
+      });
       if (result.error) throw new Error(result.error.message);
       if (result.data) {
-        const salvo = result.data as DiarioKairos;
-        setDiario(salvo);
+        const saved = result.data as DiarioKairos;
+        setDiario(saved);
         setHistorico(prev => {
           const sem = prev.filter(h => h.data !== dataBRT);
-          const atualizado = [salvo, ...sem].sort((a, b) => (b.data ?? '').localeCompare(a.data ?? ''));
+          const atualizado = [saved, ...sem].sort((a, b) => (b.data ?? '').localeCompare(a.data ?? ''));
           setStreak(calcularStreak(atualizado));
           return atualizado;
         });
@@ -193,25 +197,29 @@ export default function MomentoKairosCard() {
     try {
       await verificarToken();
       const client = await getClient();
-      const dataBRT = getDiaStr(0); // avaliado no momento do clique
-      const result = await comRetry(async () =>
-        await client.from('diario_kairos').upsert({
-          user_id:      user.id,
-          data:         dataBRT,
-          tipo_entrada: 'momento',
-          conquista:    diario.conquista   ?? null,
-          aprendizado:  diario.aprendizado ?? null,
-          energia_fim:  diario.energia_fim ?? null,
-          nota_dia:     diario.nota_dia    ?? null,
-        }, { onConflict: 'user_id,data' }).select().single()
-      );
+      const dataBRT = getDiaStr(0);
+      const result = await comRetry(async () => {
+        const campos = {
+          conquista:   diario.conquista   ?? null,
+          aprendizado: diario.aprendizado ?? null,
+          energia_fim: diario.energia_fim ?? null,
+          nota_dia:    diario.nota_dia    ?? null,
+        };
+        const { data: existente } = await client
+          .from('diario_kairos').select('id')
+          .eq('user_id', user.id).eq('data', dataBRT).eq('tipo_entrada', 'momento')
+          .maybeSingle();
+        return existente?.id
+          ? client.from('diario_kairos').update(campos).eq('id', existente.id).select().single()
+          : client.from('diario_kairos').insert({ user_id: user.id, data: dataBRT, tipo_entrada: 'momento', ...campos }).select().single();
+      });
       if (result.error) throw new Error(result.error.message);
       if (result.data) {
-        const salvo = result.data as DiarioKairos;
-        setDiario(salvo);
+        const saved = result.data as DiarioKairos;
+        setDiario(saved);
         setHistorico(prev => {
           const sem = prev.filter(h => h.data !== dataBRT);
-          const atualizado = [salvo, ...sem].sort((a, b) => (b.data ?? '').localeCompare(a.data ?? ''));
+          const atualizado = [saved, ...sem].sort((a, b) => (b.data ?? '').localeCompare(a.data ?? ''));
           setStreak(calcularStreak(atualizado));
           return atualizado;
         });
