@@ -313,10 +313,18 @@ export default function MissoesPage() {
     try {
       const client = await getClient();
       const hoje   = getDiaStr();
-      await client.from('diario_kairos').upsert(
-        { user_id: user.id, data: hoje, missao_execucao: texto, updated_at: new Date().toISOString() },
-        { onConflict: 'user_id,data' }
-      );
+      const { data: existente } = await client
+        .from('diario_kairos').select('id')
+        .eq('user_id', user.id).eq('data', hoje).eq('tipo_entrada', 'momento')
+        .maybeSingle();
+      if (existente?.id) {
+        await client.from('diario_kairos')
+          .update({ missao_execucao: texto, updated_at: new Date().toISOString() })
+          .eq('id', existente.id);
+      } else {
+        await client.from('diario_kairos')
+          .insert({ user_id: user.id, data: hoje, tipo_entrada: 'momento', missao_execucao: texto, updated_at: new Date().toISOString() });
+      }
       setFeedbackSalvo(true);
       setTimeout(() => setFeedbackSalvo(false), 1800);
     } catch (err) {
@@ -336,30 +344,22 @@ export default function MissoesPage() {
     try {
       const client = await getClient();
       const hoje   = getDiaStr();
+      const { data: existente } = await client
+        .from('diario_kairos').select('id')
+        .eq('user_id', user.id).eq('data', hoje).eq('tipo_entrada', 'momento')
+        .maybeSingle();
 
-      // Ao marcar como cumprida, persiste também missao_execucao no mesmo upsert
-      // para garantir que o texto não seja perdido caso o debounce ainda não tenha disparado.
-      if (novaCumprida) {
-        await client.from('diario_kairos').upsert(
-          {
-            user_id:         user.id,
-            data:            hoje,
-            missao_cumprida: true,
-            missao_execucao: execucao.trim() || null,
-            updated_at:      new Date().toISOString(),
-          },
-          { onConflict: 'user_id,data' }
-        );
+      // Ao marcar como cumprida, persiste também missao_execucao para garantir
+      // que o texto não seja perdido caso o debounce ainda não tenha disparado.
+      const campos = novaCumprida
+        ? { missao_cumprida: true,  missao_execucao: execucao.trim() || null, updated_at: new Date().toISOString() }
+        : { missao_cumprida: false, updated_at: new Date().toISOString() };
+
+      if (existente?.id) {
+        await client.from('diario_kairos').update(campos).eq('id', existente.id);
       } else {
-        await client.from('diario_kairos').upsert(
-          {
-            user_id:         user.id,
-            data:            hoje,
-            missao_cumprida: false,
-            updated_at:      new Date().toISOString(),
-          },
-          { onConflict: 'user_id,data' }
-        );
+        await client.from('diario_kairos')
+          .insert({ user_id: user.id, data: hoje, tipo_entrada: 'momento', ...campos });
       }
     } catch (err) {
       console.error('[missoes] toggleCumprida', err);
