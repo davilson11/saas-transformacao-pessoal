@@ -12,6 +12,7 @@ import { buscarRespostaFerramenta } from '@/lib/queries';
 
 type NivelDificuldade = 1 | 2 | 3 | 4 | 5;
 type NivelEnergia     = 1 | 2 | 3 | 4 | 5;
+type TipoHorario      = 'fixo' | 'flexivel' | '';
 
 type Habito = {
   horario:    string;
@@ -152,6 +153,28 @@ function getDificuldadeCor(n: NivelDificuldade): string {
 
 const HABITO_DEFAULT: Habito = { horario: '', duracao: '15 min', jaFaz: null, dificuldade: null };
 const BLOCO_DEFAULT: BlocoProdutivo = { tarefa: '', duracao: '1h', energia: 3 };
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function ajustarHorario(base: string, offsetMin: number): string {
+  const [hh, mm] = base.split(':').map(Number);
+  const total = hh * 60 + mm + offsetMin;
+  const h = Math.floor(((total % 1440) + 1440) / 60) % 24;
+  const m = ((total % 60) + 60) % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function sugestoesFixo(entrada: string): Record<keyof MatinalState, string> {
+  return {
+    acordar:      ajustarHorario(entrada, -90),
+    hidratacao:   ajustarHorario(entrada, -85),
+    meditacao:    ajustarHorario(entrada, -80),
+    leitura:      ajustarHorario(entrada, -65),
+    exercicio:    ajustarHorario(entrada, -45),
+    planejamento: ajustarHorario(entrada, -20),
+    cafe:         ajustarHorario(entrada, -10),
+  };
+}
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
 
@@ -468,8 +491,21 @@ export default function ArquitetoRotinasPage() {
     DIAS_SEMANA.map(() => ({ matinal: false, produtivo: false, noturno: false }))
   );
 
+  const [tipoHorario, setTipoHorario]       = useState<TipoHorario>('');
+  const [horarioEntrada, setHorarioEntrada]  = useState('07:00');
+  const [horarioSaida, setHorarioSaida]      = useState('17:00');
+
   const { dados: dadosSalvos } = useCarregarRespostas("arquiteto-rotinas");
-  useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).matinal) setMatinal((dadosSalvos as any).matinal); if ((dadosSalvos as any).blocos) setBlocos((dadosSalvos as any).blocos); if ((dadosSalvos as any).noturno) setNoturno((dadosSalvos as any).noturno); if ((dadosSalvos as any).rastreador) setRastreador((dadosSalvos as any).rastreador); }, [dadosSalvos]);
+  useEffect(() => {
+    if (!dadosSalvos) return;
+    if ((dadosSalvos as any).matinal)        setMatinal((dadosSalvos as any).matinal);
+    if ((dadosSalvos as any).blocos)         setBlocos((dadosSalvos as any).blocos);
+    if ((dadosSalvos as any).noturno)        setNoturno((dadosSalvos as any).noturno);
+    if ((dadosSalvos as any).rastreador)     setRastreador((dadosSalvos as any).rastreador);
+    if ((dadosSalvos as any).tipoHorario)    setTipoHorario((dadosSalvos as any).tipoHorario);
+    if ((dadosSalvos as any).horarioEntrada) setHorarioEntrada((dadosSalvos as any).horarioEntrada);
+    if ((dadosSalvos as any).horarioSaida)   setHorarioSaida((dadosSalvos as any).horarioSaida);
+  }, [dadosSalvos]);
 
   // ─── Verificação de pré-requisitos (F08 e F09) ─────────────────────────────
   type StatusPreReq = 'loading' | 'done' | 'not_done';
@@ -557,6 +593,15 @@ export default function ArquitetoRotinasPage() {
     </div>
   );
 
+  // ─── Computed ──────────────────────────────────────────────────────────────
+
+  const sugestoesMatinal = tipoHorario === 'fixo' ? sugestoesFixo(horarioEntrada) : null;
+
+  const blocosFixoConfig: Array<typeof BLOCOS_CONFIG[0]> = [
+    { key: 'bloco1', emoji: '🌅', nome: 'Antes do trabalho', periodo: `até ${horarioEntrada}`,        cor: '#16a34a', bg: 'rgba(22,163,74,0.07)'  },
+    { key: 'bloco2', emoji: '🌆', nome: 'Após o trabalho',   periodo: `a partir de ${horarioSaida}`, cor: '#7c3aed', bg: 'rgba(124,58,237,0.07)' },
+  ];
+
   // ─── Métricas ──────────────────────────────────────────────────────────────
 
   const matinalPreenchidos = HABITOS_MATINAIS.filter(h => matinal[h.key].horario.length > 0).length;
@@ -570,7 +615,7 @@ export default function ArquitetoRotinasPage() {
     : 66 + Math.min(34, Math.round((noturnoPreenchidos / 6) * 34));
 
   const podeAvancar =
-    etapa === 0 ? true
+    etapa === 0 ? tipoHorario !== ''
     : etapa === 1 ? matinalPreenchidos >= 3
     : etapa === 2 ? blocoPreenchidos >= 1
     : noturnoPreenchidos >= 3;
@@ -830,6 +875,139 @@ export default function ArquitetoRotinasPage() {
         ))}
       </div>
 
+      {/* Seletor de tipo de horário */}
+      <div style={{
+        background: '#fff',
+        border: `1.5px solid ${COR_BORDER}`,
+        borderRadius: 14,
+        padding: '20px 22px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+      }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700, color: COR_VERDE, marginBottom: 4 }}>
+            Qual é a sua situação de horário?
+          </div>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(26,92,58,0.6)', lineHeight: 1.5 }}>
+            Isso define como os blocos produtivos e as sugestões de horário vão se encaixar na sua realidade.
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {([
+            { id: 'fixo' as TipoHorario, emoji: '💼', nome: 'Tenho horário fixo de trabalho', desc: 'Ex: entro às 07h e saio às 17h. Minha rotina precisa encaixar antes e depois.' },
+            { id: 'flexivel' as TipoHorario, emoji: '🕊️', nome: 'Tenho horário flexível', desc: 'Freelancer, home office ou autônomo. Posso organizar meu dia com mais liberdade.' },
+          ] as Array<{ id: TipoHorario; emoji: string; nome: string; desc: string }>).map(opt => (
+            <button
+              key={opt.id as string}
+              onClick={() => setTipoHorario(opt.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px 16px',
+                borderRadius: 10,
+                border: tipoHorario === opt.id
+                  ? `2px solid ${COR_VERDE}`
+                  : `1.5px solid ${COR_BORDER}`,
+                background: tipoHorario === opt.id ? 'rgba(26,92,58,0.06)' : 'transparent',
+                cursor: 'pointer',
+                textAlign: 'left' as const,
+                transition: 'all 0.15s',
+              }}
+            >
+              <span style={{ fontSize: 22, flexShrink: 0 }}>{opt.emoji}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: tipoHorario === opt.id ? 600 : 400, color: COR_VERDE }}>
+                  {opt.nome}
+                </div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(26,92,58,0.55)', lineHeight: 1.4, marginTop: 2 }}>
+                  {opt.desc}
+                </div>
+              </div>
+              {tipoHorario === opt.id && (
+                <div style={{ width: 20, height: 20, borderRadius: '50%', background: COR_VERDE, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ color: '#fff', fontSize: 10, fontWeight: 700 }}>✓</span>
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Campos de horário fixo */}
+        {tipoHorario === 'fixo' && (
+          <div style={{
+            background: 'rgba(26,92,58,0.04)',
+            border: `1px solid rgba(26,92,58,0.15)`,
+            borderRadius: 10,
+            padding: '14px 16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: COR_VERDE }}>
+              Qual é o seu horário de trabalho?
+            </div>
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(26,92,58,0.6)', fontWeight: 500 }}>
+                  Entrada no trabalho
+                </label>
+                <input
+                  type="time"
+                  value={horarioEntrada}
+                  onChange={e => setHorarioEntrada(e.target.value)}
+                  style={{
+                    border: `1.5px solid rgba(26,92,58,0.4)`,
+                    borderRadius: 8,
+                    padding: '6px 10px',
+                    fontSize: 15,
+                    fontFamily: 'var(--font-mono)',
+                    color: COR_VERDE,
+                    background: '#fff',
+                    outline: 'none',
+                    width: 110,
+                    cursor: 'pointer',
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(26,92,58,0.6)', fontWeight: 500 }}>
+                  Saída do trabalho
+                </label>
+                <input
+                  type="time"
+                  value={horarioSaida}
+                  onChange={e => setHorarioSaida(e.target.value)}
+                  style={{
+                    border: `1.5px solid rgba(26,92,58,0.4)`,
+                    borderRadius: 8,
+                    padding: '6px 10px',
+                    fontSize: 15,
+                    fontFamily: 'var(--font-mono)',
+                    color: COR_VERDE,
+                    background: '#fff',
+                    outline: 'none',
+                    width: 110,
+                    cursor: 'pointer',
+                  }}
+                />
+              </div>
+            </div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: COR_GOLD, fontWeight: 500 }}>
+              💡 As sugestões de ritual matinal serão calculadas para caber antes das {horarioEntrada}. Os blocos produtivos serão ajustados para antes e após o trabalho.
+            </div>
+          </div>
+        )}
+
+        {!tipoHorario && (
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(26,92,58,0.5)', fontStyle: 'italic' }}>
+            Selecione uma opção acima para continuar.
+          </p>
+        )}
+      </div>
+
       <div style={{
         background: 'rgba(181,132,10,0.06)',
         border: `1px solid ${COR_GOLD}25`,
@@ -851,23 +1029,67 @@ export default function ArquitetoRotinasPage() {
 
   const step1 = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div>
-        <h2 style={{ color: COR_VERDE, marginBottom: 8 }}>Ritual Matinal</h2>
-        <p style={{ color: '#4a5568', maxWidth: 580 }}>
-          Configure cada hábito do seu amanhecer. Indique se já pratica e qual a dificuldade — isso ajuda a priorizar as mudanças mais importantes.
+
+      {/* Mensagem motivacional */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 12,
+        background: `linear-gradient(135deg, rgba(26,92,58,0.06) 0%, rgba(181,132,10,0.06) 100%)`,
+        border: `1px solid rgba(26,92,58,0.15)`,
+        borderRadius: 12,
+        padding: '14px 18px',
+      }}>
+        <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>🌱</span>
+        <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: 15, color: COR_VERDE, lineHeight: 1.65, fontWeight: 500 }}>
+          Sua rotina ideal começa com o que você tem agora.{' '}
+          <span style={{ color: '#4a5568', fontWeight: 400 }}>
+            {tipoHorario === 'fixo'
+              ? `Cada hábito encaixado antes ou após o trabalho já é uma vitória real. Você tem tempo antes das ${horarioEntrada} — use bem cada minuto.`
+              : 'Monte com calma. Um hábito consistente vale mais do que uma rotina perfeita que nunca sai do papel.'}
+          </span>
         </p>
       </div>
 
-      {HABITOS_MATINAIS.map(h => (
-        <HabitoRow
-          key={h.key}
-          emoji={h.emoji}
-          nome={h.nome}
-          sugestao={h.sugestao}
-          habito={matinal[h.key]}
-          onChange={updated => setMatinal(prev => ({ ...prev, [h.key]: updated }))}
-        />
-      ))}
+      <div>
+        <h2 style={{ color: COR_VERDE, marginBottom: 8 }}>Ritual Matinal</h2>
+        <p style={{ color: '#4a5568', maxWidth: 580 }}>
+          {tipoHorario === 'fixo'
+            ? `Configure cada hábito antes de entrar no trabalho. As sugestões já estão calculadas para caber antes das ${horarioEntrada}.`
+            : 'Configure cada hábito do seu amanhecer. Indique se já pratica e qual a dificuldade — isso ajuda a priorizar as mudanças mais importantes.'}
+        </p>
+      </div>
+
+      {tipoHorario === 'fixo' && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          background: `${COR_GOLD}10`,
+          border: `1px solid ${COR_GOLD}30`,
+          borderRadius: 10,
+          padding: '10px 14px',
+        }}>
+          <span style={{ fontSize: 15 }}>💼</span>
+          <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: 13, color: COR_GOLD, fontWeight: 500 }}>
+            Horário fixo detectado — sugestões calculadas para antes das <strong>{horarioEntrada}</strong>. Preencha o campo de horário de cada hábito.
+          </p>
+        </div>
+      )}
+
+      {HABITOS_MATINAIS.map(h => {
+        const sugestaoAdaptada = sugestoesMatinal ? sugestoesMatinal[h.key] : h.sugestao;
+        return (
+          <HabitoRow
+            key={h.key}
+            emoji={h.emoji}
+            nome={h.nome}
+            sugestao={sugestaoAdaptada}
+            habito={matinal[h.key]}
+            onChange={updated => setMatinal(prev => ({ ...prev, [h.key]: updated }))}
+          />
+        );
+      })}
 
       {matinalPreenchidos < 3 && (
         <p style={{
@@ -893,18 +1115,65 @@ export default function ArquitetoRotinasPage() {
       <div>
         <h2 style={{ color: COR_VERDE, marginBottom: 8 }}>Bloco Produtivo</h2>
         <p style={{ color: '#4a5568', maxWidth: 580 }}>
-          Defina seus 3 blocos de foco profundo. Cada bloco tem uma tarefa principal clara, duração definida e o nível de energia que a tarefa exige para ser executada com qualidade.
+          {tipoHorario === 'fixo'
+            ? `Configure os blocos disponíveis antes e após o trabalho (${horarioEntrada}–${horarioSaida}). Cada bloco tem uma tarefa principal e o nível de energia necessário.`
+            : 'Defina seus 3 blocos de foco profundo. Cada bloco tem uma tarefa principal clara, duração definida e o nível de energia que a tarefa exige para ser executada com qualidade.'}
         </p>
       </div>
 
-      {BLOCOS_CONFIG.map(config => (
-        <BlocoProdutivoCard
-          key={config.key}
-          config={config}
-          bloco={blocos[config.key]}
-          onChange={updated => setBlocos(prev => ({ ...prev, [config.key]: updated }))}
-        />
-      ))}
+      {tipoHorario === 'fixo' ? (
+        <>
+          {blocosFixoConfig.map(config => (
+            <BlocoProdutivoCard
+              key={config.key}
+              config={config}
+              bloco={blocos[config.key]}
+              onChange={updated => setBlocos(prev => ({ ...prev, [config.key]: updated }))}
+            />
+          ))}
+
+          {/* Bloco de trabalho — apenas visual */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            background: 'rgba(156,163,175,0.04)',
+            border: '1.5px solid rgba(156,163,175,0.2)',
+            borderRadius: 12,
+            padding: '16px 20px',
+          }}>
+            <span style={{ fontSize: 22, flexShrink: 0, opacity: 0.45 }}>💼</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: '#9ca3af' }}>
+                Trabalho
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
+                {horarioEntrada} – {horarioSaida}
+              </div>
+            </div>
+            <span style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              color: '#9ca3af',
+              background: 'rgba(156,163,175,0.12)',
+              borderRadius: 99,
+              padding: '3px 12px',
+              flexShrink: 0,
+            }}>
+              reservado
+            </span>
+          </div>
+        </>
+      ) : (
+        BLOCOS_CONFIG.map(config => (
+          <BlocoProdutivoCard
+            key={config.key}
+            config={config}
+            bloco={blocos[config.key]}
+            onChange={updated => setBlocos(prev => ({ ...prev, [config.key]: updated }))}
+          />
+        ))
+      )}
 
       {blocoPreenchidos === 0 && (
         <p style={{
@@ -980,7 +1249,7 @@ export default function ArquitetoRotinasPage() {
       totalItens={totalItens}
       labelItens={labelItens}
       resumo={painelResumo}
-  respostas={{ matinal, blocos, noturno, rastreador }}
+      respostas={{ matinal, blocos, noturno, rastreador, tipoHorario, horarioEntrada, horarioSaida }}
     >
       {bannerPreReq}
       {steps[etapa]}
