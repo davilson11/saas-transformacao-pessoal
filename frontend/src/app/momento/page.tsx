@@ -406,10 +406,11 @@ export default function MomentoPage() {
       userVisibleOnly: true,
       applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
     });
+    // userId não é enviado: o servidor pega da sessão do Clerk.
     await fetch('/api/push/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user.id, subscription: sub }),
+      body: JSON.stringify({ subscription: sub }),
     });
     setNotifAtiva(true);
   }

@@ -97,13 +97,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 //   (23h UTC = 20h BRT)
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  // Proteção simples por secret header
+  // Proteção por secret header. Falha FECHADA: se CRON_SECRET não estiver
+  // configurada, a rota é negada em vez de ficar aberta.
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = req.headers.get('authorization');
-    if (auth !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
-    }
+  if (!secret) {
+    console.error('[notify GET] CRON_SECRET não definida — rota bloqueada.');
+    return NextResponse.json({ error: 'Não configurado.' }, { status: 503 });
+  }
+  if (req.headers.get('authorization') !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
   }
 
   try {
