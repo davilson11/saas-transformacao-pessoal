@@ -2,10 +2,10 @@
 
 **Data:** 03/08/2026 · **Commit analisado:** `6caf067` · **Tamanho:** ~34.850 linhas TS/TSX em `frontend/src`
 
-> **Status em 03/08/2026, 23h50:** todos os itens críticos e altos estão fechados,
-> exceto o item 5. Correções de código no commit `7791c87` (ainda **sem push**);
-> os dois scripts SQL em `frontend/scripts/` já foram aplicados em produção.
-> Falta: dar push, rodar `npm run build` local, e a policy de UPDATE em `roda_vida`.
+> **Status em 03/08/2026, 23h55:** o item 1 era alarme falso e foi revertido — leia a correção abaixo.
+> Os demais itens críticos e altos estão fechados. Código nos commits `7791c87` e `b1a72f7`
+> (ainda **sem push**); os dois scripts SQL em `frontend/scripts/` já foram aplicados em produção.
+> `npm run build` passou. Falta: dar push e a policy de UPDATE em `roda_vida`.
 
 ## Stack
 
@@ -17,25 +17,25 @@ Produto: 17 ferramentas de autoconhecimento + dashboard, diário Kairos, missõe
 
 ## 🔴 Crítico
 
-### 1. Nenhum middleware de autenticação está ativo
+### 1. ~~Nenhum middleware de autenticação está ativo~~ — ❌ ALARME FALSO
 
-O arquivo `frontend/src/proxy.ts` contém um `clerkMiddleware` correto — mas o Next.js **só** reconhece `middleware.ts` (na raiz ou em `src/`). Como o arquivo se chama `proxy.ts`, ele nunca é executado.
+**Este item estava errado.** Fica registrado como correção do relatório.
 
-Consequência: **zero proteção de rota no edge**. Toda a autenticação depende de guards client-side (`useUser()` dentro de `'use client'`), que rodam depois do HTML ser servido e são triviais de contornar.
+Eu afirmei que o `clerkMiddleware` em `frontend/src/proxy.ts` nunca era executado, porque o Next.js só reconheceria `middleware.ts`. É o contrário: no **Next.js 16 o `middleware.ts` foi renomeado para `proxy.ts`**. `proxy.ts` é a convenção atual; `middleware.ts` é o nome deprecado.
 
-O histórico mostra que isso foi um vai-e-vem de 8 commits:
+O build deixa isso explícito:
 
 ```
-1bf5f22 fix: renomeia middleware.ts para proxy.ts      ← estado atual (quebrado)
-fa259b3 feat: adiciona middleware de autenticação Clerk
-0cf5aa4 fix: move middleware para raiz do projeto
-a0ceb75 fix: remover middleware.ts duplicado — usar apenas proxy.ts
-7d1accf fix: substitui middleware.ts por proxy.ts e corrige conflito Next.js 16
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead.
+...
+ƒ Proxy (Middleware)
 ```
 
-O "conflito do Next.js 16" que motivou a renomeação provavelmente era outra coisa (middleware duplicado em dois níveis). A correção certa é ter **um único** `frontend/src/middleware.ts`.
+Ou seja: **as rotas sempre estiveram protegidas no edge.** O commit `7d1accf` ("substitui middleware.ts por proxy.ts e corrige conflito Next.js 16") era uma migração correta, e eu li o vai-e-vem de renomeações como confusão quando era o oposto.
 
-**Correção:** `git mv frontend/src/proxy.ts frontend/src/middleware.ts` e garantir que não exista outro middleware na raiz.
+A renomeação que fiz em `7791c87` foi revertida em `b1a72f7`. O arquivo correto é `frontend/src/proxy.ts`.
+
+**Lição para o restante deste relatório:** o diagnóstico veio de leitura estática do código sem rodar o build. Os demais itens foram verificados contra o banco de dados real ou contra o comportamento do código, mas vale ceticismo com qualquer conclusão que dependa de convenção de framework.
 
 ### 2. Paywall pode ser burlado pelo próprio usuário (RLS)
 
@@ -130,11 +130,17 @@ Não há registro de `event.id` processado. O Stripe reenvia eventos, e a ordem 
 
 ---
 
-## Ordem de ataque sugerida
+## Ordem de ataque
 
-1. **Hoje:** renomear `proxy.ts` → `middleware.ts` (item 1).
-2. **Hoje:** autenticar `POST /api/notify` (item 3).
-3. **Esta semana:** fechar a RLS de `subscriptions` (item 2) e auditar RLS de `diario_kairos` / `momento_kairos` (item 4).
-4. **Esta semana:** exportar o schema completo do Supabase para o repo (`supabase db dump`) e passar a versionar migrations.
-5. **Depois:** idempotência + fallback no webhook (itens 6 e 7).
-6. **Contínuo:** limpar `.bak`/`.DS_Store`, adicionar CI com `next build` + `eslint`, e começar testes pelos módulos de dinheiro (`subscription.ts`, webhook).
+- [x] ~~Item 1 — middleware~~ (alarme falso, revertido)
+- [x] Item 3 — autenticar `POST /api/notify`
+- [x] Item 2 — fechar a RLS de `subscriptions`
+- [x] Item 4 — auditar RLS de `diario_kairos` / `momento_kairos` / `push_subscriptions`
+- [x] Itens 6 e 7 — idempotência + fallback no webhook
+- [x] Limpar `.bak` / `.DS_Store`, adicionar CI
+- [ ] **Dar push** (nada foi enviado ao GitHub ainda)
+- [ ] Item 5 — policy de UPDATE em `roda_vida`
+- [ ] Exportar o schema completo do Supabase (`supabase db dump`) e versionar migrations — foi a ausência disso que escondeu os problemas de RLS
+- [ ] Item 8 — verificação de assinatura nas rotas de API (parcialmente coberto: a RLS de `momento_kairos` agora barra o conteúdo no banco)
+- [ ] Zerar o passivo de 171 erros de lint e remover o `continue-on-error` do CI
+- [ ] Testes, começando pelos módulos de dinheiro (`subscription.ts`, webhook)
