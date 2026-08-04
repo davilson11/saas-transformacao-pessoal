@@ -416,7 +416,7 @@ export default function MomentoPage() {
   }
 
 
-  const nomeUsuario = user?.firstName ?? 'Davilson';
+  const nomeUsuario = user?.firstName ?? user?.fullName?.split(' ')[0] ?? 'você';
   const dataLabel = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
 
 
