@@ -26,6 +26,9 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      - name: Testes
+        run: npm test
+
       # Não bloqueia por enquanto: há ~171 erros pré-existentes de lint
       # (114 no-explicit-any, 30 no-unescaped-entities, 20 set-state-in-effect).
       # Assim que o passivo for zerado, remova o continue-on-error.

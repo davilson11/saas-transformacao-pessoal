@@ -2,24 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-
-type Action = {
-  id: number;
-  icon: string;
-  texto: string;
-  badge: string;
-  slug: string;
-  prioridade: 'alta' | 'media' | 'baixa';
-};
-
-const ACTIONS_INICIAL: Action[] = [
-  { id: 1, icon: '🎯', texto: 'Completar as 3 últimas perguntas do SWOT Pessoal',        badge: 'F03', slug: 'swot-pessoal',        prioridade: 'alta'  },
-  { id: 2, icon: '🌅', texto: 'Definir o bloco de manhã da sua Rotina Ideal',            badge: 'F08', slug: 'rotina-ideal',         prioridade: 'alta'  },
-  { id: 3, icon: '📊', texto: 'Revisar os OKRs do mês e ajustar metas',                 badge: 'F05', slug: 'okrs-pessoais',         prioridade: 'media' },
-  { id: 4, icon: '💰', texto: 'Lançar os gastos da semana no Mapa Financeiro Pessoal', badge: 'F07', slug: 'dre-pessoal',           prioridade: 'media' },
-  { id: 5, icon: '📔', texto: 'Fazer o registro de hoje no Diário de Bordo',            badge: 'F15', slug: 'diario-bordo',          prioridade: 'baixa' },
-  { id: 6, icon: '🛡', texto: 'Revisar seu Plano de Continuidade e planos SE-ENTÃO',    badge: 'F16', slug: 'prevencao-recaida',     prioridade: 'baixa' },
-];
+import { useProximosPassos } from '@/hooks/useProximosPassos';
+import { MENSAGEM_TUDO_EM_DIA } from '@/lib/proximosPassos';
 
 const PRIORIDADE_CONFIG = {
   alta:  { label: 'Alta',  dot: '#C0392B' },
@@ -28,18 +12,20 @@ const PRIORIDADE_CONFIG = {
 };
 
 export default function NextActions() {
-  const [done, setDone] = useState<Set<number>>(new Set());
+  const { passos, loading, erro } = useProximosPassos();
+  const [done, setDone] = useState<Set<string>>(new Set());
 
-  const toggle = (id: number) =>
+  const toggle = (id: string) =>
     setDone((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
 
-  const concluidos = done.size;
-  const total = ACTIONS_INICIAL.length;
-  const pct = Math.round((concluidos / total) * 100);
+  const total      = passos.length;
+  const concluidos = passos.filter((p) => done.has(p.id)).length;
+  const pct        = total === 0 ? 100 : Math.round((concluidos / total) * 100);
 
   return (
     <div
@@ -68,132 +54,181 @@ export default function NextActions() {
             Próximas Ações
           </h3>
           <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', marginTop: 3 }}>
-            Tarefas e metas do dia
+            Sugeridas a partir do seu progresso
           </p>
         </div>
 
         {/* Progresso circular compacto */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <svg width="36" height="36" viewBox="0 0 36 36">
-            <circle cx="18" cy="18" r="14" fill="none" stroke="var(--color-brand-border)" strokeWidth="3" />
-            <circle
-              cx="18" cy="18" r="14"
-              fill="none"
-              stroke={pct === 100 ? '#27AE60' : 'var(--color-brand-gold)'}
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeDasharray={`${2 * Math.PI * 14}`}
-              strokeDashoffset={`${2 * Math.PI * 14 * (1 - pct / 100)}`}
-              transform="rotate(-90 18 18)"
-              style={{ transition: 'stroke-dashoffset 0.4s ease' }}
-            />
-            <text
-              x="18" y="22"
-              textAnchor="middle"
-              style={{ fontSize: 10, fontWeight: 700, fill: 'var(--color-brand-dark-green)', fontFamily: 'DM Sans' }}
-            >
-              {pct}%
-            </text>
-          </svg>
-          <span style={{ fontSize: 12, color: 'var(--color-brand-gray)' }}>
-            {concluidos}/{total}
-          </span>
-        </div>
+        {total > 0 && (
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <svg width="36" height="36" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="14" fill="none" stroke="var(--color-brand-border)" strokeWidth="3" />
+              <circle
+                cx="18" cy="18" r="14"
+                fill="none"
+                stroke={pct === 100 ? '#27AE60' : 'var(--color-brand-gold)'}
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 14}`}
+                strokeDashoffset={`${2 * Math.PI * 14 * (1 - pct / 100)}`}
+                transform="rotate(-90 18 18)"
+                style={{ transition: 'stroke-dashoffset 0.4s ease' }}
+              />
+              <text
+                x="18" y="22"
+                textAnchor="middle"
+                style={{ fontSize: 10, fontWeight: 700, fill: 'var(--color-brand-dark-green)', fontFamily: 'DM Sans' }}
+              >
+                {pct}%
+              </text>
+            </svg>
+            <span style={{ fontSize: 12, color: 'var(--color-brand-gray)' }}>
+              {concluidos}/{total}
+            </span>
+          </div>
+        )}
       </div>
 
+      {/* Carregando */}
+      {loading && (
+        <div className="flex flex-col gap-3 px-6 py-6">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-4">
+              <div className="rounded-md" style={{ width: 20, height: 20, background: 'rgba(30,57,42,0.06)' }} />
+              <div className="rounded-xl" style={{ width: 34, height: 34, background: 'rgba(30,57,42,0.06)' }} />
+              <div className="flex-1 rounded" style={{ height: 12, background: 'rgba(30,57,42,0.06)' }} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Erro */}
+      {!loading && erro && (
+        <div className="px-6 py-8 text-center">
+          <p style={{ fontSize: 13, color: 'var(--color-brand-gray)' }}>
+            Não consegui carregar suas próximas ações agora.
+          </p>
+        </div>
+      )}
+
+      {/* Tudo em dia */}
+      {!loading && !erro && total === 0 && (
+        <div className="px-6 py-8 text-center">
+          <span style={{ fontSize: 28 }}>🌿</span>
+          <p style={{ fontSize: 14, color: 'var(--color-brand-dark-green)', marginTop: 8, lineHeight: 1.5 }}>
+            {MENSAGEM_TUDO_EM_DIA}
+          </p>
+        </div>
+      )}
+
       {/* Lista */}
-      <ul className="flex flex-col divide-y" style={{ borderColor: 'var(--color-brand-border)' }}>
-        {ACTIONS_INICIAL.map((action) => {
-          const isDone = done.has(action.id);
-          const prio = PRIORIDADE_CONFIG[action.prioridade];
+      {!loading && !erro && total > 0 && (
+        <ul className="flex flex-col divide-y" style={{ borderColor: 'var(--color-brand-border)' }}>
+          {passos.map((passo) => {
+            const isDone = done.has(passo.id);
+            const prio   = PRIORIDADE_CONFIG[passo.prioridade];
 
-          return (
-            <li key={action.id}>
-              <button
-                onClick={() => toggle(action.id)}
-                className="w-full flex items-start gap-4 px-6 py-4 text-left transition-colors duration-150"
-                style={{ background: isDone ? 'rgba(39,174,96,0.04)' : 'transparent' }}
-              >
-                {/* Checkbox */}
-                <div
-                  className="flex items-center justify-center rounded-md flex-shrink-0 mt-0.5 transition-all duration-200"
-                  style={{
-                    width: 20,
-                    height: 20,
-                    border: isDone ? 'none' : '1.5px solid var(--color-brand-border)',
-                    background: isDone ? '#27AE60' : 'transparent',
-                  }}
+            return (
+              <li key={passo.id}>
+                <button
+                  onClick={() => toggle(passo.id)}
+                  className="w-full flex items-start gap-4 px-6 py-4 text-left transition-colors duration-150"
+                  style={{ background: isDone ? 'rgba(39,174,96,0.04)' : 'transparent' }}
                 >
-                  {isDone && (
-                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                      <path d="M1.5 5.5l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </div>
-
-                {/* Ícone */}
-                <span
-                  className="flex-shrink-0 flex items-center justify-center rounded-xl"
-                  style={{
-                    width: 34,
-                    height: 34,
-                    background: isDone ? 'rgba(39,174,96,0.08)' : 'rgba(30,57,42,0.06)',
-                    fontSize: 16,
-                    opacity: isDone ? 0.6 : 1,
-                  }}
-                >
-                  {action.icon}
-                </span>
-
-                {/* Texto + badges */}
-                <div className="flex-1 min-w-0">
-                  <p
+                  {/* Checkbox */}
+                  <div
+                    className="flex items-center justify-center rounded-md flex-shrink-0 mt-0.5 transition-all duration-200"
                     style={{
-                      fontSize: 14,
-                      lineHeight: 1.45,
-                      color: isDone ? 'var(--color-brand-gray)' : 'var(--color-brand-dark-green)',
-                      textDecoration: isDone ? 'line-through' : 'none',
-                      textDecorationColor: 'var(--color-brand-gray)',
-                      transition: 'all 0.2s ease',
+                      width: 20,
+                      height: 20,
+                      border: isDone ? 'none' : '1.5px solid var(--color-brand-border)',
+                      background: isDone ? '#27AE60' : 'transparent',
                     }}
                   >
-                    {action.texto}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    {/* Badge ferramenta — link para a página da ferramenta */}
-                    <Link
-                      href={`/ferramentas/${action.slug}`}
-                      onClick={(e) => e.stopPropagation()}
+                    {isDone && (
+                      <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                        <path d="M1.5 5.5l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+
+                  {/* Ícone */}
+                  <span
+                    className="flex-shrink-0 flex items-center justify-center rounded-xl"
+                    style={{
+                      width: 34,
+                      height: 34,
+                      background: isDone ? 'rgba(39,174,96,0.08)' : 'rgba(30,57,42,0.06)',
+                      fontSize: 16,
+                      opacity: isDone ? 0.6 : 1,
+                    }}
+                  >
+                    {passo.emoji}
+                  </span>
+
+                  {/* Texto + motivo + badges */}
+                  <div className="flex-1 min-w-0">
+                    <p
                       style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 10,
-                        fontWeight: 500,
-                        color: isDone ? 'var(--color-brand-gray)' : 'var(--color-brand-gold)',
-                        background: isDone ? 'rgba(107,114,128,0.08)' : 'rgba(224,165,95,0.12)',
-                        padding: '2px 7px',
-                        borderRadius: 99,
-                        border: `1px solid ${isDone ? 'transparent' : 'rgba(224,165,95,0.25)'}`,
-                        textDecoration: 'none',
-                        cursor: 'pointer',
+                        fontSize: 14,
+                        lineHeight: 1.45,
+                        color: isDone ? 'var(--color-brand-gray)' : 'var(--color-brand-dark-green)',
+                        textDecoration: isDone ? 'line-through' : 'none',
+                        textDecorationColor: 'var(--color-brand-gray)',
+                        transition: 'all 0.2s ease',
                       }}
                     >
-                      {action.badge} ↗
-                    </Link>
-                    {/* Prioridade */}
-                    <span className="flex items-center gap-1" style={{ fontSize: 11, color: 'var(--color-brand-gray)' }}>
-                      <span
-                        className="rounded-full inline-block"
-                        style={{ width: 6, height: 6, background: isDone ? 'var(--color-brand-gray)' : prio.dot }}
-                      />
-                      {prio.label}
-                    </span>
+                      {passo.texto}
+                    </p>
+
+                    {/* O porquê da sugestão — é isto que diferencia de uma lista fixa */}
+                    <p
+                      style={{
+                        fontSize: 12,
+                        lineHeight: 1.4,
+                        color: 'var(--color-brand-gray)',
+                        marginTop: 2,
+                        fontStyle: 'italic',
+                        opacity: isDone ? 0.5 : 1,
+                      }}
+                    >
+                      {passo.motivo}
+                    </p>
+
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <Link
+                        href={`/ferramentas/${passo.slug}`}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 10,
+                          fontWeight: 500,
+                          color: isDone ? 'var(--color-brand-gray)' : 'var(--color-brand-gold)',
+                          background: isDone ? 'rgba(107,114,128,0.08)' : 'rgba(224,165,95,0.12)',
+                          padding: '2px 7px',
+                          borderRadius: 99,
+                          border: `1px solid ${isDone ? 'transparent' : 'rgba(224,165,95,0.25)'}`,
+                          textDecoration: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {passo.codigo} ↗
+                      </Link>
+                      <span className="flex items-center gap-1" style={{ fontSize: 11, color: 'var(--color-brand-gray)' }}>
+                        <span
+                          className="rounded-full inline-block"
+                          style={{ width: 6, height: 6, background: isDone ? 'var(--color-brand-gray)' : prio.dot }}
+                        />
+                        {prio.label}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       {/* Footer */}
       <div
@@ -201,9 +236,11 @@ export default function NextActions() {
         style={{ borderTop: '1px solid var(--color-brand-border)', background: 'rgba(30,57,42,0.02)' }}
       >
         <p style={{ fontSize: 12, color: 'var(--color-brand-gray)' }}>
-          {concluidos === total
-            ? '🎉 Todas as ações concluídas hoje!'
-            : `${total - concluidos} ação${total - concluidos !== 1 ? 'ões' : ''} pendente${total - concluidos !== 1 ? 's' : ''}`}
+          {total === 0
+            ? 'Nada pendente'
+            : concluidos === total
+              ? '🎉 Todas as ações concluídas hoje!'
+              : `${total - concluidos} ação${total - concluidos !== 1 ? 'ões' : ''} pendente${total - concluidos !== 1 ? 's' : ''}`}
         </p>
         <Link
           href="/ferramentas"
