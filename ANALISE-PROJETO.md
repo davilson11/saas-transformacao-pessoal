@@ -2,6 +2,10 @@
 
 **Data:** 03/08/2026 · **Commit analisado:** `6caf067` · **Tamanho:** ~34.850 linhas TS/TSX em `frontend/src`
 
+> **Status:** os itens 1, 2, 3, 6 e 7 foram corrigidos no commit `7791c87` (ainda **sem push**).
+> Falta você rodar `frontend/scripts/fix-rls-subscriptions.sql` no Supabase — sem isso o
+> item 2 continua aberto no banco. Os itens 4 e 5 dependem de auditoria no dashboard do Supabase.
+
 ## Stack
 
 Next.js 16.2.1 (App Router, React 19.2 + React Compiler) · Clerk (auth) · Supabase (Postgres + RLS) · Stripe (assinaturas) · Tailwind 4 · web-push (PWA) · deploy Vercel.
@@ -108,12 +112,13 @@ Não há registro de `event.id` processado. O Stripe reenvia eventos, e a ordem 
 | **Arquivos gigantes** | `perfil/page.tsx` 1574 linhas · `FerramentaLayout.tsx` 1357 · `mapa/page.tsx` 1338 · `arquiteto-rotinas` 1258. |
 | **Duplicação massiva** | As 17 ferramentas somam ~15k linhas com estrutura quase idêntica (form → estado → salvar em `ferramentas_respostas`). Candidato forte a virar config declarativa + um renderizador. |
 | **Tudo client-side** | Todas as páginas são `'use client'`. Nenhum Server Component. É a raiz do problema de auth (item 1) e infla o bundle. |
-| **`exhaustive-deps` desabilitado** | 22 arquivos com `eslint-disable` de hooks. Com **React Compiler ligado** isso é arriscado: o compiler memoiza assumindo deps corretas. |
+| **Lint com 171 erros** | `eslint src` acusa 171 erros e 12 warnings: 114 `no-explicit-any`, 30 `no-unescaped-entities`, 20 `set-state-in-effect`, além de `react-hooks/refs` em `useSupabaseClient.ts` (grava em ref durante o render). Com **React Compiler ligado**, os erros de `react-hooks/*` são risco real de bug, não estilo. |
+| **`exhaustive-deps` desabilitado** | 22 arquivos com `eslint-disable` de hooks — o compiler memoiza assumindo deps corretas. |
 | **Design tokens** | Cores hardcoded (`GOLD = '#C8A030'`, `DARK`, `CREAM`) repetidas em vários componentes, apesar do Tailwind 4 instalado. |
 | **Cache de client Supabase** | `authClientCache` é um `Map` por token, sem expiração — cresce a cada refresh de JWT. Vazamento pequeno mas real em sessões longas. |
 | **Histórico de commits** | 197 commits, esmagadora maioria `fix:` de bugs recém-introduzidos. Sintoma da ausência de testes/CI. |
 
-**Positivo:** `strict: true` no TypeScript, zero `: any` no código, apenas 6 `console.log`, webhook do Stripe valida assinatura corretamente, `/api/checkout` pega o `userId` do servidor em vez de confiar no cliente, e `/api/push/send` é protegido por `CRON_SECRET`. Segredos não estão versionados (`.env*` no gitignore, confirmado com `git ls-files`).
+**Positivo:** `strict: true` no TypeScript, apenas 6 `console.log`, webhook do Stripe valida assinatura corretamente, `/api/checkout` pega o `userId` do servidor em vez de confiar no cliente, e `/api/push/send` é protegido por `CRON_SECRET`. Segredos não estão versionados (`.env*` no gitignore, confirmado com `git ls-files`).
 
 ---
 
