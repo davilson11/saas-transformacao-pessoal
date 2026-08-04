@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
+import { useJornada } from '@/hooks/useJornada';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
 
@@ -211,6 +212,8 @@ export default function MissoesPage() {
   const { user }    = useUser();
   const { getClient } = useSupabaseClient();
 
+  // Conteúdo indexado pelo dia da jornada do usuário, não pela data.
+  const { diaHoje, diaDoCicloEm } = useJornada();
   // Estado do dia atual
   const [momento,         setMomento]         = useState<MomentoKairos | null>(null);
   const [diarioHoje,      setDiarioHoje]       = useState<Partial<DiarioKairos> | null>(null);
@@ -235,13 +238,15 @@ export default function MissoesPage() {
         const hoje   = getDiaStr();
         const limite = getDiaStr(30);
 
-        // Missão do dia
-        const { data: mom } = await client
-          .from('momento_kairos')
-          .select('*')
-          .eq('data', hoje)
-          .maybeSingle();
-        if (mom) setMomento(mom as MomentoKairos);
+        // Missão do dia — buscada pelo dia da jornada, não pela data
+        if (diaHoje !== null) {
+          const { data: mom } = await client
+            .from('momento_kairos')
+            .select('*')
+            .eq('dia_jornada', diaHoje)
+            .maybeSingle();
+          if (mom) setMomento(mom as MomentoKairos);
+        }
 
         // Diário de hoje
         const { data: dHoje } = await client
@@ -266,17 +271,30 @@ export default function MissoesPage() {
           .order('data', { ascending: false });
 
         if (hist && hist.length > 0) {
+          // O diário é ancorado na data real; o conteúdo, no dia da jornada.
+          // Converte cada data de registro no dia do ciclo correspondente.
           const datas = hist.map((h: { data: string }) => h.data);
+          const diaPorData = new Map<string, number>();
+          for (const d of datas) {
+            const dj = diaDoCicloEm(d);
+            if (dj !== null) diaPorData.set(d, dj);
+          }
+
           const { data: moms } = await client
             .from('momento_kairos')
-            .select('data, missao, fase')
-            .in('data', datas);
+            .select('dia_jornada, missao, fase')
+            .in('dia_jornada', Array.from(new Set(diaPorData.values())));
+
+          const missaoPorDia: Record<number, string> = {};
+          if (moms) {
+            for (const m of moms as { dia_jornada: number; missao: string }[]) {
+              missaoPorDia[m.dia_jornada] = m.missao;
+            }
+          }
 
           const momMap: Record<string, string> = {};
-          if (moms) {
-            for (const m of moms as { data: string; missao: string }[]) {
-              momMap[m.data] = m.missao;
-            }
+          for (const [data, dia] of diaPorData) {
+            if (missaoPorDia[dia]) momMap[data] = missaoPorDia[dia];
           }
 
           setHistorico(
@@ -296,7 +314,7 @@ export default function MissoesPage() {
         setLoading(false);
       }
     })();
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id, diaHoje]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Auto-save de execução (debounce 800 ms) ────────────────────────────────
 

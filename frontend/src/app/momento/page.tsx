@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useUser, useAuth } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
+import { useJornada } from '@/hooks/useJornada';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
 
@@ -232,6 +233,8 @@ export default function MomentoPage() {
   const { getToken } = useAuth();
   const { getClient } = useSupabaseClient();
 
+  // Conteúdo indexado pelo dia da jornada do usuário, não pela data.
+  const { diaHoje } = useJornada();
   const [momento, setMomento] = useState<MomentoKairos | null>(null);
   const [diario, setDiario] = useState<Partial<DiarioKairos>>({});
   const [salvando, setSalvando] = useState(false);
@@ -256,8 +259,11 @@ export default function MomentoPage() {
     (async () => {
       try {
         const client = await getClient();
-        const { data: momentoData } = await client.from('momento_kairos').select('*').eq('data', hoje).maybeSingle();
-        if (momentoData) setMomento(momentoData);
+        // Conteúdo pelo dia da jornada, não pela data do calendário.
+        if (diaHoje !== null) {
+          const { data: momentoData } = await client.from('momento_kairos').select('*').eq('dia_jornada', diaHoje).maybeSingle();
+          if (momentoData) setMomento(momentoData);
+        }
         const { data: diarioData } = await client.from('diario_kairos').select('*').eq('user_id', user.id).eq('data', hoje).or('tipo_entrada.eq.momento,tipo_entrada.is.null').maybeSingle();
         if (diarioData) setDiario(diarioData);
         const { data: hist } = await client.from('diario_kairos').select('*').eq('user_id', user.id).or('tipo_entrada.eq.momento,tipo_entrada.is.null').order('data', { ascending: false }).limit(60);
@@ -268,7 +274,7 @@ export default function MomentoPage() {
         setCarregando(false);
       }
     })();
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id, diaHoje]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   useEffect(() => {

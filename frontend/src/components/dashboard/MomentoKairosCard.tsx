@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useUser, useAuth } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
+import { useJornada } from '@/hooks/useJornada';
 import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
 
 // ─── Helpers de resiliência ───────────────────────────────────────────────────
@@ -75,6 +76,8 @@ export default function MomentoKairosCard() {
   const { getToken } = useAuth();
   const { getClient } = useSupabaseClient();
 
+  // Conteúdo indexado pelo dia da jornada do usuário, não pela data.
+  const { diaHoje } = useJornada();
   const [momento, setMomento] = useState<MomentoKairos | null>(null);
   const [diario, setDiario] = useState<Partial<DiarioKairos>>({});
   const [streak, setStreak] = useState(0);
@@ -100,7 +103,7 @@ export default function MomentoKairosCard() {
       try {
         const client = await getClient();
         const [{ data: momentoData }, { data: diarioData }, { data: hist }] = await Promise.all([
-          client.from('momento_kairos').select('*').eq('data', hoje).maybeSingle(),
+          client.from('momento_kairos').select('*').eq('dia_jornada', diaHoje ?? -1).maybeSingle(),
           client.from('diario_kairos').select('*').eq('user_id', user.id).eq('data', hoje).or('tipo_entrada.eq.momento,tipo_entrada.is.null').maybeSingle(),
           client.from('diario_kairos').select('*').eq('user_id', user.id).or('tipo_entrada.eq.momento,tipo_entrada.is.null').order('data', { ascending: false }).limit(60),
         ]);
@@ -113,7 +116,7 @@ export default function MomentoKairosCard() {
         setCarregando(false);
       }
     })();
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id, diaHoje]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!user?.id) return;
