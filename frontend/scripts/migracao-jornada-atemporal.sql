@@ -1,6 +1,8 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- MIGRAÇÃO — de calendário de 2026 para jornada atemporal de 365 dias
 -- Supabase: Dashboard → SQL Editor → New Query → Run
+--
+-- APLICADO EM PRODUÇÃO EM 04/08/2026. Seguro de rodar de novo (idempotente).
 -- ═══════════════════════════════════════════════════════════════════════════
 --
 -- O QUE MUDA
@@ -62,6 +64,11 @@ ALTER TABLE momento_kairos
 
 CREATE UNIQUE INDEX IF NOT EXISTS momento_kairos_dia_jornada_idx
   ON momento_kairos (dia_jornada);
+
+-- DROP antes do ADD para o script ser seguro de rodar mais de uma vez.
+-- ADD CONSTRAINT não aceita IF NOT EXISTS.
+ALTER TABLE momento_kairos
+  DROP CONSTRAINT IF EXISTS momento_kairos_dia_jornada_valido;
 
 ALTER TABLE momento_kairos
   ADD CONSTRAINT momento_kairos_dia_jornada_valido
