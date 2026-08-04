@@ -1,8 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
 import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
+import { useValoresDoUsuario } from '@/hooks/useValoresDoUsuario';
+import { calcularContraste, textoSemMapeamento } from '@/lib/tempoEValores';
+import type { Valor } from '@/lib/valores';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -63,6 +67,92 @@ const ADE_CONFIG: Array<{
   { key: 'otimizar',    emoji: '⚡', label: 'Otimizar',    cor: '#3b82f6', descricao: 'O que pode ser feito em menos tempo?',         placeholder: 'Ex: Reuniões de 1h → 30min, preparar refeições em lote, leitura em dobro...' },
   { key: 'aumentar',    emoji: '📈', label: 'Aumentar',    cor: '#22c55e', descricao: 'O que merece mais espaço na sua semana?',      placeholder: 'Ex: Exercício diário, estudo de 1h, tempo de qualidade com família...' },
 ];
+
+/**
+ * Espelho de Valores — cruza a Bússola com o dia típico.
+ *
+ * Toda a decisão fica em `lib/tempoEValores.ts`; aqui só há apresentação.
+ *
+ * O tom foi a parte mais difícil. A tentação é escrever "você diz que a família
+ * importa mas passa 3h no celular" — é verdadeiro, soa forte, e faz a pessoa
+ * fechar o app. O produto é sobre mudança, e ninguém muda por vergonha; muda
+ * por clareza. Então as observações apresentam os dois números, lembram que
+ * ambos vieram da própria pessoa, e devolvem a pergunta em vez do veredicto.
+ */
+function EspelhoDeValores({
+  valores,
+  semBussola,
+  diaTipico,
+}: {
+  valores: Valor[];
+  semBussola: boolean;
+  diaTipico: DiaTipico;
+}) {
+  const totalAlocado = Object.values(diaTipico).reduce((s, h) => s + h, 0);
+
+  // Antes de haver horas suficientes no dia, não há o que comparar.
+  if (totalAlocado < 8) return null;
+
+  if (semBussola) {
+    return (
+      <div className="rounded-2xl p-5" style={{ background: '#fff', border: '1px solid var(--color-brand-border)' }}>
+        <p style={{ fontFamily: 'var(--font-heading)', fontSize: 16, fontStyle: 'italic', color: COR_PRIMARY, marginBottom: 6 }}>
+          🪞 Espelho de Valores
+        </p>
+        <p style={{ fontSize: 14, color: 'var(--color-brand-gray)', lineHeight: 1.6, margin: 0 }}>
+          Saber onde suas horas vão é metade do trabalho. A outra metade é saber
+          para onde <em>você quer</em> que elas vão. Faça a{' '}
+          <Link href="/ferramentas/bussola-valores" style={{ color: COR_GOLD, fontWeight: 600, textDecoration: 'underline' }}>
+            Bússola de Valores
+          </Link>{' '}
+          e esta ferramenta passa a comparar as duas coisas.
+        </p>
+      </div>
+    );
+  }
+
+  const { observacoes, semMapeamento } = calcularContraste(valores, { diaTipico });
+  if (observacoes.length === 0 && semMapeamento.length === 0) return null;
+
+  const ESTILO = {
+    contradicao:     { fundo: 'rgba(231,76,60,0.05)',  borda: 'rgba(231,76,60,0.25)',  cor: '#C0392B', icone: '⚖️' },
+    atencao:         { fundo: 'rgba(217,119,6,0.05)',  borda: 'rgba(217,119,6,0.25)',  cor: '#B7791F', icone: '👀' },
+    reconhecimento:  { fundo: 'rgba(39,174,96,0.05)',  borda: 'rgba(39,174,96,0.25)',  cor: '#1E8449', icone: '✓'  },
+  } as const;
+
+  return (
+    <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: '#fff', border: '1px solid var(--color-brand-border)', boxShadow: 'var(--shadow-card)' }}>
+      <div>
+        <p style={{ fontFamily: 'var(--font-heading)', fontSize: 16, fontStyle: 'italic', color: COR_PRIMARY }}>
+          🪞 Espelho de Valores
+        </p>
+        <p style={{ fontSize: 13, color: 'var(--color-brand-gray)', marginTop: 2 }}>
+          Seus três valores centrais, comparados com o dia que você acabou de descrever.
+        </p>
+      </div>
+
+      {observacoes.map((o) => {
+        const e = ESTILO[o.tipo];
+        return (
+          <div
+            key={o.id}
+            className="flex items-start gap-3 rounded-xl p-3"
+            style={{ background: e.fundo, border: `1px solid ${e.borda}` }}
+          >
+            <span style={{ fontSize: 15, flexShrink: 0, lineHeight: 1.4 }}>{e.icone}</span>
+            <p style={{ fontSize: 13.5, color: e.cor, lineHeight: 1.6, margin: 0 }}>{o.texto}</p>
+          </div>
+        );
+      })}
+
+      {semMapeamento.length > 0 && (
+        <p style={{ fontSize: 12, color: 'var(--color-brand-gray)', lineHeight: 1.55, margin: 0, fontStyle: 'italic' }}>
+          {textoSemMapeamento(semMapeamento)}
+        </p>
+      )}
+    </div>
+  );
+}
 
 const REFLEXAO_PERGUNTAS: Array<{
   key: keyof Reflexao;
@@ -319,6 +409,9 @@ export default function AuditoriaTempoPage() {
   });
 
   const [reflexao, setReflexao] = useState<Reflexao>({ surpresa: '', prioridade: '', compromisso: '' });
+
+  // Valores da Bússola — segunda ponte entre ferramentas.
+  const { valores, semBussola } = useValoresDoUsuario();
 
   const { dados: dadosSalvos } = useCarregarRespostas("auditoria-tempo");
   useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).diaTipico) setDiaTipico((dadosSalvos as any).diaTipico); if ((dadosSalvos as any).ade) setADE((dadosSalvos as any).ade); if ((dadosSalvos as any).reflexao) setReflexao((dadosSalvos as any).reflexao); }, [dadosSalvos]);
@@ -617,6 +710,8 @@ export default function AuditoriaTempoPage() {
                 </p>
               </div>
             </div>
+
+            <EspelhoDeValores valores={valores} semBussola={semBussola} diaTipico={diaTipico} />
           </div>
         )}
 
