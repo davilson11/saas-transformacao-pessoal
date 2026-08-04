@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
+import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // ─── Configuração VAPID ───────────────────────────────────────────────────────
@@ -42,15 +43,22 @@ const MENSAGEM_PADRAO = {
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
+    // O user_id vem SEMPRE da sessão do Clerk no servidor. Nunca do body:
+    // esta rota escreve com a service-role key (ignora RLS), então aceitar um
+    // userId do cliente permitiria sobrescrever a subscription de qualquer usuário.
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 });
+    }
+
     const body = await req.json() as {
       subscription?: {
         endpoint: string;
         keys:     { p256dh: string; auth: string };
       };
-      userId?: string;
     };
 
-    const { subscription, userId } = body;
+    const { subscription } = body;
 
     if (!subscription?.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
       return NextResponse.json({ error: 'Subscription inválida.' }, { status: 400 });
@@ -58,11 +66,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const supabase = supabaseAdmin;
 
-    // Upsert: um registro por usuário (userId pode ser null para usuários não autenticados)
+    // Upsert: um registro por usuário
     const { error } = await supabase
       .from('push_subscriptions')
       .upsert(
-        { user_id: userId ?? 'anonymous', subscription },
+        { user_id: userId, subscription },
         { onConflict: 'user_id' },
       );
 

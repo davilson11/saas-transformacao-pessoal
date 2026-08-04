@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# backups locais — não versionar
+*.bak
+*.orig
+*~
+
+# ferramentas de IA / editor
+.claude/
+.vscode/
+.idea/
+
+# env
+.env
+.env.*
+!.env.example
+
+# notas internas
+INSTRUCOES_CLAUDE_CODE.md

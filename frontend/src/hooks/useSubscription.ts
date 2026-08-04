@@ -31,28 +31,42 @@ export function useSubscription(): UseSubscriptionResult {
 
   useEffect(() => {
     if (!isLoaded) return;
-    if (!user?.id) { setLoading(false); return; }
+
+    // `cancelado` evita setState depois que o componente desmonta ou que o
+    // usuário muda no meio da requisição.
+    let cancelado = false;
 
     (async () => {
+      const userId = user?.id;
+      if (!userId) {
+        if (!cancelado) setLoading(false);
+        return;
+      }
+
       const token = await getToken({ template: 'supabase' });
-      if (!token) { setLoading(false); return; }
+      if (!token) {
+        if (!cancelado) setLoading(false);
+        return;
+      }
 
       const client = await getClient();
-      let found = await getSubscription(user.id, client);
+      let found = await getSubscription(userId, client);
 
-      // Nenhuma subscription existe → criar trial automaticamente
+      // Nenhuma subscription existe → criar trial no servidor
       if (!found) {
-        found = await startTrial(user.id, client);
-        // Se o upsert com ignoreDuplicates devolveu null (linha já existia),
-        // buscar novamente para garantir
+        found = await startTrial();
+        // Se a rota falhou, tenta reler (pode ter sido criada em outra aba)
         if (!found) {
-          found = await getSubscription(user.id, client);
+          found = await getSubscription(userId, client);
         }
       }
 
+      if (cancelado) return;
       setSub(found);
       setLoading(false);
     })();
+
+    return () => { cancelado = true; };
   }, [isLoaded, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!sub) {
