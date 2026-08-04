@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import FerramentaLayout from "@/components/dashboard/FerramentaLayout";
 import { useCarregarRespostas } from "@/lib/useCarregarRespostas";
+import { useValoresDoUsuario } from "@/hooks/useValoresDoUsuario";
+import { calcularAlinhamento, getValor, type Valor } from "@/lib/valores";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -18,6 +21,11 @@ type Objetivo = {
   texto: string;
   emoji: string;
   krs: [KeyResult, KeyResult, KeyResult];
+  /**
+   * Valor da Bússola que este objetivo serve. Opcional: respostas salvas antes
+   * desta funcionalidade não têm o campo, e ficar sem ele não impede salvar.
+   */
+  valorId?: string | null;
 };
 
 type Semana = {
@@ -44,6 +52,7 @@ const OBJETIVO_VAZIO = (i: number): Objetivo => ({
   texto: "",
   emoji: EMOJIS_OBJETIVO[i],
   krs: [KR_VAZIO(), KR_VAZIO(), KR_VAZIO()],
+  valorId: null,
 });
 
 const SEMANA_VAZIA = (): Semana => ({ feito: "", aprendizado: "" });
@@ -139,10 +148,15 @@ function CardObjetivo({
   idx,
   obj,
   onChange,
+  valores,
+  semBussola,
 }: {
   idx: number;
   obj: Objetivo;
   onChange: (o: Partial<Objetivo>) => void;
+  /** Valores do usuário, vindos da Bússola. Vazio se ela não foi feita. */
+  valores: Valor[];
+  semBussola: boolean;
 }) {
   const cor = CORES_OBJETIVO[idx];
   const texto = obj.texto.trim();
@@ -248,7 +262,140 @@ function CardObjetivo({
             {EXEMPLOS_OBJETIVO[idx]}
           </p>
         )}
+
+        {/* ─── Vínculo com a Bússola de Valores ─────────────────────────────
+            Só aparece depois que há texto: perguntar "a qual valor isso serve?"
+            antes de existir um objetivo não faz sentido. */}
+        {texto.trim().length > 0 && (
+          <div
+            className="flex flex-col gap-2 rounded-xl p-3 mt-1"
+            style={{ background: "rgba(30,57,42,0.03)", border: "1px solid var(--color-brand-border)" }}
+          >
+            <p style={{ fontSize: 12, fontWeight: 600, color: COR_DARK, margin: 0 }}>
+              🧭 Este objetivo serve principalmente a qual valor seu?
+            </p>
+
+            {semBussola ? (
+              <p style={{ fontSize: 12, color: "var(--color-brand-gray)", lineHeight: 1.5, margin: 0 }}>
+                Você ainda não fez a{" "}
+                <Link
+                  href="/ferramentas/bussola-valores"
+                  style={{ color: "var(--color-brand-gold)", fontWeight: 600, textDecoration: "underline" }}
+                >
+                  Bússola de Valores
+                </Link>
+                . Ela define os valores que guiam suas decisões — e é o que permite
+                checar se suas metas apontam para onde você quer ir.
+              </p>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-1.5">
+                  {valores.map((v, i) => {
+                    const ativo = obj.valorId === v.id;
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => onChange({ valorId: ativo ? null : v.id })}
+                        className="flex items-center gap-1.5 rounded-full transition-all duration-150"
+                        style={{
+                          padding: "5px 11px",
+                          fontSize: 12,
+                          minHeight: 32,
+                          border: `1.5px solid ${ativo ? cor : "var(--color-brand-border)"}`,
+                          background: ativo ? `${cor}14` : "#fff",
+                          color: ativo ? cor : "var(--color-brand-gray)",
+                          fontWeight: ativo ? 600 : 400,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <span style={{ fontSize: 13 }}>{v.emoji}</span>
+                        {v.nome}
+                        {i === 0 && (
+                          <span
+                            style={{
+                              fontFamily: "var(--font-mono)",
+                              fontSize: 9,
+                              opacity: 0.7,
+                              marginLeft: 1,
+                            }}
+                          >
+                            1º
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Desalinho — mostra, não bloqueia. Pode ser um objetivo
+                    legítimo fora dos valores, ou pode ser a descoberta. */}
+                {!obj.valorId && (
+                  <p style={{ fontSize: 11.5, color: "#B7791F", lineHeight: 1.5, margin: 0 }}>
+                    Nenhum valor selecionado. Se este objetivo não serve a nenhum dos
+                    seus valores, vale perguntar de quem é essa meta.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Resumo do alinhamento entre os objetivos do trimestre e os valores do usuário.
+ *
+ * O número que interessa aqui não é "quantos objetivos estão alinhados" — é
+ * quais valores a pessoa declarou importantes e não colocou nenhum objetivo
+ * para servir. É o tipo de contradição que um bom mentor aponta.
+ */
+function ResumoAlinhamento({
+  objetivos,
+  valores,
+}: {
+  objetivos: Objetivo[];
+  valores: Valor[];
+}) {
+  if (valores.length === 0) return null;
+
+  const { alinhados, semValor, total, naoServidos } = calcularAlinhamento(objetivos, valores);
+  if (total === 0) return null;
+
+  return (
+    <div
+      className="flex flex-col gap-2 rounded-2xl p-4"
+      style={{ background: "rgba(30,57,42,0.03)", border: "1px solid var(--color-brand-border)" }}
+    >
+      <p style={{ fontSize: 13, fontWeight: 700, color: COR_DARK, margin: 0 }}>
+        🧭 Seus objetivos e seus valores
+      </p>
+
+      <p style={{ fontSize: 12.5, color: "var(--color-brand-gray)", lineHeight: 1.55, margin: 0 }}>
+        {alinhados} de {total} {total === 1 ? "objetivo aponta" : "objetivos apontam"} para
+        um valor seu
+        {semValor > 0 && ` — ${semValor} ainda sem valor definido`}.
+      </p>
+
+      {naoServidos.length > 0 && (
+        <p style={{ fontSize: 12.5, color: "#B7791F", lineHeight: 1.55, margin: 0 }}>
+          Nenhum objetivo deste trimestre serve{" "}
+          <strong>
+            {naoServidos.map((v) => `${v.emoji} ${v.nome}`).join(", ")}
+          </strong>
+          . Nem todo valor precisa de uma meta a cada trimestre — mas se um valor
+          seu passa o ano inteiro sem nenhum objetivo, ou ele não é tão central
+          quanto parecia, ou você está adiando a parte que mais importa.
+        </p>
+      )}
+
+      {naoServidos.length === 0 && semValor === 0 && (
+        <p style={{ fontSize: 12.5, color: "#27AE60", lineHeight: 1.55, margin: 0 }}>
+          Todos os seus valores têm pelo menos um objetivo servindo a eles.
+        </p>
+      )}
     </div>
   );
 }
@@ -722,6 +869,10 @@ export default function OKRsPessoaisPage() {
   const { dados: dadosSalvos } = useCarregarRespostas("okrs-pessoais");
   useEffect(() => { if (!dadosSalvos) return; if ((dadosSalvos as any).trimestre) setTrimestre((dadosSalvos as any).trimestre); if ((dadosSalvos as any).objetivos) setObjetivos((dadosSalvos as any).objetivos); if ((dadosSalvos as any).semanas) setSemanas((dadosSalvos as any).semanas); }, [dadosSalvos]);
 
+  // Valores definidos na Bússola — a primeira vez que esta ferramenta lê o
+  // resultado de outra.
+  const { valores, semBussola } = useValoresDoUsuario();
+
   const updateObjetivo = (i: number, dados: Partial<Objetivo>) =>
     setObjetivos((prev) => prev.map((o, idx) => (idx === i ? { ...o, ...dados } : o)));
 
@@ -1102,8 +1253,16 @@ export default function OKRsPessoaisPage() {
             </div>
             <div className="flex flex-col gap-5">
               {objetivos.map((obj, i) => (
-                <CardObjetivo key={i} idx={i} obj={obj} onChange={(d) => updateObjetivo(i, d)} />
+                <CardObjetivo
+                  key={i}
+                  idx={i}
+                  obj={obj}
+                  onChange={(d) => updateObjetivo(i, d)}
+                  valores={valores}
+                  semBussola={semBussola}
+                />
               ))}
+              <ResumoAlinhamento objetivos={objetivos} valores={valores} />
             </div>
           </div>
         )}

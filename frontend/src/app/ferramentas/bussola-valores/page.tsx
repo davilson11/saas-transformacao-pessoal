@@ -3,25 +3,13 @@
 import { useState, useEffect } from 'react';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
 import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
+import { VALORES, CATEGORIAS, type Valor, type ValorRankeado } from '@/lib/valores';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 type Passo = 0 | 1 | 2 | 3 | 4;
 
 type RespostaDilema = 'a' | 'b' | null;
-
-type Valor = {
-  id: string;
-  nome: string;
-  descricao: string;
-  categoria: string;
-  emoji: string;
-};
-
-type ValorRankeado = {
-  id: string;
-  porque: string;
-};
 
 type CodigoConduta = {
   naoTolero: string;
@@ -31,36 +19,6 @@ type CodigoConduta = {
 
 // ─── Dados ────────────────────────────────────────────────────────────────────
 
-const CATEGORIAS: { id: string; label: string; cor: string; emoji: string }[] = [
-  { id: 'ser',        label: 'Ser',        cor: '#4a8c6a', emoji: '🪞' },
-  { id: 'fazer',      label: 'Fazer',      cor: '#5a7abf', emoji: '⚡' },
-  { id: 'ter',        label: 'Ter',        cor: '#d4905a', emoji: '🌿' },
-  { id: 'relacionar', label: 'Relacionar', cor: '#9b6baf', emoji: '🤝' },
-  { id: 'crescer',    label: 'Crescer',    cor: '#27AE60', emoji: '📈' },
-];
-
-const VALORES: Valor[] = [
-  { id: 'autenticidade', nome: 'Autenticidade', descricao: 'Ser fiel a si mesmo em tudo',         categoria: 'ser',        emoji: '🪞' },
-  { id: 'coragem',       nome: 'Coragem',       descricao: 'Agir com bravura apesar do medo',     categoria: 'ser',        emoji: '🦁' },
-  { id: 'integridade',   nome: 'Integridade',   descricao: 'Coerência entre fala e ação',         categoria: 'ser',        emoji: '⚖️' },
-  { id: 'serenidade',    nome: 'Serenidade',    descricao: 'Paz interior em qualquer situação',   categoria: 'ser',        emoji: '🧘' },
-  { id: 'excelencia',    nome: 'Excelência',    descricao: 'Dar o melhor em tudo que faz',        categoria: 'fazer',      emoji: '🏆' },
-  { id: 'criatividade',  nome: 'Criatividade',  descricao: 'Criar e inovar constantemente',       categoria: 'fazer',      emoji: '🎨' },
-  { id: 'impacto',       nome: 'Impacto',       descricao: 'Fazer a diferença na vida dos outros',categoria: 'fazer',      emoji: '💥' },
-  { id: 'disciplina',    nome: 'Disciplina',    descricao: 'Consistência nas ações diárias',      categoria: 'fazer',      emoji: '⚡' },
-  { id: 'liberdade',     nome: 'Liberdade',     descricao: 'Autonomia sobre a própria vida',      categoria: 'ter',        emoji: '🦅' },
-  { id: 'seguranca',     nome: 'Segurança',     descricao: 'Estabilidade e previsibilidade',      categoria: 'ter',        emoji: '🛡️' },
-  { id: 'abundancia',    nome: 'Abundância',    descricao: 'Prosperidade em todas as formas',     categoria: 'ter',        emoji: '🌿' },
-  { id: 'saude',         nome: 'Saúde',         descricao: 'Corpo e mente em pleno equilíbrio',   categoria: 'ter',        emoji: '💚' },
-  { id: 'amor',          nome: 'Amor',          descricao: 'Conexão profunda com quem importa',   categoria: 'relacionar', emoji: '❤️' },
-  { id: 'lealdade',      nome: 'Lealdade',      descricao: 'Fidelidade às pessoas e causas',      categoria: 'relacionar', emoji: '🤝' },
-  { id: 'empatia',       nome: 'Empatia',       descricao: 'Compreender o outro profundamente',   categoria: 'relacionar', emoji: '💙' },
-  { id: 'pertencimento', nome: 'Pertencimento', descricao: 'Sentir que faz parte de algo maior',  categoria: 'relacionar', emoji: '🏡' },
-  { id: 'aprendizado',   nome: 'Aprendizado',   descricao: 'Evoluir e aprender constantemente',   categoria: 'crescer',    emoji: '📚' },
-  { id: 'proposito',     nome: 'Propósito',     descricao: 'Viver com sentido e direção claros',  categoria: 'crescer',    emoji: '🧭' },
-  { id: 'aventura',      nome: 'Aventura',      descricao: 'Explorar o novo e desconhecido',      categoria: 'crescer',    emoji: '🗺️' },
-  { id: 'legado',        nome: 'Legado',        descricao: 'Deixar algo que dure além de mim',    categoria: 'crescer',    emoji: '🌳' },
-];
 
 const MAX = 5;
 
