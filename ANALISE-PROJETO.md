@@ -2,9 +2,10 @@
 
 **Data:** 03/08/2026 · **Commit analisado:** `6caf067` · **Tamanho:** ~34.850 linhas TS/TSX em `frontend/src`
 
-> **Status:** os itens 1, 2, 3, 6 e 7 foram corrigidos no commit `7791c87` (ainda **sem push**).
-> Falta você rodar `frontend/scripts/fix-rls-subscriptions.sql` no Supabase — sem isso o
-> item 2 continua aberto no banco. Os itens 4 e 5 dependem de auditoria no dashboard do Supabase.
+> **Status em 03/08/2026, 23h50:** todos os itens críticos e altos estão fechados,
+> exceto o item 5. Correções de código no commit `7791c87` (ainda **sem push**);
+> os dois scripts SQL em `frontend/scripts/` já foram aplicados em produção.
+> Falta: dar push, rodar `npm run build` local, e a policy de UPDATE em `roda_vida`.
 
 ## Stack
 
@@ -75,11 +76,18 @@ A rota não valida sessão e usa o **service-role client** com um `userId` forne
 
 ## 🟠 Alto
 
-### 4. Schema do banco não está versionado por completo
+### 4. Schema do banco não está versionado por completo — ✅ auditado
 
-`supabase-schema.sql` cobre apenas `visao_ancora`, `ferramentas_respostas` e `roda_vida`. Mas o código consulta também `diario_kairos`, `momento_kairos`, `subscriptions` e `push_subscriptions`. As duas tabelas mais usadas do app (`diario_kairos`, `momento_kairos`) **não têm definição nem policy de RLS em lugar nenhum do repositório** — impossível auditar, e impossível recriar o ambiente.
+`supabase-schema.sql` cobre apenas `visao_ancora`, `ferramentas_respostas` e `roda_vida`. Mas o código consulta também `diario_kairos`, `momento_kairos`, `subscriptions` e `push_subscriptions` — sem definição nem policy versionada.
 
-Verifique no dashboard do Supabase se essas tabelas têm RLS habilitada. Se não tiverem, qualquer usuário autenticado lê o diário de todos os outros — dado altamente sensível num app de transformação pessoal (LGPD).
+Auditoria feita direto no banco em 03/08. RLS habilitada nas quatro tabelas. Resultado por tabela:
+
+- **`diario_kairos`** — correta. `ALL` com `USING (user_id = auth.jwt() ->> 'sub')`. Era o maior risco (dado pessoal sensível, LGPD) e estava fechado.
+- **`momento_kairos`** — tinha `USING (true)` aberta ao role `public`. Não é dado pessoal (a tabela não tem `user_id`; é o conteúdo editorial do produto), então não houve vazamento de usuário. Mas o conteúdo — que é o produto — estava acessível sem login e sem pagar, via anon key, inclusive o conteúdo futuro. Corrigido em `scripts/fix-rls-conteudo.sql`, que de quebra move o paywall para dentro do banco.
+- **`push_subscriptions`** — usava `auth.uid()`, que converte o `sub` do JWT para uuid. Os IDs do Clerk (`user_2abc...`) não são uuid, então a policy nunca casava. Falha fechada, não era brecha, mas quebraria qualquer leitura client-side. Alinhada com `auth.jwt() ->> 'sub'`.
+- **`subscriptions`** — reescrita conforme o item 2.
+
+**Pendente:** exportar o schema completo (`supabase db dump`) e versionar migrations. Hoje o banco é a única fonte de verdade, e foi por isso que esses três problemas passaram despercebidos.
 
 ### 5. `roda_vida` sem policy de UPDATE
 
