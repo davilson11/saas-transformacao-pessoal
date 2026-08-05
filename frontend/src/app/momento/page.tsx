@@ -8,6 +8,7 @@ import { useJornada } from '@/hooks/useJornada';
 import { buscarConteudoDoDia } from '@/lib/conteudoDoDia';
 import BoasVindasJornada from '@/components/dashboard/BoasVindasJornada';
 import MapaJornada from '@/components/dashboard/MapaJornada';
+import AfericaoAncora from '@/components/dashboard/AfericaoAncora';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
 
@@ -508,6 +509,9 @@ export default function MomentoPage() {
 
         {/* Mapa da jornada — onde estou nos 365 dias */}
         <MapaJornada estado={estadoJornadaHoje} diasRegistrados={historico.length} />
+
+        {/* Aferição — só aparece quando um mês da jornada fecha sem resposta */}
+        <AfericaoAncora estado={estadoJornadaHoje} />
 
 
         {/* Notificações */}
