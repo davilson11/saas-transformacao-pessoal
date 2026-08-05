@@ -14,6 +14,7 @@ import {
   hojeStr,
   dataFixaHoje,
   escolherConteudo,
+  calcularConstancia,
 } from './jornada';
 
 describe('estrutura da jornada', () => {
@@ -233,5 +234,44 @@ describe('datas fixas', () => {
   it('sem nenhum dos dois, devolve null em vez de undefined', () => {
     expect(escolherConteudo(null, null)).toBeNull();
     expect(escolherConteudo(undefined, undefined)).toBeNull();
+  });
+});
+
+describe('constância', () => {
+  it('nunca conta mais registros do que dias vividos', () => {
+    // Dado sujo não deve produzir 300%.
+    const c = calcularConstancia(50, 10);
+    expect(c.registrados).toBe(10);
+    expect(c.percentual).toBe(100);
+  });
+
+  it('trata o dia 1 sem dividir por zero', () => {
+    expect(calcularConstancia(0, 1).percentual).toBe(0);
+    expect(calcularConstancia(1, 1).percentual).toBe(100);
+  });
+
+  it('nos primeiros dias não cobra, apenas acolhe', () => {
+    expect(calcularConstancia(1, 3).texto).toMatch(/está começando/i);
+    expect(calcularConstancia(3, 3).texto).toMatch(/todos os dias/i);
+  });
+
+  it('reconhece constância alta', () => {
+    expect(calcularConstancia(19, 20).texto).toMatch(/constância rara/i);
+  });
+
+  it('em faixa baixa, aponta o caminho de volta em vez do fracasso', () => {
+    const t = calcularConstancia(2, 20).texto;
+    expect(t).toMatch(/retomar hoje/i);
+    expect(t).not.toMatch(/falh|perde|deixou/i);
+  });
+
+  it('nenhuma faixa usa linguagem de fracasso', () => {
+    for (const [reg, dia] of [[0, 1], [1, 3], [3, 3], [12, 20], [8, 20], [2, 20], [19, 20]]) {
+      expect(calcularConstancia(reg, dia).texto).not.toMatch(/falh|fracass|perdeu|desistiu/i);
+    }
+  });
+
+  it('concorda em número no singular', () => {
+    expect(calcularConstancia(1, 20).texto).toContain('1 dia registrado');
   });
 });

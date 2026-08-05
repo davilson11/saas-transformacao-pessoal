@@ -199,6 +199,55 @@ export function podeVerDia(diaPedido: number, diaAtual: number): boolean {
 
 // ─── Texto ────────────────────────────────────────────────────────────────────
 
+// ─── Constância ───────────────────────────────────────────────────────────────
+
+export type Constancia = {
+  /** Dias em que houve registro no diário, desde o início da jornada. */
+  registrados: number;
+  /** Dias decorridos, incluindo hoje. */
+  decorridos:  number;
+  /** 0–100. */
+  percentual:  number;
+  /** Frase curta para a tela. */
+  texto:       string;
+};
+
+/**
+ * Quantos dos dias vividos foram registrados.
+ *
+ * Sobre o tom das frases: num produto de mudança pessoal, a métrica de
+ * constância é a mais fácil de transformar em cobrança — e cobrança faz a
+ * pessoa fechar o app em vez de voltar. Por isso nenhuma faixa aqui usa
+ * linguagem de fracasso. Quem registrou 2 de 10 dias não ouve "você falhou 8
+ * vezes"; ouve que os 2 contam. Quem está no começo não ouve nada além de
+ * "está começando".
+ *
+ * A régua também é honesta: dias decorridos, não dias corridos desde sempre.
+ * Quem está no dia 3 com 3 registros tem 100%, e merece ver isso.
+ */
+export function calcularConstancia(diasRegistrados: number, diaAtual: number): Constancia {
+  const decorridos  = Math.max(1, Math.floor(diaAtual));
+  const registrados = Math.max(0, Math.min(Math.floor(diasRegistrados), decorridos));
+  const percentual  = Math.round((registrados / decorridos) * 100);
+
+  let texto: string;
+  if (decorridos <= 3) {
+    texto = registrados === decorridos
+      ? 'Você registrou todos os dias até aqui.'
+      : 'Está começando. Cada registro conta.';
+  } else if (percentual >= 90) {
+    texto = 'Constância rara. Você aparece quase todo dia.';
+  } else if (percentual >= 60) {
+    texto = `${registrados} dos ${decorridos} dias registrados. Bom ritmo.`;
+  } else if (percentual >= 30) {
+    texto = `${registrados} dos ${decorridos} dias registrados. O que já está aqui vale.`;
+  } else {
+    texto = `${registrados} ${registrados === 1 ? 'dia registrado' : 'dias registrados'}. Dá para retomar hoje.`;
+  }
+
+  return { registrados, decorridos, percentual, texto };
+}
+
 // ─── Datas fixas ──────────────────────────────────────────────────────────────
 //
 // A jornada é atemporal, mas um punhado de datas reais tem precedência: em 25

@@ -7,6 +7,7 @@ import { useSupabaseClient } from '@/lib/useSupabaseClient';
 import { useJornada } from '@/hooks/useJornada';
 import { buscarConteudoDoDia } from '@/lib/conteudoDoDia';
 import BoasVindasJornada from '@/components/dashboard/BoasVindasJornada';
+import MapaJornada from '@/components/dashboard/MapaJornada';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
 
@@ -503,6 +504,10 @@ export default function MomentoPage() {
             <p style={{ fontSize: 10, color: 'var(--color-brand-gray)', margin: '2px 0 0' }}>consecutiva</p>
           </div>
         </div>
+
+
+        {/* Mapa da jornada — onde estou nos 365 dias */}
+        <MapaJornada estado={estadoJornadaHoje} diasRegistrados={historico.length} />
 
 
         {/* Notificações */}
