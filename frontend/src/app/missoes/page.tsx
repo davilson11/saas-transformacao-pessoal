@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
 import { useJornada } from '@/hooks/useJornada';
+import { buscarConteudoDoDia } from '@/lib/conteudoDoDia';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
 
@@ -238,15 +239,9 @@ export default function MissoesPage() {
         const hoje   = getDiaStr();
         const limite = getDiaStr(30);
 
-        // Missão do dia — buscada pelo dia da jornada, não pela data
-        if (diaHoje !== null) {
-          const { data: mom } = await client
-            .from('momento_kairos')
-            .select('*')
-            .eq('dia_jornada', diaHoje)
-            .maybeSingle();
-          if (mom) setMomento(mom as MomentoKairos);
-        }
+        // Missão do dia: data fixa (Natal) tem precedência sobre a jornada.
+        const mom = await buscarConteudoDoDia(client, diaHoje);
+        if (mom) setMomento(mom);
 
         // Diário de hoje
         const { data: dHoje } = await client

@@ -199,6 +199,27 @@ export function podeVerDia(diaPedido: number, diaAtual: number): boolean {
 
 // ─── Texto ────────────────────────────────────────────────────────────────────
 
+// ─── Datas fixas ──────────────────────────────────────────────────────────────
+//
+// A jornada é atemporal, mas um punhado de datas reais tem precedência: em 25
+// de dezembro todo mundo recebe o conteúdo de Natal, esteja no dia 12 ou no 300.
+// No dia seguinte cada um retoma de onde estava — o dia da jornada é contado a
+// partir de `jornada_inicio`, não de quantos textos a pessoa leu, então nada é
+// consumido nem perdido.
+
+/** Hoje no formato MM-DD, fuso de São Paulo. Casa com `momento_kairos.data_fixa`. */
+export function dataFixaHoje(agora: Date = new Date()): string {
+  return hojeStr(agora).slice(5); // 'YYYY-MM-DD' -> 'MM-DD'
+}
+
+/**
+ * Decide qual conteúdo mostrar quando existe um candidato de data fixa.
+ * Pura, para poder ser testada sem banco: o conteúdo fixo do dia sempre vence.
+ */
+export function escolherConteudo<T>(fixo: T | null | undefined, daJornada: T | null | undefined): T | null {
+  return fixo ?? daJornada ?? null;
+}
+
 /** "Dia 47 · Quem sou eu?" — rótulo curto para cabeçalhos. */
 export function rotuloDia(estado: EstadoJornada): string {
   const base = `Dia ${estado.diaNoCiclo} · ${estado.mes.tema}`;

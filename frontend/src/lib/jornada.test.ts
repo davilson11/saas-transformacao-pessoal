@@ -12,6 +12,8 @@ import {
   podeVerDia,
   rotuloDia,
   hojeStr,
+  dataFixaHoje,
+  escolherConteudo,
 } from './jornada';
 
 describe('estrutura da jornada', () => {
@@ -207,5 +209,29 @@ describe('rotuloDia', () => {
 
   it('indica a volta a partir da segunda', () => {
     expect(rotuloDia(estadoJornada(365 + 47)!)).toContain('2ª volta');
+  });
+});
+
+describe('datas fixas', () => {
+  it('devolve MM-DD no fuso de São Paulo', () => {
+    expect(dataFixaHoje(new Date('2026-12-25T15:00:00Z'))).toBe('12-25');
+  });
+
+  it('respeita o fuso na virada — 2h UTC de 25/12 ainda é 24/12 em SP', () => {
+    expect(dataFixaHoje(new Date('2026-12-25T02:00:00Z'))).toBe('12-24');
+  });
+
+  it('o conteúdo de data fixa vence o da jornada', () => {
+    expect(escolherConteudo('natal', 'dia-47')).toBe('natal');
+  });
+
+  it('sem data fixa hoje, vale o da jornada', () => {
+    expect(escolherConteudo(null, 'dia-47')).toBe('dia-47');
+    expect(escolherConteudo(undefined, 'dia-47')).toBe('dia-47');
+  });
+
+  it('sem nenhum dos dois, devolve null em vez de undefined', () => {
+    expect(escolherConteudo(null, null)).toBeNull();
+    expect(escolherConteudo(undefined, undefined)).toBeNull();
   });
 });

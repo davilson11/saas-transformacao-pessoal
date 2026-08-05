@@ -76,6 +76,10 @@ export type MomentoKairos = {
   versiculo_texto:      string;        // coluna real no banco
   versiculo_referencia: string;        // coluna real no banco
   // Colunas opcionais adicionadas posteriormente:
+  /** Posição na jornada de 365 dias. Substituiu `data` como índice do conteúdo. */
+  dia_jornada:          number;
+  /** 'MM-DD' quando o conteúdo é preso a uma data real (Natal). Null no resto. */
+  data_fixa:            string | null;
   fase:                 number | null;
   missao_fase1:         string | null;
   missao_fase2:         string | null;

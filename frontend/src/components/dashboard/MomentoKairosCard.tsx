@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useUser, useAuth } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
 import { useJornada } from '@/hooks/useJornada';
+import { buscarConteudoDoDia } from '@/lib/conteudoDoDia';
 import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
 
 // ─── Helpers de resiliência ───────────────────────────────────────────────────
@@ -103,7 +104,7 @@ export default function MomentoKairosCard() {
       try {
         const client = await getClient();
         const [{ data: momentoData }, { data: diarioData }, { data: hist }] = await Promise.all([
-          client.from('momento_kairos').select('*').eq('dia_jornada', diaHoje ?? -1).maybeSingle(),
+          buscarConteudoDoDia(client, diaHoje).then((d) => ({ data: d })),
           client.from('diario_kairos').select('*').eq('user_id', user.id).eq('data', hoje).or('tipo_entrada.eq.momento,tipo_entrada.is.null').maybeSingle(),
           client.from('diario_kairos').select('*').eq('user_id', user.id).or('tipo_entrada.eq.momento,tipo_entrada.is.null').order('data', { ascending: false }).limit(60),
         ]);
