@@ -32,17 +32,11 @@ BEGIN;
 ALTER TABLE momento_kairos
   ALTER COLUMN dia_jornada DROP NOT NULL;
 
--- Toda linha precisa ser uma coisa ou outra, nunca as duas nem nenhuma.
+-- A CHECK só pode entrar DEPOIS de os dados estarem limpos: as linhas 358-360
+-- ainda têm dia_jornada e data_fixa preenchidos ao mesmo tempo, que é
+-- exatamente o que ela proíbe. Adicionar aqui faz a migração inteira falhar.
 ALTER TABLE momento_kairos
   DROP CONSTRAINT IF EXISTS momento_kairos_jornada_ou_especial;
-
-ALTER TABLE momento_kairos
-  ADD CONSTRAINT momento_kairos_jornada_ou_especial
-  CHECK (
-    (dia_jornada IS NOT NULL AND data_fixa IS NULL)
-    OR
-    (dia_jornada IS NULL AND data_fixa IS NOT NULL)
-  );
 
 -- ─── 2. Duplicar os sete textos sazonais como linhas especiais ─────────────
 --
@@ -82,6 +76,15 @@ UPDATE momento_kairos
  WHERE dia_jornada IS NOT NULL
    AND data_fixa IS NOT NULL;
 
+-- Agora sim: os dados estão consistentes e a regra pode ser gravada.
+ALTER TABLE momento_kairos
+  ADD CONSTRAINT momento_kairos_jornada_ou_especial
+  CHECK (
+    (dia_jornada IS NOT NULL AND data_fixa IS NULL)
+    OR
+    (dia_jornada IS NULL AND data_fixa IS NOT NULL)
+  );
+
 COMMIT;
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -114,8 +117,7 @@ COMMIT;
 --
 --   npx ts-node scripts/seed-momento.ts scripts/dezembro-2026.json
 --
--- ATENÇÃO: aquele seed usa `onConflict: 'data'`. Com as linhas especiais
--- duplicando valores de `data`, ele precisa passar a conflitar por
--- `dia_jornada`. Ajuste antes de rodar, senão o seed sobrescreve a linha
--- errada.
+-- O seed já foi ajustado para conflitar por `dia_jornada` em vez de `data`:
+-- com as linhas especiais duplicando valores de `data`, ele sobrescreveria a
+-- linha errada e apagaria o conteúdo de Natal.
 -- ═══════════════════════════════════════════════════════════════════════════
