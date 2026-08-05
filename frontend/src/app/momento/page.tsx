@@ -6,6 +6,7 @@ import { useUser, useAuth } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
 import { useJornada } from '@/hooks/useJornada';
 import { buscarConteudoDoDia } from '@/lib/conteudoDoDia';
+import BoasVindasJornada from '@/components/dashboard/BoasVindasJornada';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
 
@@ -235,7 +236,7 @@ export default function MomentoPage() {
   const { getClient } = useSupabaseClient();
 
   // Conteúdo indexado pelo dia da jornada do usuário, não pela data.
-  const { diaHoje } = useJornada();
+  const { diaHoje, estado: estadoJornadaHoje } = useJornada();
   const [momento, setMomento] = useState<MomentoKairos | null>(null);
   const [diario, setDiario] = useState<Partial<DiarioKairos>>({});
   const [salvando, setSalvando] = useState(false);
@@ -452,6 +453,9 @@ export default function MomentoPage() {
 
   return (
     <DashboardLayout>
+      {/* O ritual do Dia 1 — cobre a tela na primeira visita e some depois. */}
+      <BoasVindasJornada estado={estadoJornadaHoje} />
+
       <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20, padding: '0 0 24px' }}>
 
 
