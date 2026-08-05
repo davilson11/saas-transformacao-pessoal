@@ -38,7 +38,27 @@ ALTER TABLE momento_kairos
 ALTER TABLE momento_kairos
   DROP CONSTRAINT IF EXISTS momento_kairos_jornada_ou_especial;
 
--- ─── 2. Duplicar os sete textos sazonais como linhas especiais ─────────────
+-- ─── 2. `data` deixa de ser identidade ─────────────────────────────────────
+--
+-- Schema real da tabela, verificado em pg_constraint:
+--   momento_kairos_pkey                PRIMARY KEY (id)
+--   momento_kairos_data_key            UNIQUE (data)          ← removida aqui
+--   momento_kairos_dia_jornada_valido  CHECK (1..365)
+--   momento_kairos_data_fixa_formato   CHECK (MM-DD)
+--
+-- O UNIQUE em `data` é herança de quando `data` indexava o conteúdo. Agora a
+-- identidade é `dia_jornada` para jornada e `data_fixa` para especiais, ambas
+-- com índice único próprio. Mantê-lo impediria uma linha especial de coexistir
+-- com o dia de jornada de mesma data original — que é exatamente o que
+-- precisamos.
+--
+-- Sobre a CHECK de 1..365: em Postgres, uma CHECK que avalia para NULL passa.
+-- Então as linhas especiais, com dia_jornada NULL, não esbarram nela.
+
+ALTER TABLE momento_kairos
+  DROP CONSTRAINT IF EXISTS momento_kairos_data_key;
+
+-- ─── 3. Duplicar os sete textos sazonais como linhas especiais ─────────────
 --
 -- Copiar antes de desvincular: assim o texto original é preservado como
 -- especial e o slot da jornada fica livre para o texto novo.
@@ -66,7 +86,7 @@ WHERE m.dia_jornada IN (351, 352, 353, 356, 358, 359, 360)
        WHEN 360 THEN '12-26' END
   );
 
--- ─── 3. Limpar a marcação antiga das linhas de jornada ─────────────────────
+-- ─── 4. Limpar a marcação antiga das linhas de jornada ─────────────────────
 --
 -- Elas voltam a ser puramente de jornada. O texto continua ali até você rodar
 -- o seed com os novos — assim nada fica em branco no meio do caminho.
