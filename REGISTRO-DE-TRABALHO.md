@@ -9,20 +9,43 @@ Este aqui é o registro do que foi **feito**.
 
 ---
 
-## Estado atual
+## Estado atual — 05/08/2026
 
-**Enviado ao GitHub:** até `e0823bf`.
-**Pendente de push:** `3d5bf42` (próximas ações).
+**128 testes.** Tudo commitado; um commit pendente de push.
 
-Antes do próximo build, na pasta `frontend/`:
+### O que falta executar
 
-```bash
-npm install     # obrigatório: node_modules ficou parcial e o lock não tem vitest
-npm test        # 19 testes
-npm run build
+**No Supabase**, se ainda não rodou:
+
+```sql
+-- aferições (tabela + RLS): ver scripts/criar-afericoes.sql
+-- plano se-então:
+ALTER TABLE diario_kairos ADD COLUMN IF NOT EXISTS plano_gatilho text;
 ```
 
-Depois, na raiz: `git push`.
+**Na máquina:**
+
+```bash
+cd frontend && npm test && npm run build
+cd .. && git push
+```
+
+### Ordem em que os SQL foram aplicados
+
+1. `fix-rls-subscriptions.sql` ✅
+2. `fix-rls-conteudo.sql` ✅
+3. `migracao-jornada-atemporal.sql` ✅
+4. `migracao-datas-fixas.sql` ✅
+5. `migracao-separar-especiais.sql` ✅ (levou 4 tentativas — ver a seção de erros)
+6. `criar-afericoes.sql` — conferir
+7. `adicionar-plano-se-entao.sql` — conferir
+
+### Trabalho de conteúdo pendente (só seu)
+
+- **85 menções a neurociência** — `AUDITORIA-NEUROCIENCIA.md` e a planilha.
+  60 das 85 estão nos meses 1 a 3. Só 2 citam estudo.
+- **13 dias reescritos** já estão nos seeds; faltam os moderados e leves das
+  passagens de calendário (`passagens-calendario.csv`).
 
 ---
 
@@ -224,6 +247,51 @@ acolher e cobrar decide se a pessoa volta. Se discordar, é uma linha em
       deles esse objetivo serve. Se não serve a nenhum, isso é um dado.
 
 ---
+
+## Segunda parte da sessão — a jornada e a evidência
+
+Depois da auditoria de segurança, o trabalho virou produto.
+
+**A jornada atemporal.** O conteúdo era um calendário de 2026 que acabava em
+31/12 e colocava quem assinasse em agosto no dia 216 de uma jornada que nunca
+começou. Agora é indexado por `dia_jornada` (1–365) com `jornada_inicio` por
+usuário. Todo mundo começa em "Quem sou eu?".
+
+**Datas fixas.** Sete textos de fim de ano saíram da sequência e viraram
+conteúdo especial, que aparece na data real para todo mundo. Os sete slots
+vagos receberam texto novo.
+
+**Duas pontes entre ferramentas.** OKRs leem a Bússola de Valores; a Auditoria
+de Tempo confronta os valores com as horas do dia.
+
+**Ritual do Dia 1, mapa persistente e aferição.** A tela de abertura, a visão de
+onde você está nos 365 dias, e a pergunta mensal que compara seu progresso com a
+Visão Âncora — a peça que faltava para o mapa ter um norte.
+
+**Plano se-então na missão diária.** Implementation intentions (d = 0,65 em 94
+testes; 642 na revisão de 2024) estavam enterradas na ferramenta 16, fase 4.
+Agora acontecem todo dia.
+
+### O que a pesquisa mostrou sobre o app
+
+Feita com fontes primárias (Gollwitzer & Sheeran, Michie, Weisberg, Dai/Milkman,
+identidade e hábito). Resumo:
+
+**Acertos reais:** automonitoramento (diário) é o BCT mais consistentemente
+eficaz; a dupla automonitoramento + metas é a mais confiável; começar pela
+identidade antes das metas está alinhado com a evidência; e ligar valores a
+comportamentos fortalece a associação hábito-identidade — que é exatamente a
+ponte OKRs↔Bússola.
+
+**Fraquezas:** metade das ferramentas vem da gestão, não da ciência do
+comportamento (SWOT, OKR, DRE, Roda da Vida organizam o pensamento, mas não têm
+evidência de mudar comportamento); 17 ferramentas é excesso quando a evidência
+concentra o efeito em três coisas; e as 85 menções a neurociência sem fonte.
+
+**A conclusão honesta:** não há boa evidência de que apps de desenvolvimento
+pessoal, como categoria, transformem alguém. O que tem evidência são técnicas
+específicas dentro deles. A promessa que dá para cumprir é "este app faz você
+praticar todo dia as poucas coisas que funcionam — e mostra se está adiantando".
 
 ## Comandos úteis
 
