@@ -102,6 +102,8 @@ export type DiarioKairos = {
   gratidao:         string | null;
   missao_cumprida:  boolean;
   missao_execucao:  string | null;
+  /** Gatilho do plano se-então: quando e onde a missão do dia vai acontecer. */
+  plano_gatilho:    string | null;
   hora_registro:    string | null;  // "HH:MM" em fuso America/Sao_Paulo — salvo no momento do save
   created_at:       string;
   updated_at:       string;
@@ -266,6 +268,7 @@ export type Database = {
           gratidao?:         string | null;
           missao_cumprida?:  boolean;
           missao_execucao?:  string | null;
+          plano_gatilho?:    string | null;
           hora_registro?:    string | null;
           conquista?:        string | null;
           aprendizado?:      string | null;
@@ -286,6 +289,7 @@ export type Database = {
           gratidao?:         string | null;
           missao_cumprida?:  boolean;
           missao_execucao?:  string | null;
+          plano_gatilho?:    string | null;
           hora_registro?:    string | null;
           conquista?:        string | null;
           aprendizado?:      string | null;

@@ -9,6 +9,7 @@ import { buscarConteudoDoDia } from '@/lib/conteudoDoDia';
 import BoasVindasJornada from '@/components/dashboard/BoasVindasJornada';
 import MapaJornada from '@/components/dashboard/MapaJornada';
 import AfericaoAncora from '@/components/dashboard/AfericaoAncora';
+import { analisarGatilho, montarPlano } from '@/lib/planoSeEntao';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
 
@@ -328,6 +329,7 @@ export default function MomentoPage() {
           preocupacao:     diario.preocupacao     ?? null,
           gratidao:        diario.gratidao        ?? null,
           missao_cumprida: diario.missao_cumprida ?? false,
+          plano_gatilho:   diario.plano_gatilho   ?? null,
         };
         const { data: existente } = await client
           .from('diario_kairos').select('id')
@@ -431,6 +433,10 @@ export default function MomentoPage() {
   const missaoDoDia = momento
     ? (momento[`missao_fase${faseUsuario}` as keyof MomentoKairos] as string ?? momento.missao)
     : null;
+
+  // Derivados do plano se-então — cálculo puro, sem estado próprio.
+  const analiseGatilho = analisarGatilho(diario.plano_gatilho ?? '');
+  const planoMontado   = montarPlano(diario.plano_gatilho ?? '', missaoDoDia ?? '');
 
 
   if (carregando) return (
@@ -561,7 +567,44 @@ export default function MomentoPage() {
             <span style={{ fontSize: 22 }}>🎯</span>
             <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#C8A030', margin: 0 }}>Sua missão de hoje</p>
           </div>
-          <p style={{ fontSize: 17, color: '#F5F0E8', lineHeight: 1.7, margin: '0 0 20px', fontWeight: 600 }}>{missaoDoDia}</p>
+          <p style={{ fontSize: 17, color: '#F5F0E8', lineHeight: 1.7, margin: '0 0 18px', fontWeight: 600 }}>{missaoDoDia}</p>
+
+          {/* Plano se-então.
+              Implementation intentions são a intervenção com melhor evidência
+              da psicologia da mudança (d = 0,65 em 94 testes; 642 na revisão de
+              2024). Estava enterrada na ferramenta 16; aqui acontece todo dia.
+              O efeito é maior no formato contingente, com plano específico e
+              lido ao menos uma vez — por isso a frase volta montada. */}
+          {!diario.missao_cumprida && (
+            <div style={{ marginBottom: 18, paddingTop: 16, borderTop: '1px solid rgba(200,160,48,0.18)' }}>
+              <label style={{ display: 'block', fontSize: 12.5, color: 'rgba(245,240,232,0.6)', marginBottom: 8 }}>
+                Quando e onde você vai fazer isso?
+              </label>
+              <input
+                value={diario.plano_gatilho ?? ''}
+                onChange={(e) => setDiario(d => ({ ...d, plano_gatilho: e.target.value }))}
+                placeholder="ex: às 7h, na cozinha, depois do café"
+                style={{
+                  width: '100%', padding: '12px 14px', borderRadius: 10, fontSize: 15,
+                  background: 'rgba(245,240,232,0.05)', color: '#F5F0E8',
+                  border: '1px solid rgba(245,240,232,0.15)', outline: 'none', minHeight: 46,
+                }}
+              />
+
+              {planoMontado && (
+                <p style={{ fontSize: 14.5, color: '#C8A030', lineHeight: 1.5, margin: '10px 0 0', fontStyle: 'italic' }}>
+                  {planoMontado}.
+                </p>
+              )}
+
+              {analiseGatilho.dica && (
+                <p style={{ fontSize: 12, color: 'rgba(245,240,232,0.45)', lineHeight: 1.5, margin: '8px 0 0' }}>
+                  {analiseGatilho.dica}
+                </p>
+              )}
+            </div>
+          )}
+
           <button onClick={() => setDiario(d => ({ ...d, missao_cumprida: !d.missao_cumprida }))}
             style={{
               width: '100%', padding: '14px', borderRadius: 10, fontSize: 14, fontWeight: 800,
