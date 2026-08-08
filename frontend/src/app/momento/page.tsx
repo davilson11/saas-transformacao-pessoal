@@ -9,6 +9,7 @@ import { buscarConteudoDoDia } from '@/lib/conteudoDoDia';
 import BoasVindasJornada from '@/components/dashboard/BoasVindasJornada';
 import MapaJornada from '@/components/dashboard/MapaJornada';
 import AfericaoAncora from '@/components/dashboard/AfericaoAncora';
+import OkrsNoDia from '@/components/dashboard/OkrsNoDia';
 import { analisarGatilho, montarPlano } from '@/lib/planoSeEntao';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import type { MomentoKairos, DiarioKairos } from '@/lib/database.types';
@@ -518,6 +519,11 @@ export default function MomentoPage() {
 
         {/* Aferição — só aparece quando um mês da jornada fecha sem resposta */}
         <AfericaoAncora estado={estadoJornadaHoje} />
+
+        {/* Resultados-chave — automonitoramento encontrando as metas.
+            A dupla com maior lastro nas meta-análises, que até aqui morava em
+            duas telas que não se falavam. */}
+        <OkrsNoDia />
 
 
         {/* Notificações */}
