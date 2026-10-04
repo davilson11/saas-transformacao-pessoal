@@ -274,3 +274,26 @@ export function rotuloDia(estado: EstadoJornada): string {
   const base = `Dia ${estado.diaNoCiclo} · ${estado.mes.tema}`;
   return estado.volta > 1 ? `${base} · ${estado.volta}ª volta` : base;
 }
+
+/**
+ * O dia de hoje, à prova de data de início no futuro.
+ *
+ * ─── Por que isto existe ───────────────────────────────────────────────────
+ *
+ * `jornada_inicio` era gravado com o `CURRENT_DATE` do Postgres, que roda em
+ * UTC. Entre 21h e meia-noite em São Paulo o banco já virou o dia — então quem
+ * se cadastrasse à noite recebia a data de amanhã como início.
+ *
+ * O resultado era `diaJornadaHoje` devolver 0, `estadoJornada` devolver null
+ * (dia 0 não existe) e a tela do momento ficar em branco. No primeiro acesso,
+ * que é o pior momento possível para um app não mostrar nada.
+ *
+ * A causa foi corrigida no banco (scripts/fix-fuso-jornada.sql). Esta função é
+ * a segunda barreira: qualquer data de início no futuro, venha de onde vier,
+ * vira dia 1 em vez de tela vazia. Perder um dia de contagem é um problema
+ * pequeno; um app que abre vazio é um problema grande.
+ */
+export function diaJornadaSeguro(inicio: string, agora: Date = new Date()): number {
+  const dia = diaJornadaHoje(inicio, agora);
+  return dia === null || dia < 1 ? 1 : dia;
+}

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
 import {
-  diaJornadaHoje,
+  diaJornadaSeguro,
   diaJornadaDe,
   estadoJornada,
   type EstadoJornada,
@@ -74,7 +74,9 @@ export function useJornada(): UseJornadaResult {
     return () => { cancelado = true; };
   }, [isLoaded, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const diaAbsoluto = inicio ? diaJornadaHoje(inicio) : null;
+  // `diaJornadaSeguro` em vez de `diaJornadaHoje`: uma data de início no futuro
+  // devolveria 0 e deixaria a tela em branco. Ver o comentário da função.
+  const diaAbsoluto = inicio ? diaJornadaSeguro(inicio) : null;
   const estado      = diaAbsoluto !== null ? estadoJornada(diaAbsoluto) : null;
 
   return {

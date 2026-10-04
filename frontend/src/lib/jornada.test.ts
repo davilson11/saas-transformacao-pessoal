@@ -6,6 +6,7 @@ import {
   somarDias,
   diaJornadaDe,
   diaJornadaHoje,
+  diaJornadaSeguro,
   dataDoDiaJornada,
   estadoJornada,
   mesDoDia,
@@ -273,5 +274,34 @@ describe('constância', () => {
 
   it('concorda em número no singular', () => {
     expect(calcularConstancia(1, 20).texto).toContain('1 dia registrado');
+  });
+});
+
+describe('dia seguro — data de início no futuro', () => {
+  it('conta normalmente quando o início está no passado', () => {
+    const agora = new Date('2026-10-03T15:00:00Z');
+    expect(diaJornadaSeguro('2026-10-01', agora)).toBe(3);
+  });
+
+  it('devolve 1 no próprio dia de início', () => {
+    const agora = new Date('2026-10-03T15:00:00Z');
+    expect(diaJornadaSeguro('2026-10-03', agora)).toBe(1);
+  });
+
+  it('não devolve 0 quando o início é amanhã — era o bug do fuso', () => {
+    // 22h37 em São Paulo = 01h37 do dia seguinte em UTC. Era assim que o
+    // CURRENT_DATE do Postgres gravava a data de amanhã.
+    const agora = new Date('2026-10-04T01:37:00Z'); // ainda dia 3 em SP
+    expect(diaJornadaHoje('2026-10-04', agora)).toBe(0);  // o sintoma
+    expect(diaJornadaSeguro('2026-10-04', agora)).toBe(1); // a proteção
+  });
+
+  it('aguenta início muito à frente sem devolver negativo', () => {
+    const agora = new Date('2026-10-03T15:00:00Z');
+    expect(diaJornadaSeguro('2027-01-01', agora)).toBe(1);
+  });
+
+  it('aguenta data inválida', () => {
+    expect(diaJornadaSeguro('não é data')).toBe(1);
   });
 });
