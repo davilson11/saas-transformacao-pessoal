@@ -575,9 +575,13 @@ export default function MomentoPage() {
 
         {/* Notificações */}
         {typeof window !== 'undefined' && 'Notification' in window && (
-          <div className="momento-notif-row" style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '14px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div>
+          <div style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '14px 20px' }}>
+            {/* A classe fica na linha que é flex: a media query do rodapé
+                empilha ela no celular e dá 100% de largura ao botão. Quando a
+                classe estava no cartão de fora, o botão esticava dentro da
+                linha e espremia o texto a uma letra por linha. */}
+            <div className="momento-notif-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ minWidth: 0 }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-brand-dark-green)', margin: 0 }}>🔔 Lembrete diário</p>
                 <p style={{ fontSize: 11, color: 'var(--color-brand-gray)', margin: '2px 0 0' }}>
                   {notifAtiva ? 'Ativado neste aparelho' : 'Um aviso todo dia de manhã, com o seu dia da jornada'}
