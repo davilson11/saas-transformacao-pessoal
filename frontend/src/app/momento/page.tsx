@@ -254,6 +254,8 @@ export default function MomentoPage() {
   const [diaSelecionado, setDiaSelecionado] = useState<Partial<DiarioKairos> | null>(null);
   const [streak, setStreak] = useState(0);
   const [notifAtiva, setNotifAtiva] = useState(false);
+  const [erroNotif, setErroNotif] = useState<string | null>(null);
+  const [ativandoNotif, setAtivandoNotif] = useState(false);
   const [emocaoHover, setEmocaoHover] = useState<string | null>(null);
   const [faseUsuario, setFaseUsuario] = useState(1);
   // Usa getDiaStr(0) — data BRT avaliada a cada render, evitando stale closure ao salvar
@@ -407,23 +409,68 @@ export default function MomentoPage() {
 
 
 
+  /**
+   * Ativa o lembrete diário.
+   *
+   * A versão anterior desta função não tratava erro nenhum: nem o da
+   * `subscribe`, nem o do `fetch`. O resultado era o pior tipo de bug — o botão
+   * ficava verde, a pessoa ia embora achando que estava resolvido, e a tabela
+   * `push_subscriptions` continuava vazia. Foi exatamente o que aconteceu.
+   *
+   * Agora cada passo que pode falhar diz o que falhou. O botão só fica verde
+   * depois que o servidor confirma que gravou.
+   */
   async function ativarNotificacoes() {
     if (!user?.id) return;
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return alert('Permissão negada. Ative nas configurações do navegador.');
-    const reg = await navigator.serviceWorker.register('/sw.js');
-    await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    });
-    // userId não é enviado: o servidor pega da sessão do Clerk.
-    await fetch('/api/push/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subscription: sub }),
-    });
-    setNotifAtiva(true);
+    setErroNotif(null);
+    setAtivandoNotif(true);
+
+    try {
+      // A chave é injetada no build. Se faltar na Vercel, ela chega como
+      // undefined aqui e a `subscribe` falha com uma mensagem obscura.
+      const chave = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!chave) {
+        throw new Error('A chave de notificação não está configurada no servidor.');
+      }
+
+      const permissao = await Notification.requestPermission();
+      if (permissao !== 'granted') {
+        throw new Error('Permissão negada. Você pode liberar nos ajustes do navegador.');
+      }
+
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+
+      // Se já existe uma subscription neste aparelho, reaproveita: pedir outra
+      // com chave diferente dá InvalidStateError.
+      const sub = (await reg.pushManager.getSubscription())
+        ?? (await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: chave,
+        }));
+
+      // userId não é enviado: o servidor pega da sessão do Clerk.
+      const resp = await fetch('/api/push/subscribe', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ subscription: sub }),
+      });
+
+      // ESTE era o ponto cego: sem checar a resposta, um 401 ou um 500
+      // passavam como sucesso.
+      if (!resp.ok) {
+        const corpo = await resp.json().catch(() => ({})) as { error?: string };
+        throw new Error(corpo.error ?? `O servidor recusou (${resp.status}).`);
+      }
+
+      setNotifAtiva(true);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Não consegui ativar.';
+      console.error('[notificações]', e);
+      setErroNotif(msg);
+    } finally {
+      setAtivandoNotif(false);
+    }
   }
 
 
@@ -528,15 +575,26 @@ export default function MomentoPage() {
 
         {/* Notificações */}
         {typeof window !== 'undefined' && 'Notification' in window && (
-          <div className="momento-notif-row" style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-brand-dark-green)', margin: 0 }}>🔔 Lembrete diário</p>
-              <p style={{ fontSize: 11, color: 'var(--color-brand-gray)', margin: '2px 0 0' }}>Receba um aviso todo dia às 7h</p>
+          <div className="momento-notif-row" style={{ background: '#fff', border: '1px solid var(--color-brand-border)', borderRadius: 12, padding: '14px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-brand-dark-green)', margin: 0 }}>🔔 Lembrete diário</p>
+                <p style={{ fontSize: 11, color: 'var(--color-brand-gray)', margin: '2px 0 0' }}>
+                  {notifAtiva ? 'Ativado neste aparelho' : 'Um aviso todo dia de manhã, com o seu dia da jornada'}
+                </p>
+              </div>
+              <button onClick={ativarNotificacoes} disabled={notifAtiva || ativandoNotif}
+                style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: notifAtiva || ativandoNotif ? 'default' : 'pointer', background: notifAtiva ? '#27AE60' : '#0E0E0E', color: '#F5F0E8', border: 'none', minHeight: 44, flexShrink: 0, opacity: ativandoNotif ? 0.6 : 1 }}>
+                {notifAtiva ? '✓ Ativado' : ativandoNotif ? 'Ativando…' : 'Ativar'}
+              </button>
             </div>
-            <button onClick={ativarNotificacoes} disabled={notifAtiva}
-              style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: notifAtiva ? 'default' : 'pointer', background: notifAtiva ? '#27AE60' : '#0E0E0E', color: '#F5F0E8', border: 'none', minHeight: 44, flexShrink: 0 }}>
-              {notifAtiva ? '✓ Ativado' : 'Ativar'}
-            </button>
+
+            {/* O erro aparece. Botão verde sem gravação foi o bug que isto fecha. */}
+            {erroNotif && (
+              <p style={{ fontSize: 12, color: '#C0392B', margin: '10px 0 0', lineHeight: 1.5 }}>
+                {erroNotif}
+              </p>
+            )}
           </div>
         )}
 
