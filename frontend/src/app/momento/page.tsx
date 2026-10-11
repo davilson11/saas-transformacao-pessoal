@@ -608,8 +608,12 @@ export default function MomentoPage() {
           <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#C8A030', marginBottom: 16 }}>A voz do dia</p>
           <div style={{ position: 'relative' }}>
             <span style={{ position: 'absolute', top: -8, left: -4, fontSize: 48, color: '#C8A030', lineHeight: 1, opacity: 0.5, fontFamily: 'Georgia, serif', pointerEvents: 'none' }}>&ldquo;</span>
-            <p style={{ fontSize: 18, color: '#F5F0E8', lineHeight: 1.9, fontFamily: 'var(--font-heading)', fontStyle: 'italic', margin: 0, paddingLeft: 20 }}>
-              {momento.voz_do_dia}
+            {/* `whiteSpace: pre-line` honra as quebras de parágrafo do texto.
+                Sem isto o HTML colapsa toda quebra de linha num espaço, e os
+                365 textos voltam a ser um bloco só — não importa como estejam
+                escritos no banco. */}
+            <p style={{ fontSize: 18, color: '#F5F0E8', lineHeight: 1.9, fontFamily: 'var(--font-heading)', fontStyle: 'italic', margin: 0, paddingLeft: 20, whiteSpace: 'pre-line' }}>
+              {momento.voz_do_dia?.trim()}
             </p>
             <span style={{ float: 'right', fontSize: 48, color: '#C8A030', lineHeight: 0.5, opacity: 0.5, fontFamily: 'Georgia, serif', marginTop: 8 }}>&rdquo;</span>
           </div>
