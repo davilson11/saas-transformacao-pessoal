@@ -159,10 +159,10 @@ function getSaudacao(hora: number): string {
 
 const PRIMARY_NAV = [
   { label: 'Início',   href: '/dashboard',                icon: <IconDashboard />,  exact: true,  destaque: false },
-  { label: 'Momento',  href: '/momento',                  icon: <IconMomento />,    exact: true,  destaque: false },
+  { label: 'Momento',  href: '/momento',                  icon: <IconMomento />,    exact: true,  destaque: true  },
   { label: 'Missões',  href: '/missoes',                  icon: <IconMissoes />,    exact: true,  destaque: false },
   { label: 'Mapa',     href: '/mapa',                     icon: <IconMapa />,       exact: true,  destaque: false },
-  { label: 'Diário',   href: '/ferramentas/diario-bordo', icon: <IconDiario />,     exact: false, destaque: true  },
+  { label: 'Diário',   href: '/ferramentas/diario-bordo', icon: <IconDiario />,     exact: false, destaque: false },
 ];
 
 const SECONDARY_NAV = [

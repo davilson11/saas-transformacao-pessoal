@@ -40,13 +40,13 @@ const PASSOS = [
     corpo: (
       <>
         <p>
-          Kairos é a sua jornada de transformação pessoal de 12 meses — 16
-          ferramentas guiadas que ajudam você a se conhecer, planejar e agir com
-          intenção.
+          O Kairos ajuda você a conectar direção pessoal e ação diária. Defina
+          o que importa, abra o Momento para orientar seu dia e use o Diário de
+          Bordo para aprofundar suas reflexões.
         </p>
         <p>
-          Cada ferramenta é um passo concreto. Juntas, elas constroem a melhor
-          versão de você.
+          As 16 ferramentas ajudam você a se conhecer, planejar e trabalhar o
+          que precisa de atenção.
         </p>
       </>
     ),
@@ -58,35 +58,35 @@ const PASSOS = [
     corpo: (
       <>
         <p>
-          A <strong style={{ color: "#C8A030" }}>Visão Âncora (F00)</strong> é o
-          documento mais importante da sua jornada — define quem você quer ser
-          nos próximos 12 meses e ancora todas as suas decisões.
+          A <strong style={{ color: "#C8A030" }}>Visão Âncora</strong> é a sua
+          direção — quem você quer ser ao longo da jornada. Ao fim de cada mês,
+          o Momento devolve a sua âncora e pergunta se você está mais perto ou
+          mais longe dela.
         </p>
         <p>
-          Reserve 60 minutos, responda com honestidade e volte a ela sempre que
-          precisar de direção.
+          Responda com honestidade e volte a ela sempre que precisar de
+          direção. Ela pode mudar conforme você muda.
         </p>
       </>
     ),
     cta: { label: "Criar minha Visão Âncora →", href: "/visao-ancora" },
   },
   {
-    emoji: "📔",
-    titulo: "Registre seu dia, todo dia",
+    emoji: "🌅",
+    titulo: "O dia começa no Momento",
     corpo: (
       <>
         <p>
-          O <strong style={{ color: "#C8A030" }}>Diário de Bordo</strong> é o
-          hábito central do Kairos — 5 minutos por dia para registrar vitórias,
-          aprendizados e como você está se sentindo.
+          No <strong style={{ color: "#C8A030" }}>Momento</strong>, você
+          encontra o conteúdo do dia, uma missão e um check-in rápido.
         </p>
         <p>
-          A consistência é o que separa quem sonha de quem transforma. Comece
-          hoje.
+          Para aprofundar suas reflexões e registrar o que viveu, abra o Diário
+          de Bordo.
         </p>
       </>
     ),
-    cta: { label: "Abrir Diário de Bordo →", href: "/ferramentas/diario-bordo" },
+    cta: { label: "Abrir o Momento de hoje →", href: "/momento" },
   },
 ] as const;
 

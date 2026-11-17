@@ -112,13 +112,14 @@ banco ter uma linha só.
 
 Vistos no console durante o teste, sem ação tomada:
 
-1. **`GET /manifest.json` → 404** em produção. Provável causa: o matcher do
-   `proxy.ts` exclui `.js` (`js(?!on)`) mas **não** `.json`, então o manifesto
-   passa pelo `auth.protect()` e o Clerk devolve 404 para a requisição sem
-   sessão que o navegador faz. Afeta metadados do PWA (nome, ícone, cor de
-   tema na instalação). O app instalado no iPhone já existe, então o efeito
-   hoje é em instalações novas. Correção provável: adicionar `/manifest.json`
-   às rotas públicas, ou `json` à lista de extensões excluídas — uma linha.
+1. **`GET /manifest.json` → 404** em produção — **RESOLVIDO** no commit
+   `aee82e6` (2026-11-16). Causa comprovada: o matcher do `proxy.ts` exclui
+   `.js` (`js(?!on)`) mas não `.json`; o manifesto caía no `auth.protect()` e o
+   Clerk devolvia 404 para a requisição sem credenciais do navegador.
+   Correção: `/manifest.json` adicionado a `isPublicRoute`; matcher intacto.
+   Validado em produção: HTTP 200 e corpo JSON com `name`, `short_name`,
+   `start_url`, `display`, cores e ícones. **Não verificado ainda:** painel
+   Application → Manifest no DevTools e uma instalação nova do PWA.
 2. **"Multiple GoTrueClient instances detected"** — aviso do SDK do Supabase,
    indica mais de um cliente criado no mesmo contexto. Não é erro; pode
    produzir comportamento indefinido sob concorrência. Vale olhar em
