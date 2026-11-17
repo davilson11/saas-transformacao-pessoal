@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
 import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
+import { COR_GOLD, COR_PRIMARY } from '@/lib/tokens';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -134,8 +135,6 @@ const INSTRUCOES = [
   },
 ];
 
-const COR_PRIMARY = '#1a5c3a';
-const COR_GOLD    = '#b5840a';
 const COR_NOTURNO = '#4a3a8a';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

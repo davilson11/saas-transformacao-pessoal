@@ -419,7 +419,7 @@ export default function BussolaValoresPage() {
               style={{ background: '#fff', border: '1px solid var(--color-brand-border)', boxShadow: 'var(--shadow-card)' }}>
               <div className="flex items-start gap-3">
                 <div className="flex items-center justify-center rounded-xl flex-shrink-0 font-bold"
-                  style={{ width: 32, height: 32, background: resp ? 'var(--color-brand-gold)' : 'rgba(30,57,42,0.07)', color: resp ? '#1E392A' : 'var(--color-brand-gray)', fontFamily: 'var(--font-heading)', fontSize: 13 }}>
+                  style={{ width: 32, height: 32, background: resp ? 'var(--color-brand-gold)' : 'rgba(30,57,42,0.07)', color: resp ? 'var(--color-brand-dark-green)' : 'var(--color-brand-gray)', fontFamily: 'var(--font-heading)', fontSize: 13 }}>
                   {i + 1}
                 </div>
                 <div>
@@ -503,7 +503,7 @@ export default function BussolaValoresPage() {
               <div className="flex items-center gap-3">
                 {/* Posição */}
                 <div className="flex items-center justify-center rounded-xl flex-shrink-0 font-bold"
-                  style={{ width: 36, height: 36, background: idx === 0 ? 'var(--color-brand-gold)' : 'rgba(30,57,42,0.07)', color: idx === 0 ? '#1E392A' : 'var(--color-brand-gray)', fontFamily: 'var(--font-heading)', fontSize: 15 }}>
+                  style={{ width: 36, height: 36, background: idx === 0 ? 'var(--color-brand-gold)' : 'rgba(30,57,42,0.07)', color: idx === 0 ? 'var(--color-brand-dark-green)' : 'var(--color-brand-gray)', fontFamily: 'var(--font-heading)', fontSize: 15 }}>
                   {idx + 1}º
                 </div>
                 <span style={{ fontSize: 22 }}>{v.emoji}</span>

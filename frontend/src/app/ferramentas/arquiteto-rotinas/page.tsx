@@ -7,6 +7,7 @@ import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
 import { useSupabaseClient } from '@/lib/useSupabaseClient';
 import { useUser } from '@clerk/nextjs';
 import { buscarRespostaFerramenta } from '@/lib/queries';
+import { COR_BORDER, COR_GOLD, COR_VERDE } from '@/lib/tokens';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -55,10 +56,6 @@ type NoturnoState = {
 type DiaRastreador = { matinal: boolean; produtivo: boolean; noturno: boolean };
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
-
-const COR_VERDE  = '#1a5c3a';
-const COR_GOLD   = '#b5840a';
-const COR_BORDER = 'rgba(26,92,58,0.1)';
 
 const ETAPAS = [
   { label: 'Bem-vindo',       descricao: 'Introdução à ferramenta'   },

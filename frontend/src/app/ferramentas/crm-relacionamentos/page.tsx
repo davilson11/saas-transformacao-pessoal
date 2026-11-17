@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
 import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
+import { COR_BORDER, COR_GOLD, COR_VERDE } from '@/lib/tokens';
+import BadgeTopo from '@/components/dashboard/BadgeTopo';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -25,10 +27,6 @@ type FrequenciaState = {
 type Reflexao = { q1: string; q2: string; q3: string; q4: string; q5: string };
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
-
-const COR_VERDE  = '#1a5c3a';
-const COR_GOLD   = '#b5840a';
-const COR_BORDER = 'rgba(26,92,58,0.1)';
 
 const ETAPAS = [
   { label: 'Bem-vindo',          descricao: 'Introdução à ferramenta'         },
@@ -480,16 +478,7 @@ export default function CrmRelacionamentosPage() {
   const step0 = (
     <div style={{ maxWidth: 620, display: 'flex', flexDirection: 'column', gap: 28 }}>
       <div>
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: `${COR_GOLD}15`, border: `1px solid ${COR_GOLD}30`,
-          borderRadius: 99, padding: '4px 14px', marginBottom: 16,
-        }}>
-          <span style={{ fontSize: 14 }}>🤝</span>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: COR_GOLD }}>
-            F14 · Mapa de Relacionamentos
-          </span>
-        </div>
+        <BadgeTopo emoji="🤝">F14 · Mapa de Relacionamentos</BadgeTopo>
         <h1 style={{ color: COR_VERDE, marginBottom: 12 }}>
           Seus relacionamentos são seu maior patrimônio
         </h1>

@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import FerramentaLayout from "@/components/dashboard/FerramentaLayout";
 import { useCarregarRespostas } from "@/lib/useCarregarRespostas";
+import { COR_DARK, COR_GOLD } from '@/lib/tokens';
+import CartaoInstrucao from '@/components/dashboard/CartaoInstrucao';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -110,9 +112,6 @@ const COR_FORCAS = "#27AE60";
 const COR_FRAQUEZAS = "#E74C3C";
 const COR_OPORTUNIDADES = "#2980B9";
 const COR_AMEACAS = "#E67E22";
-const COR_GOLD = "#E0A55F";
-const COR_DARK = "#1E392A";
-
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
 
 function QuadranteEditor({
@@ -468,22 +467,7 @@ export default function SwotPessoalPage() {
       <div className="p-8">
 
         {/* Instrução contextual */}
-        <div
-          className="max-w-2xl mx-auto mb-6 flex flex-col gap-3 rounded-xl p-4"
-          style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}
-        >
-          <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK }}>
-            {instrucao.titulo}
-          </p>
-          <ul className="flex flex-col gap-2">
-            {instrucao.itens.map((item, i) => (
-              <li key={i} className="flex items-start gap-2">
-                <span style={{ color: COR_GOLD, fontSize: 15, marginTop: 1, flexShrink: 0 }}>→</span>
-                <span style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <CartaoInstrucao instrucao={instrucao} centralizado />
 
         {/* Passo 0 — Bem-vindo */}
         {passo === 0 && (

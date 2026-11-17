@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import FerramentaLayout from "@/components/dashboard/FerramentaLayout";
 import { useCarregarRespostas } from "@/lib/useCarregarRespostas";
+import { COR_DARK, COR_GOLD } from '@/lib/tokens';
+import CartaoInstrucao from '@/components/dashboard/CartaoInstrucao';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -67,7 +69,7 @@ const AREAS: Area[] = [
     id: "financas",
     emoji: "💰",
     label: "Finanças",
-    cor: "#E0A55F",
+    cor: COR_GOLD,
     placeholder1: "Qual é minha renda?",
     placeholder3: "O que já conquistei financeiramente?",
     placeholder5: "Como é minha liberdade financeira?",
@@ -173,7 +175,7 @@ const PERGUNTAS_DIA: {
     emoji: "✨",
     titulo: "Como me sinto ao final do dia?",
     placeholder: "Qual é a sensação predominante? O que me dá satisfação? Do que me orgulho?",
-    cor: "#E0A55F",
+    cor: COR_GOLD,
   },
   {
     id: "ritual",
@@ -229,9 +231,6 @@ const INSTRUCOES: Record<number, { titulo: string; itens: string[] }> = {
     ],
   },
 };
-
-const COR_GOLD = "#E0A55F";
-const COR_DARK = "#1E392A";
 
 const AREAS_VISAO_INICIAL: VisaoAreas = Object.fromEntries(
   AREAS.map((a) => [a.id, { um: "", tres: "", cinco: "" }])
@@ -329,7 +328,7 @@ function TabelaAreas({
 }) {
   const horizontes: { key: keyof HorizonteArea; label: string; cor: string; desc: string }[] = [
     { key: "um", label: "1 Ano", cor: "#27AE60", desc: "Conquistas próximas" },
-    { key: "tres", label: "3 Anos", cor: "#E0A55F", desc: "Transformação real" },
+    { key: "tres", label: "3 Anos", cor: COR_GOLD, desc: "Transformação real" },
     { key: "cinco", label: "5 Anos", cor: "#8E44AD", desc: "Versão ideal" },
   ];
 
@@ -826,24 +825,7 @@ export default function DesignVidaPage() {
       <div className="p-8">
 
         {/* Instrução da etapa */}
-        {instrucao && (
-          <div
-            className="flex flex-col gap-3 rounded-xl p-4 mb-6"
-            style={{ background: `${COR_DARK}06`, border: `1px solid ${COR_DARK}12` }}
-          >
-            <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 700, color: COR_DARK }}>
-              {instrucao.titulo}
-            </p>
-            <ul className="flex flex-col gap-2">
-              {instrucao.itens.map((item, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <span style={{ color: COR_GOLD, fontSize: 15, marginTop: 1, flexShrink: 0 }}>→</span>
-                  <span style={{ fontSize: 15, color: "var(--color-brand-gray)", lineHeight: 1.5 }}>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <CartaoInstrucao instrucao={instrucao} />
 
         {/* Passo 0 — Bem-vindo */}
         {passo === 0 && (

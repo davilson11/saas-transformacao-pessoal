@@ -12,6 +12,7 @@ import {
 import { Radar } from 'react-chartjs-2';
 import FerramentaLayout from '@/components/dashboard/FerramentaLayout';
 import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
+import { COR_GOLD, COR_PRIMARY } from '@/lib/tokens';
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
 
@@ -45,7 +46,7 @@ type RespostaArea = {
 const AREAS: Area[] = [
   { emoji: '💪', label: 'Saúde & Corpo',       descricao: 'Energia, sono, alimentação e movimento físico.',      cor: '#27AE60' },
   { emoji: '🧠', label: 'Mente & Emoções',      descricao: 'Saúde mental, clareza, equilíbrio emocional.',        cor: '#2980B9' },
-  { emoji: '💰', label: 'Finanças',             descricao: 'Controle, segurança, investimentos e renda.',         cor: '#b5840a' },
+  { emoji: '💰', label: 'Finanças',             descricao: 'Controle, segurança, investimentos e renda.',         cor: COR_GOLD },
   { emoji: '🚀', label: 'Carreira & Propósito', descricao: 'Realização, alinhamento e impacto no trabalho.',      cor: '#af6b9b' },
   { emoji: '🤝', label: 'Relacionamentos',       descricao: 'Família, amigos, parceiro(a) e rede de apoio.',      cor: '#5a7abf' },
   { emoji: '🎨', label: 'Lazer & Diversão',      descricao: 'Hobbies, descanso, prazer e criatividade.',          cor: '#D97706' },
@@ -192,9 +193,6 @@ const INSTRUCOES = [
     dica: '💡 Recomendamos refazer o Raio-X a cada 30 dias para medir seu progresso.',
   },
 ];
-
-const COR_PRIMARY = '#1a5c3a';
-const COR_GOLD    = '#b5840a';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

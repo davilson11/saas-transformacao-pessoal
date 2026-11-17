@@ -7,6 +7,7 @@ import { useCarregarRespostas } from '@/lib/useCarregarRespostas';
 import { useValoresDoUsuario } from '@/hooks/useValoresDoUsuario';
 import { calcularContraste, textoSemMapeamento } from '@/lib/tempoEValores';
 import type { Valor } from '@/lib/valores';
+import { COR_GOLD, COR_PRIMARY } from '@/lib/tokens';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -220,9 +221,6 @@ const INSTRUCOES = [
 ];
 
 const HORAS_DIA   = 24;
-const COR_PRIMARY = '#1a5c3a';
-const COR_GOLD    = '#b5840a';
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function parseH(v: string): number {
