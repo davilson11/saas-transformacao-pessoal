@@ -69,6 +69,8 @@ COMMIT;
 -- Os scripts de seed (scripts/seed-*.ts) continuam funcionando: usam a
 -- service-role key, que ignora RLS.
 --
--- PENDENTE: `roda_vida` tem policies de SELECT, INSERT e DELETE, mas não de
--- UPDATE. Qualquer update naquela tabela falha em silêncio.
+-- `roda_vida` — RESOLVIDO (verificado no banco em 2026-11-16): a policy
+-- `update_own` existe. A nota anterior, que dizia faltar UPDATE, estava
+-- desatualizada. Detalhe em VERIFICACAO-RODA-VIDA.md. Observação: o código
+-- nunca faz UPDATE nessa tabela — ela é append-only por desenho.
 -- ═══════════════════════════════════════════════════════════════════════════

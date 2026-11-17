@@ -105,5 +105,5 @@ COMMIT;
 --
 -- (idem para momento_kairos)
 --
--- Falta também a policy de UPDATE em `roda_vida` — ela só tem SELECT, INSERT
--- e DELETE, então qualquer update naquela tabela falha silenciosamente.
+-- Sobre `roda_vida`: a nota antiga dizia faltar policy de UPDATE. Verificado
+-- no banco em 2026-11-16: `update_own` existe. Ver VERIFICACAO-RODA-VIDA.md.

@@ -91,9 +91,10 @@ mortos mesmo. São 2.706 linhas a menos e zero risco.
 
 ## 3. O que está frágil, por ordem
 
-**a) `roda_vida` sem policy de UPDATE** — pendência conhecida desde a auditoria
-de RLS. Hoje o usuário consegue criar e ler, mas um `update` falha. Se alguma
-tela tentar atualizar, cai no padrão do item 1: `data` null, silêncio.
+**a) ~~`roda_vida` sem policy de UPDATE~~ — não procede.** Verificado no banco
+em 2026-11-16: `update_own` existe, e todas as seis policies usam
+`auth.jwt() ->> 'sub'` sobre `user_id text`. O código nunca faz UPDATE nessa
+tabela (append-only por desenho). Detalhe em `VERIFICACAO-RODA-VIDA.md`.
 
 **b) A notificação depende de 5 variáveis de ambiente na Vercel** (`CRON_SECRET`,
 `VAPID_PRIVATE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_MAILTO`,
@@ -133,6 +134,6 @@ testada; a tela só exibe.
 2. **`push/send/route.ts`** — tratar os dois erros do Supabase. 10 linhas.
    É a rota das 6h30.
 3. **Apagar os 9 mortos** — 2.706 linhas, `tsc` como prova.
-4. **`roda_vida` UPDATE policy** — uma migração SQL.
+4. ~~`roda_vida` UPDATE policy~~ — já existia; nota desatualizada corrigida.
 5. Extrair a lógica do FerramentaLayout para `lib/` — quando houver motivo
    para mexer nele, não antes.
