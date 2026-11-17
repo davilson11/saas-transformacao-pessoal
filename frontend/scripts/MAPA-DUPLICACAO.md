@@ -57,8 +57,8 @@ parece feito por duas pessoas.
 
 | padrão | ferramentas | observação |
 |---|---|---|
-| cartão de instrução (título + lista com seta) | 9 | JSX idêntico, copiado |
-| badge dourado do topo (pill) | 13 | mesmo bloco de estilo inline |
+| cartão de instrução (título + lista com seta) | 5 | JSX idêntico, copiado — *(o mapa dizia 9; outras 4 têm o cartão em desenho diferente)* |
+| badge dourado do topo (pill) | 5 | mesmo bloco de estilo inline — *(o mapa dizia 13; `borderRadius: 99` também é barra de progresso)* |
 | fiação do `FerramentaLayout` (etapas/progresso/avançar/voltar) | 6 | idêntica linha a linha |
 | constantes de cor redeclaradas | 14 | ver acima |
 
@@ -124,3 +124,15 @@ quebram nada que os 164 testes não peguem.
 
 Não faria 4 agora. E não faria 3 sem antes ler as seis ferramentas com calma —
 hook que esconde variação vira pior que a duplicação que ele substituiu.
+
+---
+
+## Pós-execução (Pedido 1 feito)
+
+Os números acima de cartão (9) e badge (13) estavam inflados: contei por
+substring, não por estrutura. Os reais são 5 e 5, e a economia foi de 147
+linhas, não ~300. Itens 1 e 2 executados; tsc limpo; 164 testes passando.
+
+Os dourados antigos continuam fora de `ferramentas/`: mapa, perfil, dashboard,
+LifeWheel, StreakBar, VitalityScore, ExportarProgresso e o gráfico de emoção do
+momento. Correção é mecânica agora — trocar literal por import de `tokens.ts`.

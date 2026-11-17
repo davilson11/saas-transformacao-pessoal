@@ -2,12 +2,21 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import {
+  interpretarInscricao,
+  classificarFalha,
+  mensagemDaFalha,
+  type CorpoResposta,
+} from "@/lib/inscricaoPush";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 type Passo = 0 | 1 | 2;
 
-type NotifStatus = "idle" | "loading" | "granted" | "denied" | "unsupported";
+// "denied" é só permissão negada no navegador. Falha de servidor ou de rede é
+// "erro", com a mensagem — eram tratadas como "denied" e a tela mandava a
+// pessoa mexer nos ajustes do navegador por um problema que não era dele.
+type NotifStatus = "idle" | "loading" | "granted" | "denied" | "unsupported" | "erro";
 
 const STORAGE_KEY = "kairos_onboarding_visto";
 
@@ -128,6 +137,7 @@ export default function Onboarding() {
   const [passo,       setPasso]       = useState<Passo>(0);
   const [saindo,      setSaindo]      = useState(false);
   const [notifStatus, setNotifStatus] = useState<NotifStatus>("idle");
+  const [notifErro, setNotifErro]     = useState<string | null>(null);
 
   // Mostrar apenas na primeira visita
   useEffect(() => {
@@ -164,30 +174,62 @@ export default function Onboarding() {
       return;
     }
     setNotifStatus("loading");
+    setNotifErro(null);
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         setNotifStatus("denied");
         return;
       }
+
+      // Sem a chave, `subscribe` falha com um erro obscuro. Melhor dizer o que é.
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
+      if (!vapidKey) {
+        setNotifStatus("erro");
+        setNotifErro(mensagemDaFalha("chave"));
+        return;
+      }
+
       const reg = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
 
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
-      const subscription = await reg.pushManager.subscribe({
-        userVisibleOnly:      true,
-        applicationServerKey: vapidKey ? urlBase64ToUint8Array(vapidKey) : undefined,
-      });
+      // Reaproveita a inscrição do aparelho se já existir: pedir outra com
+      // chave diferente dá InvalidStateError.
+      const subscription =
+        (await reg.pushManager.getSubscription()) ??
+        (await reg.pushManager.subscribe({
+          userVisibleOnly:      true,
+          applicationServerKey: urlBase64ToUint8Array(vapidKey),
+        }));
 
-      await fetch("/api/notify", {
+      // Mesma rota que o Momento usa. Antes eram duas rotas para a mesma coisa,
+      // e a correção feita numa não chegava na outra.
+      const resp = await fetch("/api/push/subscribe", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ subscription }),
       });
 
-      setNotifStatus("granted");
-    } catch {
-      setNotifStatus("denied");
+      // ESTE era o ponto cego: a resposta não era lida, e qualquer status
+      // virava "granted".
+      const corpo = (await resp.json().catch(() => null)) as CorpoResposta;
+      const resultado = interpretarInscricao(resp.status, corpo);
+
+      if (resultado.estado === "granted") {
+        setNotifStatus("granted");
+      } else {
+        setNotifStatus("erro");
+        setNotifErro(resultado.mensagem);
+      }
+    } catch (e) {
+      const origem = classificarFalha(e);
+      if (origem === "permissao") {
+        setNotifStatus("denied");
+      } else {
+        console.error("[onboarding] ativar lembretes:", e);
+        setNotifStatus("erro");
+        setNotifErro(mensagemDaFalha(origem));
+      }
     }
   }
 
@@ -378,7 +420,29 @@ export default function Onboarding() {
                     borderRadius: 10, padding: "10px 16px",
                   }}>
                     <span>✓</span>
-                    <span>Lembretes diários ativados às 20h!</span>
+                    <span>Lembrete diário ativado — chega de manhã, com o seu dia da jornada.</span>
+                  </div>
+                ) : notifStatus === "erro" ? (
+                  <div style={{
+                    display: "flex", flexDirection: "column", gap: 8,
+                    fontFamily: "var(--font-body)", fontSize: 12,
+                    color: "rgba(248,113,113,0.85)",
+                    background: "rgba(248,113,113,0.08)",
+                    border: "1px solid rgba(248,113,113,0.25)",
+                    borderRadius: 10, padding: "10px 16px", lineHeight: 1.5,
+                  }}>
+                    <span>{notifErro ?? "Não consegui ativar."}</span>
+                    <button
+                      type="button"
+                      onClick={ativarLembretes}
+                      style={{
+                        alignSelf: "flex-start", background: "transparent", border: "none",
+                        color: "inherit", textDecoration: "underline", cursor: "pointer",
+                        padding: 0, fontSize: 12, fontFamily: "inherit",
+                      }}
+                    >
+                      tentar de novo
+                    </button>
                   </div>
                 ) : notifStatus === "denied" ? (
                   <p style={{

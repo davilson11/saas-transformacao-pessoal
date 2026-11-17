@@ -3,6 +3,7 @@ import webpush from 'web-push';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { diaJornadaSeguro, estadoJornada } from '@/lib/jornada';
 import { montarLembrete } from '@/lib/lembreteDiario';
+import { exigir } from '@/lib/exigir';
 
 /**
  * O lembrete da manhã.
@@ -38,24 +39,34 @@ type Assinatura = Parameters<typeof webpush.sendNotification>[0];
 async function enviarLembretes() {
   initWebPush();
 
-  // Quem pediu para ser lembrado.
-  const { data: subs, error } = await supabaseAdmin
-    .from('push_subscriptions')
-    .select('id, user_id, subscription');
+  // As três consultas abaixo passam por `exigir`: erro do Supabase vira
+  // exceção, e a rota devolve 500. Antes, as duas últimas descartavam o erro —
+  // consulta de assinaturas falhando virava "ninguém para lembrar" e o cron
+  // reportava `enviados: 0` como se fosse uma manhã normal. É o tipo de falha
+  // que ninguém vê, porque o log diz que deu certo.
 
-  if (error) throw new Error(error.message);
-  if (!subs?.length) return { enviados: 0, removidos: 0, falhas: 0 };
+  // Quem pediu para ser lembrado.
+  const subs = exigir(
+    await supabaseAdmin.from('push_subscriptions').select('id, user_id, subscription'),
+    'push_subscriptions',
+    [],
+  );
+  if (!subs.length) return { enviados: 0, removidos: 0, falhas: 0 };
 
   const ids = subs.map((s) => s.user_id as string);
 
   // Em que dia cada um está.
-  const { data: assinaturas } = await supabaseAdmin
-    .from('subscriptions')
-    .select('user_id, jornada_inicio, status, trial_ends_at')
-    .in('user_id', ids);
+  const assinaturas = exigir(
+    await supabaseAdmin
+      .from('subscriptions')
+      .select('user_id, jornada_inicio, status, trial_ends_at')
+      .in('user_id', ids),
+    'subscriptions',
+    [],
+  );
 
   const inicioPor = new Map<string, string>();
-  for (const a of (assinaturas ?? []) as Array<{
+  for (const a of assinaturas as Array<{
     user_id: string; jornada_inicio: string | null;
     status: string; trial_ends_at: string | null;
   }>) {
@@ -78,12 +89,16 @@ async function enviarLembretes() {
 
   const vozPorDia = new Map<number, string>();
   if (diasNecessarios.length) {
-    const { data: conteudos } = await supabaseAdmin
-      .from('momento_kairos')
-      .select('dia_jornada, voz_do_dia')
-      .in('dia_jornada', diasNecessarios);
+    const conteudos = exigir(
+      await supabaseAdmin
+        .from('momento_kairos')
+        .select('dia_jornada, voz_do_dia')
+        .in('dia_jornada', diasNecessarios),
+      'momento_kairos',
+      [],
+    );
 
-    for (const c of (conteudos ?? []) as Array<{ dia_jornada: number; voz_do_dia: string | null }>) {
+    for (const c of conteudos as Array<{ dia_jornada: number; voz_do_dia: string | null }>) {
       if (c.voz_do_dia) vozPorDia.set(c.dia_jornada, c.voz_do_dia);
     }
   }
