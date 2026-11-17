@@ -14,6 +14,8 @@ import {
   type RespostaAfericao,
 } from '@/lib/afericao';
 import { buscarAfericoes, salvarAfericao } from '@/lib/afericaoDb';
+import { marcoAnterior, dataDoMarco, mensagemMarco, type ResultadoMarco } from '@/lib/marcos';
+import { buscarTextoDoMarco } from '@/lib/marcosDb';
 import type { EstadoJornada } from '@/lib/jornada';
 
 const GOLD  = '#C8A030';
@@ -40,6 +42,7 @@ export default function AfericaoAncora({ estado }: { estado: EstadoJornada | nul
   const [porque,     setPorque]     = useState('');
   const [salvando,   setSalvando]   = useState(false);
   const [erro,       setErro]       = useState<string | null>(null);
+  const [marco,      setMarco]      = useState<ResultadoMarco | null>(null);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -67,6 +70,33 @@ export default function AfericaoAncora({ estado }: { estado: EstadoJornada | nul
 
     return () => { cancelado = true; };
   }, [isLoaded, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── O texto do marco anterior ─────────────────────────────────────────
+  //
+  // Precisa ficar ANTES dos returns abaixo (regra dos hooks). `diaMarco` é
+  // derivado do mês a aferir; quando não há mês ou o mês não tem marco
+  // (mês 1, meses 7+), fica null e nada é consultado nem renderizado — a
+  // aferição continua idêntica à de antes.
+  const mesParaMarco = (!carregando && estado) ? mesAAferir(estado, afericoes) : null;
+  const diaMarco     = mesParaMarco ? marcoAnterior(mesParaMarco.numero) : null;
+
+  useEffect(() => {
+    if (!user?.id || !estado || diaMarco === null) { setMarco(null); return; }
+    let cancelado = false;
+
+    (async () => {
+      try {
+        const client = await getClient();
+        const r = await buscarTextoDoMarco(client, user.id, dataDoMarco(diaMarco, estado));
+        if (!cancelado) setMarco(r);
+      } catch (e) {
+        console.error('[AfericaoAncora] marco:', e instanceof Error ? e.message : e);
+        if (!cancelado) setMarco({ situacao: 'erro' });
+      }
+    })();
+
+    return () => { cancelado = true; };
+  }, [user?.id, diaMarco, estado?.diaAbsoluto]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (carregando || !estado) return null;
 
@@ -139,6 +169,23 @@ export default function AfericaoAncora({ estado }: { estado: EstadoJornada | nul
       }}>
         “{manchete}”
       </p>
+
+      {/* O que você escreveu no marco do mês anterior — só quando há marco.
+          'ausente' e 'erro' têm mensagens diferentes de propósito. */}
+      {diaMarco !== null && marco && (
+        <div style={{ margin: '16px 0 0', paddingLeft: 14, borderLeft: '2px solid rgba(200,160,48,0.3)' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(200,160,48,0.75)', margin: 0 }}>
+            O que você registrou no dia {diaMarco}
+          </p>
+          <p style={{
+            fontSize: 14, lineHeight: 1.6, margin: '6px 0 0', whiteSpace: 'pre-line',
+            color: marco.situacao === 'texto' ? CREAM : 'rgba(245,240,232,0.5)',
+            fontStyle: marco.situacao === 'texto' ? 'italic' : 'normal',
+          }}>
+            {mensagemMarco(marco)}
+          </p>
+        </div>
+      )}
 
       <p style={{ fontSize: 14.5, color: 'rgba(245,240,232,0.72)', lineHeight: 1.6, margin: '16px 0 0' }}>
         {pergunta}
