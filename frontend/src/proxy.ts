@@ -23,6 +23,18 @@ const isPublicRoute = createRouteMatcher([
   // o secret, não a sessão.
   "/api/push/send(.*)",
   "/api/notify(.*)",
+
+  // ─── Manifesto do PWA ─────────────────────────────────────────────────
+  //
+  // O matcher acima exclui .js mas deixa .json de propósito, então
+  // /manifest.json cai no auth.protect(). O navegador busca o manifesto sem
+  // credenciais (é a spec), o Clerk não vê sessão e devolve 404 — e a
+  // instalação do PWA perde nome, ícone e cor de tema.
+  //
+  // Verificado em produção em 2026-11-16: GET /manifest.json → 404. O arquivo
+  // existe em public/ e o layout aponta para o caminho certo; o bloqueio era
+  // só aqui. É um arquivo público por natureza — não tem nada a proteger.
+  "/manifest.json",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
